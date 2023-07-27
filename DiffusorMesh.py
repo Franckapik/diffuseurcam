@@ -57,39 +57,23 @@ def add_cadre(
             (bord_cadre, firstM * k - epaisseur, 0),
         ] """
 
-    print(
-        [
-            (0, epaisseur, 0),
-            (0, longueur_cadre - epaisseur, 0),
-            ((profondeur / 2 - tenon_cadre / 2), longueur_cadre - epaisseur, 0),
-            ((profondeur / 2 - tenon_cadre / 2), longueur_cadre, 0),
-            ((profondeur / 2 + tenon_cadre / 2), longueur_cadre, 0),
-            ((profondeur / 2 + tenon_cadre / 2), longueur_cadre - epaisseur, 0),
-            ((profondeur), longueur_cadre - epaisseur, 0),
-            ((profondeur), epaisseur, 0),
-            ((profondeur / 2 + tenon_cadre / 2), epaisseur, 0),
-            ((profondeur / 2 + tenon_cadre / 2), 0, 0),
-            ((profondeur / 2 - tenon_cadre / 2), 0, 0),
-            ((profondeur / 2 - tenon_cadre / 2), epaisseur, 0),
-            *map(
-                lambda k: [
-                    (bord_cadre, firstM * N, 0),
-                    (
-                        bord_cadre + tenon_peigne + offset_mortaise_interne,
-                        firstM * N,
-                        0,
-                    ),
-                    (
-                        bord_cadre + tenon_peigne + offset_mortaise_interne,
-                        firstM * N - epaisseur,
-                        0,
-                    ),
-                    (bord_cadre, firstM * N - epaisseur, 0),
-                ],
-                range(1, N),
+    """ print(
+        tuple([
+            (bord_cadre, firstM * N, 0),
+            (
+                bord_cadre + tenon_peigne + offset_mortaise_interne,
+                firstM * N,
+                0,
             ),
+            (
+                bord_cadre + tenon_peigne + offset_mortaise_interne,
+                firstM * N - epaisseur,
+                0,
+            ),
+            (bord_cadre, firstM * N - epaisseur, 0),
         ]
-    )
+        for N in range(1, N))
+    ) """
 
     """ numbers = [
         1,
@@ -102,11 +86,11 @@ def add_cadre(
 
     print(numbers) """
 
-    #    def vertsMortaisesInt(n) :
-    #        return (bord_cadre, firstM * N,0 ),(bord_cadre + tenon_peigne + offset_mortaise_interne,firstM * N,0 ),(bord_cadre + tenon_peigne + offset_mortaise_interne,firstM * N - epaisseur,0 ),(bord_cadre,firstM * N - epaisseur,0 )
-    #
-    #    verts2 = list(map(vertsMortaisesInt, range(1,N)))
-    #    print(len(verts2), verts2[0])
+    def vertsMortaisesInt(n) :
+        return (bord_cadre, firstM * N,0 ),(bord_cadre + tenon_peigne + offset_mortaise_interne,firstM * N,0 ),(bord_cadre + tenon_peigne + offset_mortaise_interne,firstM * N - epaisseur,0 ),(bord_cadre,firstM * N - epaisseur,0 )
+
+    verts2 = list(map(vertsMortaisesInt, range(1,N)))
+    print(len(verts2), verts2)
 
     # a = [i*i for i in range(10)]
     #
