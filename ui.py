@@ -1,5 +1,6 @@
 from bpy.types import Panel
 import bpy
+from .ops import classes
 
 PROPS = [
     ('prefix', bpy.props.StringProperty(name='Prefix', default='Pref')),
@@ -27,12 +28,13 @@ PROPS = [
         print('My string:', self.my_string)
         return {'FINISHED'} """
 
-class TLA_PT_sidebar(Panel):
+class Diffuseur_SideBar(Panel):
     """Display test button"""
     bl_label = "Diffuseurs"
+    bl_idname = "DIFFUSEURS_PT_Diffuseurs"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_category = "Diffuseurs"
+    bl_category = "DIFFUSEURS"
 
     def draw(self, context):
         col = self.layout.column(align=True)
@@ -43,11 +45,23 @@ class TLA_PT_sidebar(Panel):
         props.my_bool = True
         props.my_string = "Shouldn't that be 47?" """
 
-        row = self.layout.row()
-        row.prop(context.scene, 'my_use_x')
+        """ row = self.layout.row()
+        row.prop(context.scene, 'my_use_x') """
 
                
 """         box = self.layout.box()
         box.label(text="Selection Tools")
         box.operator("object.select_all").action = 'TOGGLE' """
 
+def menu_func(self, context):
+    for cls in classes:
+        self.layout.operator(cls.bl_idname, icon="MESH_CUBE")
+
+def register():
+    bpy.utils.register_class(Diffuseur_SideBar)
+    bpy.types.VIEW3D_MT_mesh_add.append(menu_func)
+
+
+def unregister():
+    bpy.types.VIEW3D_MT_mesh_add.remove(menu_func)
+    bpy.utils.unregister_class(Diffuseur_SideBar) 

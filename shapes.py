@@ -204,7 +204,6 @@ def add_cadre_tenon(
     largeur_diffuseur,
     offset_mortaise_interne,
     tenon_peigne,
-    my_use_x
 ):
     """
     This function takes inputs and returns vertex and face arrays.
@@ -220,7 +219,7 @@ def add_cadre_tenon(
     vertsCadre = [
         (0, epaisseur, 0),
         (0, largeur_diffuseur - epaisseur, 0),
-        ((profondeur / 2 - tenon_cadre / 2), my_use_x - epaisseur, 0),
+        ((profondeur / 2 - tenon_cadre / 2), largeur_diffuseur - epaisseur, 0),
         ((profondeur / 2 - tenon_cadre / 2), largeur_diffuseur, 0),
         ((profondeur / 2 + tenon_cadre / 2), largeur_diffuseur, 0),
         ((profondeur / 2 + tenon_cadre / 2), largeur_diffuseur - epaisseur, 0),

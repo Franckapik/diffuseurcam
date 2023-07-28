@@ -1,6 +1,4 @@
 import bpy
-from .ops import AddCadreCourtMortaise, AddCadreLongMortaise, AddCadreTenon, AddCarreau, AddPeigneCourt, AddPeigneLong
-from .ui import TLA_PT_sidebar
 
 bl_info = {
     "name": "Diffuseur CAM",
@@ -12,26 +10,34 @@ bl_info = {
     "category": "Generic",
 }
 
-classes = [AddCadreCourtMortaise, AddCadreLongMortaise, AddCadreTenon, AddCarreau, AddPeigneCourt, AddPeigneLong, TLA_PT_sidebar,]
 
+modulesNames = ['ops', 'ui']
 
-def menu_func(self, context):
-    for cls in classes:
-        self.layout.operator(cls.bl_idname, icon="MESH_CUBE")
-
-
+import sys
+import importlib
+ 
+modulesFullNames = {}
+for currentModuleName in modulesNames:
+    modulesFullNames[currentModuleName] = ('{}.{}'.format(__name__, currentModuleName))
+ 
+for currentModuleFullName in modulesFullNames.values():
+    if currentModuleFullName in sys.modules:
+        importlib.reload(sys.modules[currentModuleFullName])
+    else:
+        globals()[currentModuleFullName] = importlib.import_module(currentModuleFullName)
+        setattr(globals()[currentModuleFullName], 'modulesNames', modulesFullNames)
+ 
 def register():
-    for cls in classes:
-        bpy.utils.register_class(cls)
-    bpy.types.VIEW3D_MT_mesh_add.append(menu_func)
-    bpy.types.Scene.my_use_x = bpy.props.IntProperty()
-
-
+    for currentModuleName in modulesFullNames.values():
+        if currentModuleName in sys.modules:
+            if hasattr(sys.modules[currentModuleName], 'register'):
+                sys.modules[currentModuleName].register()
+ 
 def unregister():
-    for cls in classes:
-        bpy.utils.unregister_class(cls)
-    bpy.types.VIEW3D_MT_mesh_add.remove(menu_func)
-    del bpy.types.Scene.my_use_x
-
+    for currentModuleName in modulesFullNames.values():
+        if currentModuleName in sys.modules:
+            if hasattr(sys.modules[currentModuleName], 'unregister'):
+                sys.modules[currentModuleName].unregister()
+ 
 if __name__ == "__main__":
     register()

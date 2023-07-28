@@ -550,3 +550,13 @@ class AddPeigneLong(bpy.types.Operator, AddObjectHelper):
         return {"FINISHED"}
 
 
+classes = [AddCadreCourtMortaise, AddCadreLongMortaise, AddCadreTenon, AddCarreau, AddPeigneCourt, AddPeigneLong]
+
+def register():
+    for cls in classes:
+        bpy.utils.register_class(cls)
+
+
+def unregister():
+    for cls in classes:
+        bpy.utils.unregister_class(cls)
