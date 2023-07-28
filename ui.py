@@ -39,19 +39,6 @@ class Diffuseur_SideBar(Panel):
     def draw(self, context):
         col = self.layout.column(align=True)
         self.layout.label(text="Diffuseur Générateur")
-        col.operator('mesh.cadre_mortaise', text='Cadre Mortaise')
-
-        """ props = self.layout.operator('object.property_example')
-        props.my_bool = True
-        props.my_string = "Shouldn't that be 47?" """
-
-        """ row = self.layout.row()
-        row.prop(context.scene, 'my_use_x') """
-
-               
-"""         box = self.layout.box()
-        box.label(text="Selection Tools")
-        box.operator("object.select_all").action = 'TOGGLE' """
 
 def menu_func(self, context):
     for cls in classes:

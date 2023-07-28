@@ -1,6 +1,6 @@
 import bpy
 
-def add_cadre_mortaise(
+def add_cadre_court_mortaise(
     epaisseur,
     profondeur,
     tenon_cadre,

@@ -1,6 +1,6 @@
 import bpy
 import bmesh
-from .shapes import add_cadre_mortaise, add_cadre_long_mortaise, add_cadre_tenon, add_carreau, add_peigne_court, add_peigne_long
+from .shapes import add_cadre_court_mortaise, add_cadre_long_mortaise, add_cadre_tenon, add_carreau, add_peigne_court, add_peigne_long
 from bpy_extras.object_utils import AddObjectHelper
 
 from bpy.props import (
@@ -11,8 +11,8 @@ from bpy.props import (
 class AddCadreCourtMortaise(bpy.types.Operator, AddObjectHelper):
     """Ajouter un cadre mortaise"""
 
-    bl_idname = "mesh.cadre_mortaise"
-    bl_label = "Ajouter Cadre Mortaise"
+    bl_idname = "mesh.cadre_court_mortaise"
+    bl_label = "Ajouter Cadre Court Mortaise"
     bl_options = {"REGISTER", "UNDO"}
 
     epaisseur: FloatProperty(
@@ -66,7 +66,7 @@ class AddCadreCourtMortaise(bpy.types.Operator, AddObjectHelper):
     )
 
     def execute(self, context):
-        vertex, edges = add_cadre_mortaise(
+        vertex, edges = add_cadre_court_mortaise(
             self.epaisseur,
             self.profondeur,
             self.tenon_cadre,
@@ -376,8 +376,8 @@ class AddCarreau(bpy.types.Operator, AddObjectHelper):
 class AddPeigneCourt(bpy.types.Operator, AddObjectHelper):
     """Ajouter un cadre tenon"""
 
-    bl_idname = "mesh.cadre_tenon"
-    bl_label = "Ajouter Cadre Tenon"
+    bl_idname = "mesh.peigne_court"
+    bl_label = "Ajouter Peigne Court"
     bl_options = {"REGISTER", "UNDO"}
 
     epaisseur: FloatProperty(

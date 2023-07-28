@@ -7,7 +7,7 @@ from bpy.props import (
 )
 
 
-def add_cadre_mortaise(
+def add_cadre_court_mortaise(
     epaisseur,
     profondeur,
     tenon_cadre,
@@ -162,7 +162,7 @@ class AddCadreMortaise(bpy.types.Operator, AddObjectHelper):
     )
 
     def execute(self, context):
-        vertex, edges = add_cadre_mortaise(
+        vertex, edges = add_cadre_court_mortaise(
             self.epaisseur,
             self.profondeur,
             self.tenon_cadre,
