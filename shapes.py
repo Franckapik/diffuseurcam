@@ -1,18 +1,14 @@
 import bpy
 
-def add_cadre_court_mortaise(
-    epaisseur,
-    profondeur,
-    tenon_cadre,
-    bord_cadre,
-    largeur_diffuseur,
-    offset_mortaise_interne,
-    tenon_peigne,
-):
-    """
-    This function takes inputs and returns vertex and face arrays.
-    no actual mesh data creation is done here.
-    """
+
+def add_cadre_court_mortaise(difprops):
+    epaisseur = difprops.epaisseur
+    profondeur = difprops.profondeur
+    tenon_cadre = difprops.tenon_cadre
+    bord_cadre = difprops.bord_cadre
+    largeur_diffuseur = difprops.largeur_diffuseur
+    offset_mortaise_interne = difprops.offset_mortaise_interne
+    tenon_peigne = difprops.tenon_peigne
 
     N = 7
     correction = 0.00235
@@ -26,7 +22,7 @@ def add_cadre_court_mortaise(
         ((profondeur / 2 - tenon_cadre / 2), largeur_diffuseur, 0),
         ((profondeur / 2 - tenon_cadre / 2), largeur_diffuseur - epaisseur, 0),
         ((profondeur / 2 + tenon_cadre / 2), largeur_diffuseur - epaisseur, 0),
-        ((profondeur / 2 + tenon_cadre / 2), largeur_diffuseur , 0),
+        ((profondeur / 2 + tenon_cadre / 2), largeur_diffuseur, 0),
         ((profondeur), largeur_diffuseur, 0),
         ((profondeur), 0, 0),
         ((profondeur / 2 + tenon_cadre / 2), 0, 0),
@@ -96,21 +92,17 @@ def add_cadre_court_mortaise(
 
     return verts, edges
 
-def add_cadre_long_mortaise(
-    epaisseur,
-    profondeur,
-    tenon_cadre,
-    bord_cadre,
-    largeur_diffuseur,
-    offset_mortaise_interne,
-    tenon_peigne,
-    longueur_diffuseur,
-    diffuseur_type_is2D
-):
-    """
-    This function takes inputs and returns vertex and face arrays.
-    no actual mesh data creation is done here.
-    """
+
+def add_cadre_long_mortaise(difprops):
+    epaisseur = difprops.epaisseur
+    profondeur = difprops.profondeur
+    tenon_cadre = difprops.tenon_cadre
+    bord_cadre = difprops.bord_cadre
+    largeur_diffuseur = difprops.largeur_diffuseur
+    offset_mortaise_interne = difprops.offset_mortaise_interne
+    tenon_peigne = difprops.tenon_peigne
+    longueur_diffuseur = difprops.longueur_diffuseur
+    diffuseur_type_is2D = difprops.diffuseur_type_is2D
 
     N = 7
     correction = 0.00235
@@ -137,7 +129,7 @@ def add_cadre_long_mortaise(
     vertsMortaisesInt = []
 
     for k in range(1, round(N * longueur_diffuseur)):
-        if diffuseur_type_is2D : 
+        if diffuseur_type_is2D:
             vertsMortaisesInt += [
                 (bord_cadre, bloc * k, 0),
                 (bord_cadre + tenon_peigne + offset_mortaise_interne, bloc * k, 0),
@@ -196,19 +188,15 @@ def add_cadre_long_mortaise(
 
     return verts, edges
 
-def add_cadre_tenon(
-    epaisseur,
-    profondeur,
-    tenon_cadre,
-    bord_cadre,
-    largeur_diffuseur,
-    offset_mortaise_interne,
-    tenon_peigne,
-):
-    """
-    This function takes inputs and returns vertex and face arrays.
-    no actual mesh data creation is done here.
-    """
+
+def add_cadre_tenon(difprops):
+    epaisseur = difprops.epaisseur
+    profondeur = difprops.profondeur
+    tenon_cadre = difprops.tenon_cadre
+    bord_cadre = difprops.bord_cadre
+    largeur_diffuseur = difprops.largeur_diffuseur
+    offset_mortaise_interne = difprops.offset_mortaise_interne
+    tenon_peigne = difprops.tenon_peigne
 
     N = 7
     correction = 0.00235
@@ -292,22 +280,13 @@ def add_cadre_tenon(
 
     return verts, edges
 
-def add_carreau(
-    epaisseur,
-    profondeur,
-    tenon_cadre,
-    bord_cadre,
-    largeur_diffuseur,
-    offset_mortaise_interne,
-    tenon_peigne,
-    longueur_diffuseur,
-    diffuseur_type_is2D,
-    is_accroche
-):
-    """
-    This function takes inputs and returns vertex and face arrays.
-    no actual mesh data creation is done here.
-    """
+
+def add_carreau(difprops):
+    epaisseur = difprops.epaisseur
+    largeur_diffuseur = difprops.largeur_diffuseur
+    longueur_diffuseur = difprops.longueur_diffuseur
+    diffuseur_type_is2D = difprops.diffuseur_type_is2D
+    is_accroche = difprops.is_accroche
 
     N = 7
     correction = 0.00235
@@ -319,15 +298,38 @@ def add_carreau(
     if diffuseur_type_is2D:
         vertsCadre = [(0, 0, 0), (0, bloc, 0), (bloc, bloc, 0), (bloc, 0, 0), (0, 0, 0)]
     else:
-        vertsCadre = [(0, 0, 0), (0, longueurTotale, 0), (bloc, longueurTotale, 0), (bloc, 0, 0), (0, 0, 0)]
+        vertsCadre = [
+            (0, 0, 0),
+            (0, longueurTotale, 0),
+            (bloc, longueurTotale, 0),
+            (bloc, 0, 0),
+            (0, 0, 0),
+        ]
 
     if is_accroche and diffuseur_type_is2D:
-        bpy.ops.mesh.primitive_circle_add(radius=0.01, enter_editmode=True, align='WORLD', location= (bloc/2,bloc/2, 0), scale=(1, 1, 1))
-        
-    if is_accroche and not diffuseur_type_is2D :    
-        bpy.ops.mesh.primitive_circle_add(radius=0.01, enter_editmode=True, align='WORLD', location= (bloc/2,longueurTotale/5, 0), scale=(1, 1, 1))
-        bpy.ops.mesh.primitive_circle_add(radius=0.01, enter_editmode=True, align='WORLD', location= (bloc/2,longueurTotale/5 * 4, 0), scale=(1, 1, 1))
+        bpy.ops.mesh.primitive_circle_add(
+            radius=0.01,
+            enter_editmode=True,
+            align="WORLD",
+            location=(bloc / 2, bloc / 2, 0),
+            scale=(1, 1, 1),
+        )
 
+    if is_accroche and not diffuseur_type_is2D:
+        bpy.ops.mesh.primitive_circle_add(
+            radius=0.01,
+            enter_editmode=True,
+            align="WORLD",
+            location=(bloc / 2, longueurTotale / 5, 0),
+            scale=(1, 1, 1),
+        )
+        bpy.ops.mesh.primitive_circle_add(
+            radius=0.01,
+            enter_editmode=True,
+            align="WORLD",
+            location=(bloc / 2, longueurTotale / 5 * 4, 0),
+            scale=(1, 1, 1),
+        )
 
     edgesCadre = []
 
@@ -338,19 +340,13 @@ def add_carreau(
 
     return vertsCadre, edgesCadre
 
-def add_peigne_court(
-    epaisseur,
-    profondeur,
-    tenon_cadre,
-    bord_cadre,
-    largeur_diffuseur,
-    offset_mortaise_interne,
-    tenon_peigne,
-):
-    """
-    This function takes inputs and returns vertex and face arrays.
-    no actual mesh data creation is done here.
-    """
+
+def add_peigne_court(difprops):
+    epaisseur = difprops.epaisseur
+    profondeur = difprops.profondeur
+    bord_cadre = difprops.bord_cadre
+    largeur_diffuseur = difprops.largeur_diffuseur
+    tenon_peigne = difprops.tenon_peigne
 
     N = 7
     correction = 0.00235
@@ -362,11 +358,10 @@ def add_peigne_court(
     for k in range(1, N):
         peignes += [
             (profondeur, largeur_diffuseur - epaisseur - bloc * k, 0),
-            (profondeur/2, largeur_diffuseur - epaisseur - bloc * k, 0),
-            (profondeur/2, largeur_diffuseur - epaisseur - bloc * k - epaisseur, 0),
+            (profondeur / 2, largeur_diffuseur - epaisseur - bloc * k, 0),
+            (profondeur / 2, largeur_diffuseur - epaisseur - bloc * k - epaisseur, 0),
             (profondeur, largeur_diffuseur - epaisseur - bloc * k - epaisseur, 0),
-            
-            ]
+        ]
 
     vertsCadre = [
         (0, epaisseur, 0),
@@ -393,32 +388,24 @@ def add_peigne_court(
         (bord_cadre, epaisseur, 0),
         (0, epaisseur, 0),
     ]
-  
+
     edgesCadre = []
 
-    for k in range(0, len(vertsCadre)-1):
-            edgesCadre += [
-                (k, k + 1),
-            ]   
-
-
+    for k in range(0, len(vertsCadre) - 1):
+        edgesCadre += [
+            (k, k + 1),
+        ]
 
     return vertsCadre, edgesCadre
 
-def add_peigne_long(
-    epaisseur,
-    profondeur,
-    tenon_cadre,
-    bord_cadre,
-    largeur_diffuseur,
-    offset_mortaise_interne,
-    tenon_peigne,
-    longueur_diffuseur
-):
-    """
-    This function takes inputs and returns vertex and face arrays.
-    no actual mesh data creation is done here.
-    """
+
+def add_peigne_long(difprops):
+    epaisseur = difprops.epaisseur
+    profondeur = difprops.profondeur
+    bord_cadre = difprops.bord_cadre
+    largeur_diffuseur = difprops.largeur_diffuseur
+    tenon_peigne = difprops.tenon_peigne
+    longueur_diffuseur = difprops.longueur_diffuseur
 
     N = 7
     correction = 0.00235
@@ -431,11 +418,10 @@ def add_peigne_long(
     for k in range(1, round(N * longueur_diffuseur)):
         peignes += [
             (profondeur, longueurTotale - epaisseur - bloc * k, 0),
-            (profondeur/2, longueurTotale - epaisseur - bloc * k, 0),
-            (profondeur/2, longueurTotale - epaisseur - bloc * k - epaisseur, 0),
+            (profondeur / 2, longueurTotale - epaisseur - bloc * k, 0),
+            (profondeur / 2, longueurTotale - epaisseur - bloc * k - epaisseur, 0),
             (profondeur, longueurTotale - epaisseur - bloc * k - epaisseur, 0),
-            
-            ]
+        ]
 
     vertsCadre = [
         (0, epaisseur, 0),
@@ -462,14 +448,12 @@ def add_peigne_long(
         (bord_cadre, epaisseur, 0),
         (0, epaisseur, 0),
     ]
-  
+
     edgesCadre = []
 
-    for k in range(0, len(vertsCadre)-1):
-            edgesCadre += [
-                (k, k + 1),
-            ]   
-
-
+    for k in range(0, len(vertsCadre) - 1):
+        edgesCadre += [
+            (k, k + 1),
+        ]
 
     return vertsCadre, edgesCadre

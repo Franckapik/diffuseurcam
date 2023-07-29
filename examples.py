@@ -46,3 +46,5 @@ col = self.layout.column(align=True)
         layout.prop(context.scene, "largeur")
         props = row.operator("mesh.cadre_court_mortaise", text="What?")
         print(props)
+
+""" bpy.data.scenes['Scene'].dif_props.epaisseur """

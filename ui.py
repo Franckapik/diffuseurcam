@@ -1,10 +1,10 @@
 from bpy.types import Panel
 import bpy
 from .ops import classes
-
+from .props import DiffuseurProps
 
 class Diffuseur_SideBar(Panel):
-    """Display test button"""
+    """Diffuseur options panel"""
 
     bl_label = "Diffuseurs"
     bl_idname = "DIFFUSEURS_PT_Diffuseurs"
@@ -15,13 +15,20 @@ class Diffuseur_SideBar(Panel):
     def draw(self, context):
         layout = self.layout
         scene = context.scene
-        mytool = scene.my_tool
-        
-        layout.prop(mytool, "my_string")
-        layout.prop(mytool, "my_float_vector")
-        layout.prop(mytool, "epaisseur")
+        difprops = scene.dif_props
+        attributes = difprops.listAttributes()
+
+
+        for att in attributes :
+            layout.prop(difprops, att)
 
         layout.operator("mesh.cadre_court_mortaise")
+        layout.operator("mesh.cadre_long_mortaise")
+        layout.operator("mesh.cadre_tenon")
+        layout.operator("mesh.carreau")
+        layout.operator("mesh.peigne_court")
+        layout.operator("mesh.peigne_long")
+        layout.operator("mesh.add_diffuseur")
 
 
 def menu_func(self, context):
