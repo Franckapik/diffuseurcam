@@ -11,7 +11,7 @@ bl_info = {
 }
 
 
-modulesNames = ['ops', 'ui']
+modulesNames = ['ops', 'ui', 'props']
 
 import sys
 import importlib

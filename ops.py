@@ -66,8 +66,11 @@ class AddCadreCourtMortaise(bpy.types.Operator, AddObjectHelper):
     )
 
     def execute(self, context):
+        scene = context.scene
+        mytool = scene.my_tool
+        
         vertex, edges = add_cadre_court_mortaise(
-            self.epaisseur,
+            mytool.epaisseur,
             self.profondeur,
             self.tenon_cadre,
             self.bord_cadre,
