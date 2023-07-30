@@ -14,6 +14,8 @@ class AddCadreCourtMortaise(bpy.types.Operator, AddObjectHelper):
     bl_idname = "mesh.cadre_court_mortaise"
     bl_label = "Ajouter Cadre Court Mortaise"
     bl_options = {"REGISTER", "UNDO"}
+    
+    
 
     def execute(self, context):
         scene = context.scene
@@ -46,18 +48,24 @@ class AddCadreLongMortaise(bpy.types.Operator, AddObjectHelper):
         difprops = scene.dif_props
         vertex, edges = add_cadre_long_mortaise(difprops)
 
-        mesh = bpy.data.meshes.new("Cadre_long_mortaise")
-
-        mesh.from_pydata(vertex, edges, [])
+        #create a bmesh
         bm = bmesh.new()
+
+        # Create new mesh data.
+        mesh = bpy.data.meshes.new("Cadre_long_mortaise")
+        mesh.from_pydata(vertex, edges, [])
+
+        # Load BMesh with mesh data
         bm.from_mesh(mesh)
+
+
+        # Convert BMesh to mesh data, then release BMesh.
         bm.to_mesh(mesh)
-        mesh.update()
-
-        # add the mesh as an object into the scene with this utility module
-        from bpy_extras import object_utils
-
-        object_utils.object_data_add(context, mesh, operator=self)
+        bm.free()
+    
+        #Add Object to the default collection from mesh
+        mesh_obj = bpy.data.objects.new(mesh.name, mesh)
+        bpy.context.collection.objects.link(mesh_obj)
 
         return {"FINISHED"}
 
