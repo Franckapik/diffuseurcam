@@ -5,19 +5,21 @@ from .ops import classes
 from bl_operators.presets import AddPresetBase
 
 
-class Diffuseurs_MT_Presets(Menu):
+class DIF_MT_Presets(Menu):
     bl_label = "Diffuseurs Presets"
     preset_subdir = "object/display"
     preset_operator = "script.execute_preset"
     draw = Menu.draw_preset
 
+
 # Enregistrement du preset dans le fichier suivant
 # /home/fanch/.config/blender/3.6/scripts/presets/object/display/
+
 
 class OT_AddMyPreset(AddPresetBase, Operator):
     bl_idname = "my.add_preset"
     bl_label = "Ajouter un preset"
-    preset_menu = "Diffuseurs_MT_Presets"
+    preset_menu = "DIF_MT_Presets"
     # Common variable used for all preset values
     preset_defines = ["obj = bpy.context.object", "scene = bpy.context.scene"]
     # Properties to store in the preset
@@ -39,17 +41,39 @@ class Diffuseur_SideBar(Panel):
         layout = self.layout
         scene = context.scene
         difprops = scene.dif_props
-        attributes = difprops.listAttributes()
-        row = layout.row(align=True)
-        row.menu(Diffuseurs_MT_Presets.__name__, text=Diffuseurs_MT_Presets.bl_label)
-        row.operator(OT_AddMyPreset.bl_idname, text="", icon='ADD')
-        row.operator(OT_AddMyPreset.bl_idname, text="", icon='REMOVE').remove_active = True
+        arrayprops = scene.array_props
+        dif_attributes = difprops.listAttributes()
+        array_attributes = arrayprops.listAttributes()
 
+        row1 = layout.row(align=True)
+        row1.menu(DIF_MT_Presets.__name__, text=DIF_MT_Presets.bl_label)
+        row1.operator(OT_AddMyPreset.bl_idname, text="", icon="ADD")
+        row1.operator(
+            OT_AddMyPreset.bl_idname, text="", icon="REMOVE"
+        ).remove_active = True
 
-        for att in attributes:
+        layout.separator()
+        for att in dif_attributes:
             layout.prop(difprops, att)
 
+        layout.separator()
+        row2 = layout.row()
+        row2.prop(arrayprops, "array_offset")
 
+        split = layout.split()
+        col1 = split.column()
+        col2 = split.column()
+
+        col1.label(text="X count", )
+        col2.label(text="Y count")
+        
+        for arr in (x for x in array_attributes if x != "array_offset"):
+            if arr[-1] == "x":
+                col1.prop(arrayprops, arr)
+            if arr[-1] == "y":
+                col2.prop(arrayprops, arr)
+
+        layout.separator()
         layout.operator("mesh.cadre_court_mortaise")
         layout.operator("mesh.cadre_long_mortaise")
         layout.operator("mesh.cadre_tenon")
@@ -58,12 +82,13 @@ class Diffuseur_SideBar(Panel):
         layout.operator("mesh.peigne_long")
         layout.operator("mesh.add_diffuseur")
 
-ui_classes = [Diffuseurs_MT_Presets, OT_AddMyPreset]
+
+ui_classes = [DIF_MT_Presets, OT_AddMyPreset]
 
 
 def menu_func(self, context):
     for cls in classes:
-        self.layout.operator(cls.bl_idname, icon="MESH_CUBE")    
+        self.layout.operator(cls.bl_idname, icon="MESH_CUBE")
 
 
 def register():

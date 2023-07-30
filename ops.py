@@ -8,32 +8,47 @@ from .shapes import (
     add_peigne_court,
     add_peigne_long,
 )
+from .difarray import difArray
 from bpy_extras.object_utils import AddObjectHelper
+
 
 class AddCadreCourtMortaise(bpy.types.Operator, AddObjectHelper):
     bl_idname = "mesh.cadre_court_mortaise"
     bl_label = "Ajouter Cadre Court Mortaise"
     bl_options = {"REGISTER", "UNDO"}
-    
-    
 
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
+        arrayprops = scene.array_props
         vertex, edges = add_cadre_court_mortaise(difprops)
 
-        mesh = bpy.data.meshes.new("Cadre_court_mortaise")
-
-        mesh.from_pydata(vertex, edges, [])
+        # create a bmesh
         bm = bmesh.new()
+
+        # Create new mesh data.
+        mesh = bpy.data.meshes.new("Cadre_court_mortaise")
+        mesh.from_pydata(vertex, edges, [])
+
+        # Load BMesh with mesh data
         bm.from_mesh(mesh)
+
+        # Convert BMesh to mesh data, then release BMesh.
         bm.to_mesh(mesh)
-        mesh.update()
+        bm.free()
 
-        # add the mesh as an object into the scene with this utility module
-        from bpy_extras import object_utils
+        # Add Object to the default collection from mesh
+        mesh_obj = bpy.data.objects.new(mesh.name, mesh)
+        bpy.context.collection.objects.link(mesh_obj)
 
-        object_utils.object_data_add(context, mesh, operator=self)
+        difArray(
+            mesh_obj,
+            arrayprops.array_offset,
+            arrayprops.cadre_court_mortaise_x,
+            arrayprops.cadre_court_mortaise_y,
+            difprops.profondeur,
+            difprops.longueur_diffuseur,
+        )
 
         return {"FINISHED"}
 
@@ -48,7 +63,9 @@ class AddCadreLongMortaise(bpy.types.Operator, AddObjectHelper):
         difprops = scene.dif_props
         vertex, edges = add_cadre_long_mortaise(difprops)
 
-        #create a bmesh
+        arrayprops = scene.array_props
+
+        # create a bmesh
         bm = bmesh.new()
 
         # Create new mesh data.
@@ -58,14 +75,22 @@ class AddCadreLongMortaise(bpy.types.Operator, AddObjectHelper):
         # Load BMesh with mesh data
         bm.from_mesh(mesh)
 
-
         # Convert BMesh to mesh data, then release BMesh.
         bm.to_mesh(mesh)
         bm.free()
-    
-        #Add Object to the default collection from mesh
+
+        # Add Object to the default collection from mesh
         mesh_obj = bpy.data.objects.new(mesh.name, mesh)
         bpy.context.collection.objects.link(mesh_obj)
+
+        difArray(
+            mesh_obj,
+            arrayprops.array_offset,
+            arrayprops.cadre_long_mortaise_x,
+            arrayprops.cadre_long_mortaise_y,
+            difprops.profondeur,
+            difprops.longueur_diffuseur,
+        )
 
         return {"FINISHED"}
 
@@ -80,20 +105,37 @@ class AddCadreTenon(bpy.types.Operator, AddObjectHelper):
         difprops = scene.dif_props
         vertex, edges = add_cadre_tenon(difprops)
 
-        mesh = bpy.data.meshes.new("Cadre_court_tenon")
+        arrayprops = scene.array_props
 
-        mesh.from_pydata(vertex, edges, [])
+        # create a bmesh
         bm = bmesh.new()
+
+        # Create new mesh data.
+        mesh = bpy.data.meshes.new("Cadre_court_tenon")
+        mesh.from_pydata(vertex, edges, [])
+
+        # Load BMesh with mesh data
         bm.from_mesh(mesh)
+
+        # Convert BMesh to mesh data, then release BMesh.
         bm.to_mesh(mesh)
-        mesh.update()
+        bm.free()
 
-        # add the mesh as an object into the scene with this utility module
-        from bpy_extras import object_utils
+        # Add Object to the default collection from mesh
+        mesh_obj = bpy.data.objects.new(mesh.name, mesh)
+        bpy.context.collection.objects.link(mesh_obj)
 
-        object_utils.object_data_add(context, mesh, operator=self)
+        difArray(
+            mesh_obj,
+            arrayprops.array_offset,
+            arrayprops.cadre_tenon_x,
+            arrayprops.cadre_tenon_y,
+            difprops.profondeur,
+            difprops.longueur_diffuseur,
+        )
 
         return {"FINISHED"}
+
 
 
 class AddCarreau(bpy.types.Operator, AddObjectHelper):
@@ -106,20 +148,37 @@ class AddCarreau(bpy.types.Operator, AddObjectHelper):
         difprops = scene.dif_props
         vertex, edges = add_carreau(difprops)
 
-        mesh = bpy.data.meshes.new("Carreau")
+        arrayprops = scene.array_props
 
-        mesh.from_pydata(vertex, edges, [])
+        # create a bmesh
         bm = bmesh.new()
+
+        # Create new mesh data.
+        mesh = bpy.data.meshes.new("Carreau")
+        mesh.from_pydata(vertex, edges, [])
+
+        # Load BMesh with mesh data
         bm.from_mesh(mesh)
+
+        # Convert BMesh to mesh data, then release BMesh.
         bm.to_mesh(mesh)
-        mesh.update()
+        bm.free()
 
-        # add the mesh as an object into the scene with this utility module
-        from bpy_extras import object_utils
+        # Add Object to the default collection from mesh
+        mesh_obj = bpy.data.objects.new(mesh.name, mesh)
+        bpy.context.collection.objects.link(mesh_obj)
 
-        object_utils.object_data_add(context, mesh, operator=self)
+        difArray(
+            mesh_obj,
+            arrayprops.array_offset,
+            arrayprops.carreau_x,
+            arrayprops.carreau_y,
+            difprops.profondeur,
+            difprops.longueur_diffuseur,
+        )
 
         return {"FINISHED"}
+
 
 
 class AddPeigneCourt(bpy.types.Operator, AddObjectHelper):
@@ -132,18 +191,34 @@ class AddPeigneCourt(bpy.types.Operator, AddObjectHelper):
         difprops = scene.dif_props
         vertex, edges = add_peigne_court(difprops)
 
-        mesh = bpy.data.meshes.new("Peigne_court")
+        arrayprops = scene.array_props
 
-        mesh.from_pydata(vertex, edges, [])
+        # create a bmesh
         bm = bmesh.new()
+
+        # Create new mesh data.
+        mesh = bpy.data.meshes.new("Peigne_court")
+        mesh.from_pydata(vertex, edges, [])
+
+        # Load BMesh with mesh data
         bm.from_mesh(mesh)
+
+        # Convert BMesh to mesh data, then release BMesh.
         bm.to_mesh(mesh)
-        mesh.update()
+        bm.free()
 
-        # add the mesh as an object into the scene with this utility module
-        from bpy_extras import object_utils
+        # Add Object to the default collection from mesh
+        mesh_obj = bpy.data.objects.new(mesh.name, mesh)
+        bpy.context.collection.objects.link(mesh_obj)
 
-        object_utils.object_data_add(context, mesh, operator=self)
+        difArray(
+            mesh_obj,
+            arrayprops.array_offset,
+            arrayprops.peigne_court_x,
+            arrayprops.peigne_court_y,
+            difprops.profondeur,
+            difprops.longueur_diffuseur,
+        )
 
         return {"FINISHED"}
 
@@ -158,21 +233,38 @@ class AddPeigneLong(bpy.types.Operator, AddObjectHelper):
         difprops = scene.dif_props
         vertex, edges = add_peigne_long(difprops)
 
-        mesh = bpy.data.meshes.new("Peigne_long")
+        arrayprops = scene.array_props
 
-        mesh.from_pydata(vertex, edges, [])
+        # create a bmesh
         bm = bmesh.new()
+
+        # Create new mesh data.
+        mesh = bpy.data.meshes.new("Peigne_long")
+        mesh.from_pydata(vertex, edges, [])
+
+        # Load BMesh with mesh data
         bm.from_mesh(mesh)
+
+        # Convert BMesh to mesh data, then release BMesh.
         bm.to_mesh(mesh)
-        mesh.update()
+        bm.free()
 
-        # add the mesh as an object into the scene with this utility module
-        from bpy_extras import object_utils
+        # Add Object to the default collection from mesh
+        mesh_obj = bpy.data.objects.new(mesh.name, mesh)
+        bpy.context.collection.objects.link(mesh_obj)
 
-        object_utils.object_data_add(context, mesh, operator=self)
+        difArray(
+            mesh_obj,
+            arrayprops.array_offset,
+            arrayprops.peigne_long_x,
+            arrayprops.peigne_long_y,
+            difprops.profondeur,
+            difprops.longueur_diffuseur,
+        )
 
         return {"FINISHED"}
-    
+
+
 class AddDiffuseur(bpy.types.Operator, AddObjectHelper):
     bl_idname = "mesh.add_diffuseur"
     bl_label = "Ajouter Diffuseur"
@@ -215,7 +307,7 @@ classes = [
     AddCarreau,
     AddPeigneCourt,
     AddPeigneLong,
-    AddDiffuseur
+    AddDiffuseur,
 ]
 
 

@@ -1,6 +1,6 @@
 import bpy
 
-from bpy.props import FloatProperty, BoolProperty
+from bpy.props import FloatProperty, BoolProperty, IntProperty
 
 
 class DiffuseurProps(bpy.types.PropertyGroup):
@@ -89,6 +89,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         unit="LENGTH",
         precision=4,
     )
+
     diffuseur_type_is2D: BoolProperty(
         name="Diffuseur 2D",
         description="Box Type de diffuseur",
@@ -114,16 +115,122 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         return attributes
 
 
-classes = [DiffuseurProps]
+class ArrayProps(bpy.types.PropertyGroup):
+    array_offset: FloatProperty(
+        name="Offset Array",
+        description="Espace entre les pièces",
+        min=0.000,
+        default=0.01,
+        unit="LENGTH",
+        precision=4,
+    )
+
+    peigne_court_x: IntProperty(
+        name="Peigne court",
+        default=1,
+        min=0,
+    )
+
+    peigne_court_y: IntProperty(
+        name="Peigne court",
+        default=1,
+        min=0,
+    )
+
+    peigne_long_x: IntProperty(
+        name="Peigne long",
+        default=1,
+        min=0,
+    )
+
+    peigne_long_y: IntProperty(
+        name="Peigne long",
+        default=1,
+        min=0,
+    )
+    cadre_long_mortaise_x: IntProperty(
+        name="Cadre long mortaise",
+        default=1,
+        min=0,
+    )
+
+    cadre_long_mortaise_y: IntProperty(
+        name="Cadre long mortaise",
+        default=1,
+        min=0,
+    )
+    cadre_court_mortaise_x: IntProperty(
+        name="Cadre court mortaise",
+        default=1,
+        min=0,
+    )
+
+    cadre_court_mortaise_y: IntProperty(
+        name="Cadre court mortaise",
+        default=1,
+        min=0,
+    )
+    cadre_tenon_x: IntProperty(
+        name="Cadre tenon",
+        default=1,
+        min=0,
+    )
+
+    cadre_tenon_y: IntProperty(
+        name="Cadre tenon",
+        default=1,
+        min=0,
+    )
+    carreau_x: IntProperty(
+        name="Carreau",
+        default=1,
+        min=0,
+    )
+
+    carreau_y: IntProperty(
+        name="Carreau",
+        default=1,
+        min=0,
+    )
+    carreau_x: IntProperty(
+        name="Carreau",
+        default=1,
+        min=0,
+    )
+
+    carreau_y: IntProperty(
+        name="Carreau",
+        default=1,
+        min=0,
+    )
+
+    def listAttributes(self):
+        attributes = [
+            a
+            for a in dir(self)
+            if not (
+                a.startswith("__")
+                or "bl_rna" in a
+                or "name" in a
+                or "rna_type" in a
+                or "listAttributes" in a
+            )
+        ]
+        return attributes
+
+
+classes = [DiffuseurProps, ArrayProps]
 
 
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
-        bpy.types.Scene.dif_props = bpy.props.PointerProperty(type=DiffuseurProps)
+    bpy.types.Scene.dif_props = bpy.props.PointerProperty(type=DiffuseurProps)
+    bpy.types.Scene.array_props = bpy.props.PointerProperty(type=ArrayProps)
 
 
 def unregister():
     for cls in classes:
         bpy.utils.unregister_class(cls)
-        del bpy.types.Scene.dif_props
+    del bpy.types.Scene.dif_props
+    del bpy.types.Scene.array_props
