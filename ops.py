@@ -1,5 +1,6 @@
 import bpy
 import bmesh
+import mathutils
 from .shapes import (
     add_cadre_court_mortaise,
     add_cadre_long_mortaise,
@@ -21,6 +22,7 @@ class AddCadreCourtMortaise(bpy.types.Operator, AddObjectHelper):
         scene = context.scene
         difprops = scene.dif_props
         arrayprops = scene.array_props
+
         vertex, edges = add_cadre_court_mortaise(difprops)
 
         # create a bmesh
@@ -29,6 +31,19 @@ class AddCadreCourtMortaise(bpy.types.Operator, AddObjectHelper):
         # Create new mesh data.
         mesh = bpy.data.meshes.new("Cadre_court_mortaise")
         mesh.from_pydata(vertex, edges, [])
+
+        # Positionning according to position props
+        posprops = scene.pos_props
+        mesh.transform(
+            mathutils.Matrix.Translation(
+                (
+                    posprops.cadre_court_mortaise_position[0],
+                    posprops.cadre_court_mortaise_position[1],
+                    posprops.cadre_court_mortaise_position[2],
+                )
+            )
+        )
+        mesh.update(calc_edges=True)
 
         # Load BMesh with mesh data
         bm.from_mesh(mesh)
@@ -72,6 +87,20 @@ class AddCadreLongMortaise(bpy.types.Operator, AddObjectHelper):
         mesh = bpy.data.meshes.new("Cadre_long_mortaise")
         mesh.from_pydata(vertex, edges, [])
 
+
+        # Positionning according to position props
+        posprops = scene.pos_props
+        mesh.transform(
+            mathutils.Matrix.Translation(
+                (
+                    posprops.cadre_long_mortaise_position[0],
+                    posprops.cadre_long_mortaise_position[1],
+                    posprops.cadre_long_mortaise_position[2],
+                )
+            )
+        )
+        mesh.update(calc_edges=True)
+
         # Load BMesh with mesh data
         bm.from_mesh(mesh)
 
@@ -114,6 +143,19 @@ class AddCadreTenon(bpy.types.Operator, AddObjectHelper):
         mesh = bpy.data.meshes.new("Cadre_court_tenon")
         mesh.from_pydata(vertex, edges, [])
 
+        # Positionning according to position props
+        posprops = scene.pos_props
+        mesh.transform(
+            mathutils.Matrix.Translation(
+                (
+                    posprops.cadre_tenon_position[0],
+                    posprops.cadre_tenon_position[1],
+                    posprops.cadre_tenon_position[2],
+                )
+            )
+        )
+        mesh.update(calc_edges=True)
+
         # Load BMesh with mesh data
         bm.from_mesh(mesh)
 
@@ -137,7 +179,6 @@ class AddCadreTenon(bpy.types.Operator, AddObjectHelper):
         return {"FINISHED"}
 
 
-
 class AddCarreau(bpy.types.Operator, AddObjectHelper):
     bl_idname = "mesh.carreau"
     bl_label = "Ajouter un carreau"
@@ -156,6 +197,19 @@ class AddCarreau(bpy.types.Operator, AddObjectHelper):
         # Create new mesh data.
         mesh = bpy.data.meshes.new("Carreau")
         mesh.from_pydata(vertex, edges, [])
+
+        # Positionning according to position props
+        posprops = scene.pos_props
+        mesh.transform(
+            mathutils.Matrix.Translation(
+                (
+                    posprops.carreau_position[0],
+                    posprops.carreau_position[1],
+                    posprops.carreau_position[2],
+                )
+            )
+        )
+        mesh.update(calc_edges=True)
 
         # Load BMesh with mesh data
         bm.from_mesh(mesh)
@@ -180,7 +234,6 @@ class AddCarreau(bpy.types.Operator, AddObjectHelper):
         return {"FINISHED"}
 
 
-
 class AddPeigneCourt(bpy.types.Operator, AddObjectHelper):
     bl_idname = "mesh.peigne_court"
     bl_label = "Ajouter Peigne Court"
@@ -199,6 +252,19 @@ class AddPeigneCourt(bpy.types.Operator, AddObjectHelper):
         # Create new mesh data.
         mesh = bpy.data.meshes.new("Peigne_court")
         mesh.from_pydata(vertex, edges, [])
+
+        # Positionning according to position props
+        posprops = scene.pos_props
+        mesh.transform(
+            mathutils.Matrix.Translation(
+                (
+                    posprops.peigne_court_position[0],
+                    posprops.peigne_court_position[1],
+                    posprops.peigne_court_position[2],
+                )
+            )
+        )
+        mesh.update(calc_edges=True)
 
         # Load BMesh with mesh data
         bm.from_mesh(mesh)
@@ -241,6 +307,19 @@ class AddPeigneLong(bpy.types.Operator, AddObjectHelper):
         # Create new mesh data.
         mesh = bpy.data.meshes.new("Peigne_long")
         mesh.from_pydata(vertex, edges, [])
+
+        # Positionning according to position props
+        posprops = scene.pos_props
+        mesh.transform(
+            mathutils.Matrix.Translation(
+                (
+                    posprops.peigne_long_position[0],
+                    posprops.peigne_long_position[1],
+                    posprops.peigne_long_position[2],
+                )
+            )
+        )
+        mesh.update(calc_edges=True)        
 
         # Load BMesh with mesh data
         bm.from_mesh(mesh)

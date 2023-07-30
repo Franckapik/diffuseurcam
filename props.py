@@ -1,6 +1,6 @@
 import bpy
 
-from bpy.props import FloatProperty, BoolProperty, IntProperty
+from bpy.props import FloatProperty, BoolProperty, IntProperty, FloatVectorProperty
 
 
 class DiffuseurProps(bpy.types.PropertyGroup):
@@ -219,7 +219,47 @@ class ArrayProps(bpy.types.PropertyGroup):
         return attributes
 
 
-classes = [DiffuseurProps, ArrayProps]
+class PositionProps(bpy.types.PropertyGroup):
+    peigne_court_position: FloatVectorProperty(
+        name="Peigne court",
+    )
+
+    peigne_long_position: FloatVectorProperty(
+        name="Peigne long",
+    )
+
+    cadre_long_mortaise_position: FloatVectorProperty(
+        name="Cadre long mortaise",
+    )
+
+    cadre_court_mortaise_position: FloatVectorProperty(
+        name="Cadre court mortaise",
+    )
+
+    cadre_tenon_position: FloatVectorProperty(
+        name="Cadre tenon",
+    )
+
+    carreau_position: FloatVectorProperty(
+        name="Carreau",
+    )
+
+    def listAttributes(self):
+        attributes = [
+            a
+            for a in dir(self)
+            if not (
+                a.startswith("__")
+                or "bl_rna" in a
+                or "name" in a
+                or "rna_type" in a
+                or "listAttributes" in a
+            )
+        ]
+        return attributes
+
+
+classes = [DiffuseurProps, ArrayProps, PositionProps]
 
 
 def register():
@@ -227,6 +267,7 @@ def register():
         bpy.utils.register_class(cls)
     bpy.types.Scene.dif_props = bpy.props.PointerProperty(type=DiffuseurProps)
     bpy.types.Scene.array_props = bpy.props.PointerProperty(type=ArrayProps)
+    bpy.types.Scene.pos_props = bpy.props.PointerProperty(type=PositionProps)
 
 
 def unregister():
@@ -234,3 +275,4 @@ def unregister():
         bpy.utils.unregister_class(cls)
     del bpy.types.Scene.dif_props
     del bpy.types.Scene.array_props
+    del bpy.types.Scene.pos_props

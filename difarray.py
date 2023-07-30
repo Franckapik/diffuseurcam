@@ -17,5 +17,5 @@ def difArray(mesh_obj, array_offset, count_x, count_y, x_offset, y_offset):
     arry.use_relative_offset = False
     arry.use_constant_offset = True
     arry.constant_offset_displace[0] = 0
-    arry.constant_offset_displace[1] = y_offset / 2 + array_offset
+    arry.constant_offset_displace[1] = y_offset + array_offset
     arry.count = count_y

@@ -23,7 +23,7 @@ class OT_AddMyPreset(AddPresetBase, Operator):
     # Common variable used for all preset values
     preset_defines = ["obj = bpy.context.object", "scene = bpy.context.scene"]
     # Properties to store in the preset
-    preset_values = ["scene.dif_props"]
+    preset_values = ["scene.dif_props", "scene.array_props"]
     # Directory to store the presets
     preset_subdir = "object/display"
 
@@ -42,9 +42,10 @@ class Diffuseur_SideBar(Panel):
         scene = context.scene
         difprops = scene.dif_props
         arrayprops = scene.array_props
+        posprops = scene.pos_props
         dif_attributes = difprops.listAttributes()
         array_attributes = arrayprops.listAttributes()
-
+        
         row1 = layout.row(align=True)
         row1.menu(DIF_MT_Presets.__name__, text=DIF_MT_Presets.bl_label)
         row1.operator(OT_AddMyPreset.bl_idname, text="", icon="ADD")
@@ -74,12 +75,12 @@ class Diffuseur_SideBar(Panel):
                 col2.prop(arrayprops, arr)
 
         layout.separator()
-        layout.operator("mesh.cadre_court_mortaise")
-        layout.operator("mesh.cadre_long_mortaise")
-        layout.operator("mesh.cadre_tenon")
-        layout.operator("mesh.carreau")
-        layout.operator("mesh.peigne_court")
-        layout.operator("mesh.peigne_long")
+
+        for piece in ['peigne_court', 'cadre_court_mortaise', 'cadre_long_mortaise','cadre_tenon', 'carreau', 'peigne_long' ]:
+            row = layout.row()
+            row.prop(posprops, f"{piece}_position")
+            row.operator(f"mesh.{piece}")
+
         layout.operator("mesh.add_diffuseur")
 
 
