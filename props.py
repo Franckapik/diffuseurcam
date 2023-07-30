@@ -222,26 +222,38 @@ class ArrayProps(bpy.types.PropertyGroup):
 class PositionProps(bpy.types.PropertyGroup):
     peigne_court_position: FloatVectorProperty(
         name="Peigne court",
+        unit="LENGTH",
+        precision=4,
     )
 
     peigne_long_position: FloatVectorProperty(
         name="Peigne long",
+        unit="LENGTH",
+        precision=4,
     )
 
     cadre_long_mortaise_position: FloatVectorProperty(
         name="Cadre long mortaise",
+        unit="LENGTH",
+        precision=4,
     )
 
     cadre_court_mortaise_position: FloatVectorProperty(
         name="Cadre court mortaise",
+        unit="LENGTH",
+        precision=4,
     )
 
     cadre_tenon_position: FloatVectorProperty(
         name="Cadre tenon",
+        unit="LENGTH",
+        precision=4,
     )
 
     carreau_position: FloatVectorProperty(
         name="Carreau",
+        unit="LENGTH",
+        precision=4,
     )
 
     def listAttributes(self):
