@@ -7,7 +7,7 @@ from .shapes import (
     add_carreau,
     add_peigne_court,
     add_peigne_long,
-    add_diffuseur,
+    add_accroche,
 )
 from .difarray import difArray
 from bpy_extras.object_utils import AddObjectHelper
@@ -138,7 +138,7 @@ class AddCarreau(bpy.types.Operator, AddObjectHelper):
         bm = bmesh.new()
 
         # Create new mesh data.
-        mesh = bpy.data.meshes.new("Carreau")
+        mesh = bpy.data.meshes.new(name)
         mesh.from_pydata(vertex, edges, [])
 
         # Positionning according to position props
@@ -170,6 +170,60 @@ class AddCarreau(bpy.types.Operator, AddObjectHelper):
             arrayprops.array_offset,
             arrayprops.carreau_x,
             arrayprops.carreau_y,
+            difprops.getRang(),
+            difprops.getRang(),
+        )
+
+        return {"FINISHED"}
+
+
+class AddAccroche(bpy.types.Operator, AddObjectHelper):
+    bl_idname = "mesh.accroche"
+    bl_label = "Ajouter une accroche"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        scene = context.scene
+        difprops = scene.dif_props
+        vertex, edges, name = add_accroche(difprops)
+        arrayprops = scene.array_props
+
+        # create a bmesh
+        bm = bmesh.new()
+
+        # Create new mesh data.
+        mesh = bpy.data.meshes.new(name)
+        mesh.from_pydata(vertex, edges, [])
+
+        # Positionning according to position props
+        posprops = scene.pos_props
+        mesh.transform(
+            mathutils.Matrix.Translation(
+                (
+                    posprops.accroche_position[0],
+                    posprops.accroche_position[1],
+                    posprops.accroche_position[2],
+                )
+            )
+        )
+        mesh.update(calc_edges=True)
+
+        # Load BMesh with mesh data
+        bm.from_mesh(mesh)
+
+        # Convert BMesh to mesh data, then release BMesh.
+        bm.to_mesh(mesh)
+        bm.free()
+
+        # Add Object to the default collection from mesh
+        mesh_obj = bpy.data.objects.new(mesh.name, mesh)
+        bpy.context.collection.objects.link(mesh_obj)
+
+        difArray(
+            mesh_obj,
+            arrayprops.array_offset,
+            arrayprops.accroche_x,
+            arrayprops.accroche_y,
             difprops.getRang(),
             difprops.getRang(),
         )
@@ -293,12 +347,12 @@ class AddDiffuseur(bpy.types.Operator, AddObjectHelper):
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
-
         AddCadreMortaise.execute(self, context)
         AddCadreTenon.execute(self, context)
         AddCarreau.execute(self, context)
         AddPeigneCourt.execute(self, context)
         AddPeigneLong.execute(self, context)
+        AddAccroche.execute(self, context)
 
         return {"FINISHED"}
 
@@ -309,6 +363,7 @@ classes = [
     AddCarreau,
     AddPeigneCourt,
     AddPeigneLong,
+    AddAccroche,
     AddDiffuseur,
 ]
 

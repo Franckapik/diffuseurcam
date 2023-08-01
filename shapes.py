@@ -1,5 +1,6 @@
 import bpy
 
+
 def add_cadre_mortaise(difprops):
     epaisseur = difprops.epaisseur
     profondeur = difprops.profondeur
@@ -189,7 +190,6 @@ def add_carreau(difprops):
     largeur_diffuseur = difprops.largeur_diffuseur
     longueur_diffuseur = difprops.longueur_diffuseur
     diffuseur_type_is2D = difprops.diffuseur_type_is2D
-    is_accroche = difprops.is_accroche
     N = difprops.type
     rang = difprops.getRang()
 
@@ -206,31 +206,6 @@ def add_carreau(difprops):
             (0, 0, 0),
         ]
 
-    if is_accroche and diffuseur_type_is2D:
-        bpy.ops.mesh.primitive_circle_add(
-            radius=0.01,
-            enter_editmode=True,
-            align="WORLD",
-            location=(rang / 2, rang / 2, 0),
-            scale=(1, 1, 1),
-        )
-
-    if is_accroche and not diffuseur_type_is2D:
-        bpy.ops.mesh.primitive_circle_add(
-            radius=0.01,
-            enter_editmode=True,
-            align="WORLD",
-            location=(rang / 2, longueurTotale / 5, 0),
-            scale=(1, 1, 1),
-        )
-        bpy.ops.mesh.primitive_circle_add(
-            radius=0.01,
-            enter_editmode=True,
-            align="WORLD",
-            location=(rang / 2, longueurTotale / 5 * 4, 0),
-            scale=(1, 1, 1),
-        )
-
     edgesCadre = []
 
     for k in range(0, len(vertsCadre) - 1):
@@ -239,6 +214,56 @@ def add_carreau(difprops):
         ]
 
     return vertsCadre, edgesCadre, "Carreau"
+
+
+def add_accroche(difprops):
+    longueur_diffuseur = difprops.longueur_diffuseur
+    diffuseur_type_is2D = difprops.diffuseur_type_is2D
+    N = difprops.type
+    rang = difprops.getRang()
+
+    longueurTotale = N * longueur_diffuseur * rang
+
+    if diffuseur_type_is2D:
+        vertsCadre = [(0, 0, 0), (0, rang, 0), (rang, rang, 0), (rang, 0, 0), (0, 0, 0)]
+    else:
+        vertsCadre = [
+            (0, 0, 0),
+            (0, longueurTotale, 0),
+            (rang, longueurTotale, 0),
+            (rang, 0, 0),
+            (0, 0, 0),
+        ]
+
+    vertsAccroche = [
+        (rang / 3, rang / 4, 0),
+        (rang / 3 * 2, rang / 4, 0),
+        (rang / 3 * 2, rang / 4 * 2, 0),
+        (rang / 2, rang / 4 * 3, 0),
+        (rang / 3, rang / 4 * 2, 0),
+    ]
+
+    edgesCadre = []
+    edgesAccroche = []
+
+    for k in range(0, len(vertsCadre) - 1):
+        edgesCadre += [
+            (k, k + 1),
+        ]
+    for k in range(len(vertsCadre), len(vertsCadre) + len(vertsAccroche) - 1):
+        edgesAccroche += [
+            (k, k + 1),
+        ]
+    edgesAccroche += [
+        (len(vertsCadre), len(vertsCadre) + len(vertsAccroche) -1 ),
+    ]
+
+    print(edgesAccroche)
+
+    verts = [*list(vertsCadre), *list(vertsAccroche)]
+    edges = [*list(edgesCadre), *list(edgesAccroche)]
+
+    return verts, edges, "Accroche"
 
 
 def add_peigne_court(difprops):
@@ -306,7 +331,6 @@ def add_peigne_long(difprops):
     longueur_diffuseur = difprops.longueur_diffuseur
     diffuseur_type_is2D = difprops.diffuseur_type_is2D
 
-
     N = difprops.type
 
     rang = difprops.getRang()
@@ -320,7 +344,6 @@ def add_peigne_long(difprops):
             (profondeur / 2, longueurTotale - epaisseur - rang * k - epaisseur, 0),
             (profondeur, longueurTotale - epaisseur - rang * k - epaisseur, 0),
         ]
-
 
     vertsCadre = [
         (0, epaisseur, 0),
@@ -356,10 +379,3 @@ def add_peigne_long(difprops):
         ]
 
     return vertsCadre, edgesCadre, "Peigne long"
-
-def add_diffuseur(difprops):
-    
-    [verts1, edges1] = add_cadre_tenon(difprops)
-    [verts2, edges2] = add_peigne_long(difprops)
-
-    return (verts2), (edges2)

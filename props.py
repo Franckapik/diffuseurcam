@@ -92,11 +92,6 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         description="Box Type de diffuseur",
     )
 
-    is_accroche: BoolProperty(
-        name="Accroche",
-        description="Box Accroche",
-    )
-
     def getRang(self):
         rang = (self.largeur_diffuseur + 2 * self.epaisseur - 2 * 0.00235 ) / self.type
         return round(rang, 3)
@@ -195,6 +190,17 @@ class ArrayProps(bpy.types.PropertyGroup):
         default=1,
         min=0,
     )
+    accroche_x: IntProperty(
+        name="Accroche",
+        default=1,
+        min=0,
+    )
+
+    accroche_y: IntProperty(
+        name="Accroche",
+        default=1,
+        min=0,
+    )
 
     def listAttributes(self):
         attributes = [
@@ -239,6 +245,11 @@ class PositionProps(bpy.types.PropertyGroup):
 
     carreau_position: FloatVectorProperty(
         name="Carreau",
+        unit="LENGTH",
+        precision=4,
+    )
+    accroche_position: FloatVectorProperty(
+        name="Accroche",
         unit="LENGTH",
         precision=4,
     )
