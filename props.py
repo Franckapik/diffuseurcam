@@ -58,12 +58,12 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         unit="LENGTH",
         precision=4,
     )
-    offset_mortaise_interne: FloatProperty(
-        name="offset_mortaise_interne",
-        description="Box offset_mortaise_interne",
+    offset: FloatProperty(
+        name="offset",
+        description="Box offset",
         min=0.000,
         max=0.005,
-        default=0.01,
+        default=0.001,
         unit="LENGTH",
         precision=4,
     )

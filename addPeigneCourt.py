@@ -13,7 +13,7 @@ def add_peigne_court(
     tenon_cadre,
     bord_cadre,
     largeur_diffuseur,
-    offset_mortaise_interne,
+    offset,
     tenon_peigne,
 ):
     """
@@ -117,9 +117,9 @@ class AddPeigneCourt(bpy.types.Operator, AddObjectHelper):
         max=0.1,
         default=0.05,
     )
-    offset_mortaise_interne: FloatProperty(
-        name="offset_mortaise_interne",
-        description="Box offset_mortaise_interne",
+    offset: FloatProperty(
+        name="offset",
+        description="Box offset",
         min=0.000,
         max=0.005,
         default=0.01,
@@ -139,7 +139,7 @@ class AddPeigneCourt(bpy.types.Operator, AddObjectHelper):
             self.tenon_cadre,
             self.bord_cadre,
             self.largeur_diffuseur,
-            self.offset_mortaise_interne,
+            self.offset,
             self.tenon_peigne,
         )
 

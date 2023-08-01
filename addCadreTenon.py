@@ -13,7 +13,7 @@ def add_cadre_tenon(
     tenon_cadre,
     bord_cadre,
     largeur_diffuseur,
-    offset_mortaise_interne,
+    offset,
     tenon_peigne,
 ):
     """
@@ -47,9 +47,9 @@ def add_cadre_tenon(
     for k in range(1, N):
         vertsMortaisesInt += [
             (bord_cadre, bloc * k, 0),
-            (bord_cadre + tenon_peigne + offset_mortaise_interne, bloc * k, 0),
+            (bord_cadre + tenon_peigne + offset, bloc * k, 0),
             (
-                bord_cadre + tenon_peigne + offset_mortaise_interne,
+                bord_cadre + tenon_peigne + offset,
                 bloc * k - epaisseur,
                 0,
             ),
@@ -57,12 +57,12 @@ def add_cadre_tenon(
             (profondeur - bord_cadre, bloc * k - epaisseur, 0),
             (profondeur - bord_cadre, bloc * k, 0),
             (
-                profondeur - bord_cadre - tenon_peigne - offset_mortaise_interne,
+                profondeur - bord_cadre - tenon_peigne - offset,
                 bloc * k,
                 0,
             ),
             (
-                profondeur - bord_cadre - tenon_peigne - offset_mortaise_interne,
+                profondeur - bord_cadre - tenon_peigne - offset,
                 bloc * k - epaisseur,
                 0,
             ),
@@ -146,9 +146,9 @@ class AddCadreTenon(bpy.types.Operator, AddObjectHelper):
         max=0.1,
         default=0.05,
     )
-    offset_mortaise_interne: FloatProperty(
-        name="offset_mortaise_interne",
-        description="Box offset_mortaise_interne",
+    offset: FloatProperty(
+        name="offset",
+        description="Box offset",
         min=0.000,
         max=0.005,
         default=0.01,
@@ -168,7 +168,7 @@ class AddCadreTenon(bpy.types.Operator, AddObjectHelper):
             self.tenon_cadre,
             self.bord_cadre,
             self.largeur_diffuseur,
-            self.offset_mortaise_interne,
+            self.offset,
             self.tenon_peigne,
         )
 
