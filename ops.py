@@ -2,8 +2,7 @@ import bpy
 import bmesh
 import mathutils
 from .shapes import (
-    add_cadre_court_mortaise,
-    add_cadre_long_mortaise,
+    add_cadre_mortaise,
     add_cadre_tenon,
     add_carreau,
     add_peigne_court,
@@ -13,33 +12,34 @@ from .difarray import difArray
 from bpy_extras.object_utils import AddObjectHelper
 
 
-class AddCadreCourtMortaise(bpy.types.Operator, AddObjectHelper):
-    bl_idname = "mesh.cadre_court_mortaise"
-    bl_label = "Ajouter Cadre Court Mortaise"
+class AddCadreMortaise(bpy.types.Operator, AddObjectHelper):
+    bl_idname = "mesh.cadre_mortaise"
+    bl_label = "Ajouter Cadre mortaise"
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        arrayprops = scene.array_props
+        vertex, edges = add_cadre_mortaise(difprops)
 
-        vertex, edges = add_cadre_court_mortaise(difprops)
+        arrayprops = scene.array_props
 
         # create a bmesh
         bm = bmesh.new()
 
         # Create new mesh data.
-        mesh = bpy.data.meshes.new("Cadre_court_mortaise")
+        mesh = bpy.data.meshes.new("cadre_mortaise")
         mesh.from_pydata(vertex, edges, [])
+
 
         # Positionning according to position props
         posprops = scene.pos_props
         mesh.transform(
             mathutils.Matrix.Translation(
                 (
-                    posprops.cadre_court_mortaise_position[0],
-                    posprops.cadre_court_mortaise_position[1],
-                    posprops.cadre_court_mortaise_position[2],
+                    posprops.cadre_mortaise_position[0],
+                    posprops.cadre_mortaise_position[1],
+                    posprops.cadre_mortaise_position[2],
                 )
             )
         )
@@ -59,64 +59,8 @@ class AddCadreCourtMortaise(bpy.types.Operator, AddObjectHelper):
         difArray(
             mesh_obj,
             arrayprops.array_offset,
-            arrayprops.cadre_court_mortaise_x,
-            arrayprops.cadre_court_mortaise_y,
-            difprops.profondeur,
-            difprops.longueur_diffuseur,
-        )
-
-        return {"FINISHED"}
-
-
-class AddCadreLongMortaise(bpy.types.Operator, AddObjectHelper):
-    bl_idname = "mesh.cadre_long_mortaise"
-    bl_label = "Ajouter Cadre Long Mortaise"
-    bl_options = {"REGISTER", "UNDO"}
-
-    def execute(self, context):
-        scene = context.scene
-        difprops = scene.dif_props
-        vertex, edges = add_cadre_long_mortaise(difprops)
-
-        arrayprops = scene.array_props
-
-        # create a bmesh
-        bm = bmesh.new()
-
-        # Create new mesh data.
-        mesh = bpy.data.meshes.new("Cadre_long_mortaise")
-        mesh.from_pydata(vertex, edges, [])
-
-
-        # Positionning according to position props
-        posprops = scene.pos_props
-        mesh.transform(
-            mathutils.Matrix.Translation(
-                (
-                    posprops.cadre_long_mortaise_position[0],
-                    posprops.cadre_long_mortaise_position[1],
-                    posprops.cadre_long_mortaise_position[2],
-                )
-            )
-        )
-        mesh.update(calc_edges=True)
-
-        # Load BMesh with mesh data
-        bm.from_mesh(mesh)
-
-        # Convert BMesh to mesh data, then release BMesh.
-        bm.to_mesh(mesh)
-        bm.free()
-
-        # Add Object to the default collection from mesh
-        mesh_obj = bpy.data.objects.new(mesh.name, mesh)
-        bpy.context.collection.objects.link(mesh_obj)
-
-        difArray(
-            mesh_obj,
-            arrayprops.array_offset,
-            arrayprops.cadre_long_mortaise_x,
-            arrayprops.cadre_long_mortaise_y,
+            arrayprops.cadre_mortaise_x,
+            arrayprops.cadre_mortaise_y,
             difprops.profondeur,
             difprops.longueur_diffuseur,
         )
@@ -381,8 +325,7 @@ class AddDiffuseur(bpy.types.Operator, AddObjectHelper):
 
 
 classes = [
-    AddCadreCourtMortaise,
-    AddCadreLongMortaise,
+    AddCadreMortaise,
     AddCadreTenon,
     AddCarreau,
     AddPeigneCourt,

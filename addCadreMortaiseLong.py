@@ -8,7 +8,7 @@ from bpy.props import (
 )
 
 
-def add_cadre_long_mortaise(
+def add_cadre_mortaise(
     epaisseur,
     profondeur,
     tenon_cadre,
@@ -110,10 +110,10 @@ def add_cadre_long_mortaise(
 
 
 class AddCadreMortaise(bpy.types.Operator, AddObjectHelper):
-    """Ajouter un cadre long mortaise"""
+    """Ajouter un Cadre mortaise"""
 
-    bl_idname = "mesh.cadre_long_mortaise"
-    bl_label = "Ajouter Cadre Long Mortaise"
+    bl_idname = "mesh.cadre_mortaise"
+    bl_label = "Ajouter Cadre mortaise"
     bl_options = {"REGISTER", "UNDO"}
 
     epaisseur: FloatProperty(
@@ -179,7 +179,7 @@ class AddCadreMortaise(bpy.types.Operator, AddObjectHelper):
     )
 
     def execute(self, context):
-        vertex, edges = add_cadre_long_mortaise(
+        vertex, edges = add_cadre_mortaise(
             self.epaisseur,
             self.profondeur,
             self.tenon_cadre,
@@ -191,7 +191,7 @@ class AddCadreMortaise(bpy.types.Operator, AddObjectHelper):
             self.diffuseur_type_is2D,
         )
 
-        mesh = bpy.data.meshes.new("Cadre_long_mortaise")
+        mesh = bpy.data.meshes.new("cadre_mortaise")
 
         mesh.from_pydata(vertex, edges, [])
         bm = bmesh.new()
@@ -226,4 +226,4 @@ if __name__ == "__main__":
     register()
 
     # test call
-    bpy.ops.mesh.cadre_long_mortaise()
+    bpy.ops.mesh.cadre_mortaise()

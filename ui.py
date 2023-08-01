@@ -79,7 +79,7 @@ class Diffuseur_SideBar(Panel):
 
         layout.separator()
 
-        for piece in ['peigne_court', 'cadre_court_mortaise', 'cadre_long_mortaise','cadre_tenon', 'carreau', 'peigne_long' ]:
+        for piece in ['peigne_court', 'cadre_mortaise','cadre_tenon', 'carreau', 'peigne_long' ]:
             row = layout.row()
             row.prop(posprops, f"{piece}_position")
             row.operator(f"mesh.{piece}")

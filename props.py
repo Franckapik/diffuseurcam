@@ -77,15 +77,6 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         precision=4,
     )
 
-    offset_mortaise_interne: FloatProperty(
-        name="offset_mortaise_interne",
-        description="Box offset_mortaise_interne",
-        min=0.000,
-        max=0.005,
-        default=0.01,
-        unit="LENGTH",
-        precision=4,
-    )
 
     longueur_diffuseur: FloatProperty(
         name="longueur_diffuseur",
@@ -159,28 +150,18 @@ class ArrayProps(bpy.types.PropertyGroup):
         default=1,
         min=0,
     )
-    cadre_long_mortaise_x: IntProperty(
-        name="Cadre long mortaise",
+    cadre_mortaise_x: IntProperty(
+        name="Cadre mortaise",
         default=1,
         min=0,
     )
 
-    cadre_long_mortaise_y: IntProperty(
-        name="Cadre long mortaise",
-        default=1,
-        min=0,
-    )
-    cadre_court_mortaise_x: IntProperty(
-        name="Cadre court mortaise",
+    cadre_mortaise_y: IntProperty(
+        name="Cadre mortaise",
         default=1,
         min=0,
     )
 
-    cadre_court_mortaise_y: IntProperty(
-        name="Cadre court mortaise",
-        default=1,
-        min=0,
-    )
     cadre_tenon_x: IntProperty(
         name="Cadre tenon",
         default=1,
@@ -244,14 +225,8 @@ class PositionProps(bpy.types.PropertyGroup):
         precision=4,
     )
 
-    cadre_long_mortaise_position: FloatVectorProperty(
-        name="Cadre long mortaise",
-        unit="LENGTH",
-        precision=4,
-    )
-
-    cadre_court_mortaise_position: FloatVectorProperty(
-        name="Cadre court mortaise",
+    cadre_mortaise_position: FloatVectorProperty(
+        name="Cadre mortaise",
         unit="LENGTH",
         precision=4,
     )
