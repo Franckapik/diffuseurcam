@@ -33,29 +33,36 @@ def add_cadre_mortaise(difprops):
     for k in range(1, round(N * longueur_diffuseur)):
         if diffuseur_type_is2D:
             vertsMortaisesInt += [
-                (bord_cadre, startup + rang * k + epaisseur/2, 0),
+                (bord_cadre - offset / 2, startup + rang * k + epaisseur / 2, 0),
                 (
-                    bord_cadre + tenon_peigne + offset,
-                    startup + rang * k + epaisseur/2,   
+                    bord_cadre + tenon_peigne + offset / 2,
+                    startup + rang * k + epaisseur / 2,
                     0,
                 ),
                 (
-                    bord_cadre + tenon_peigne + offset,
-                    startup + rang * k - epaisseur/2,
+                    bord_cadre + tenon_peigne + offset / 2,
+                    startup + rang * k - epaisseur / 2,
                     0,
                 ),
-                (bord_cadre, startup + rang * k - epaisseur/2, 0),
-
-                (profondeur - bord_cadre, startup + rang * k + epaisseur/2, 0),
-                (profondeur - bord_cadre, startup + rang * k - epaisseur/2, 0),
+                (bord_cadre - offset / 2, startup + rang * k - epaisseur / 2, 0),
                 (
-                    profondeur - bord_cadre - tenon_peigne - offset,
-                    startup + rang * k - epaisseur/2,
+                    profondeur - bord_cadre + offset / 2,
+                    startup + rang * k + epaisseur / 2,
                     0,
                 ),
                 (
-                    profondeur - bord_cadre - tenon_peigne - offset,
-                    startup + rang * k + epaisseur/2,
+                    profondeur - bord_cadre + offset / 2,
+                    startup + rang * k - epaisseur / 2,
+                    0,
+                ),
+                (
+                    profondeur - bord_cadre - tenon_peigne - offset / 2,
+                    startup + rang * k - epaisseur / 2,
+                    0,
+                ),
+                (
+                    profondeur - bord_cadre  - tenon_peigne - offset / 2,
+                    startup + rang * k + epaisseur / 2,
                     0,
                 ),
             ]
@@ -107,7 +114,6 @@ def add_cadre_tenon(difprops):
     startup = epaisseur / 2
     longueur_diffuseur = difprops.longueur_diffuseur
 
-
     N = difprops.type
 
     rang = difprops.getRang()
@@ -131,29 +137,36 @@ def add_cadre_tenon(difprops):
 
     for k in range(1, round(N * longueur_diffuseur)):
             vertsMortaisesInt += [
-                (bord_cadre, startup + rang * k + epaisseur/2, 0),
+                (bord_cadre - offset / 2, startup + rang * k + epaisseur / 2, 0),
                 (
-                    bord_cadre + tenon_peigne + offset,
-                    startup + rang * k + epaisseur/2,   
+                    bord_cadre + tenon_peigne + offset / 2,
+                    startup + rang * k + epaisseur / 2,
                     0,
                 ),
                 (
-                    bord_cadre + tenon_peigne + offset,
-                    startup + rang * k - epaisseur/2,
+                    bord_cadre + tenon_peigne + offset / 2,
+                    startup + rang * k - epaisseur / 2,
                     0,
                 ),
-                (bord_cadre, startup + rang * k - epaisseur/2, 0),
-
-                (profondeur - bord_cadre, startup + rang * k + epaisseur/2, 0),
-                (profondeur - bord_cadre, startup + rang * k - epaisseur/2, 0),
+                (bord_cadre - offset / 2, startup + rang * k - epaisseur / 2, 0),
                 (
-                    profondeur - bord_cadre - tenon_peigne - offset,
-                    startup + rang * k - epaisseur/2,
+                    profondeur - bord_cadre + offset / 2,
+                    startup + rang * k + epaisseur / 2,
                     0,
                 ),
                 (
-                    profondeur - bord_cadre - tenon_peigne - offset,
-                    startup + rang * k + epaisseur/2,
+                    profondeur - bord_cadre + offset / 2,
+                    startup + rang * k - epaisseur / 2,
+                    0,
+                ),
+                (
+                    profondeur - bord_cadre - tenon_peigne - offset / 2,
+                    startup + rang * k - epaisseur / 2,
+                    0,
+                ),
+                (
+                    profondeur - bord_cadre  - tenon_peigne - offset / 2,
+                    startup + rang * k + epaisseur / 2,
                     0,
                 ),
             ]
@@ -194,9 +207,6 @@ def add_cadre_tenon(difprops):
     return verts, edges, "Cadre tenon"
 
 
-
-
-
 def add_peigne_court(difprops):
     epaisseur = difprops.epaisseur
     profondeur = difprops.profondeur
@@ -211,7 +221,7 @@ def add_peigne_court(difprops):
     peignes = []
     for k in range(1, N):
         peignes += [
-            (profondeur, largeur_diffuseur - rang * k , 0),
+            (profondeur, largeur_diffuseur - rang * k, 0),
             (profondeur / 2, largeur_diffuseur - rang * k, 0),
             (profondeur / 2, largeur_diffuseur - rang * k - epaisseur, 0),
             (profondeur, largeur_diffuseur - rang * k - epaisseur, 0),
@@ -241,7 +251,7 @@ def add_peigne_court(difprops):
         (bord_cadre, 0, 0),
         (bord_cadre, epaisseur, 0),
         (0, epaisseur, 0),
-    ]   
+    ]
 
     edgesCadre = []
 
@@ -265,7 +275,6 @@ def add_peigne_long(difprops):
 
     rang = difprops.getRang()
     longueurTotale = difprops.getLongueur()
-
 
     peignes = []
     for k in range(1, round(N * longueur_diffuseur)):
@@ -311,6 +320,7 @@ def add_peigne_long(difprops):
 
     return vertsCadre, edgesCadre, "Peigne long"
 
+
 def add_carreau(difprops):
     diffuseur_type_is2D = difprops.diffuseur_type_is2D
     epaisseur = difprops.epaisseur
@@ -322,7 +332,13 @@ def add_carreau(difprops):
     longueurTotale = difprops.getLongueur()
 
     if diffuseur_type_is2D:
-        vertsCadre = [(0, 0, 0), (0, rang-epaisseur - offset, 0), (rang-epaisseur - offset, rang-epaisseur - offset, 0), (rang-epaisseur - offset, 0, 0), (0, 0, 0)]
+        vertsCadre = [
+            (0, 0, 0),
+            (0, rang - epaisseur - offset, 0),
+            (rang - epaisseur - offset, rang - epaisseur - offset, 0),
+            (rang - epaisseur - offset, 0, 0),
+            (0, 0, 0),
+        ]
     else:
         vertsCadre = [
             (0, 0, 0),
@@ -348,11 +364,16 @@ def add_accroche(difprops):
     epaisseur = difprops.epaisseur
     offset = difprops.offset
 
-
     longueurTotale = difprops.getLongueur()
 
     if diffuseur_type_is2D:
-        vertsCadre = [(0, 0, 0), (0, rang-epaisseur - offset, 0), (rang-epaisseur - offset, rang-epaisseur - offset, 0), (rang-epaisseur - offset, 0, 0), (0, 0, 0)]
+        vertsCadre = [
+            (0, 0, 0),
+            (0, rang - epaisseur - offset, 0),
+            (rang - epaisseur - offset, rang - epaisseur - offset, 0),
+            (rang - epaisseur - offset, 0, 0),
+            (0, 0, 0),
+        ]
     else:
         vertsCadre = [
             (0, 0, 0),
