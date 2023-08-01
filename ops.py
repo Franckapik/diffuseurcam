@@ -188,7 +188,6 @@ class AddCarreau(bpy.types.Operator, AddObjectHelper):
         scene = context.scene
         difprops = scene.dif_props
         vertex, edges = add_carreau(difprops)
-
         arrayprops = scene.array_props
 
         # create a bmesh
@@ -222,13 +221,15 @@ class AddCarreau(bpy.types.Operator, AddObjectHelper):
         mesh_obj = bpy.data.objects.new(mesh.name, mesh)
         bpy.context.collection.objects.link(mesh_obj)
 
+
+
         difArray(
             mesh_obj,
             arrayprops.array_offset,
             arrayprops.carreau_x,
             arrayprops.carreau_y,
-            difprops.profondeur,
-            difprops.longueur_diffuseur,
+            difprops.getRang(),
+            difprops.getRang(),
         )
 
         return {"FINISHED"}

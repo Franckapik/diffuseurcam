@@ -14,6 +14,14 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         precision=4,
     )
 
+    type: IntProperty(
+        name="type",
+        description="Type du diffuseur",
+        min=6,
+        max=13,
+        default=7,
+    )
+
     profondeur: FloatProperty(
         name="profondeur",
         description="Box profondeur",
@@ -86,8 +94,6 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         max=2,
         default=1,
         step=25,
-        unit="LENGTH",
-        precision=4,
     )
 
     diffuseur_type_is2D: BoolProperty(
@@ -100,6 +106,10 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         description="Box Accroche",
     )
 
+    def getRang(self):
+        rang = (self.largeur_diffuseur + 2 * self.epaisseur - 2 * 0.00235 ) / self.type
+        return round(rang, 3)
+    
     def listAttributes(self):
         attributes = [
             a
@@ -110,6 +120,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                 or "name" in a
                 or "rna_type" in a
                 or "listAttributes" in a
+                or "getRang" in a
             )
         ]
         return attributes
@@ -214,6 +225,7 @@ class ArrayProps(bpy.types.PropertyGroup):
                 or "name" in a
                 or "rna_type" in a
                 or "listAttributes" in a
+                or "getRang" in a
             )
         ]
         return attributes
@@ -266,6 +278,7 @@ class PositionProps(bpy.types.PropertyGroup):
                 or "name" in a
                 or "rna_type" in a
                 or "listAttributes" in a
+                or "getRang" in a
             )
         ]
         return attributes

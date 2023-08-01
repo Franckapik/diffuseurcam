@@ -56,6 +56,9 @@ class Diffuseur_SideBar(Panel):
         layout.separator()
         for att in dif_attributes:
             layout.prop(difprops, att)
+        
+        layout.separator()
+        layout.label(text=f"Rang : {difprops.getRang() * 1000} mm")
 
         layout.separator()
         row2 = layout.row()

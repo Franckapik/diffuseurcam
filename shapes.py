@@ -10,11 +10,9 @@ def add_cadre_court_mortaise(difprops):
     offset_mortaise_interne = difprops.offset_mortaise_interne
     tenon_peigne = difprops.tenon_peigne
 
-    N = 7
-    correction = 0.00235
-    largeurTotale = largeur_diffuseur + 2 * epaisseur
-    longueurArray = largeurTotale - 2 * correction
-    bloc = longueurArray / N
+    N = difprops.type
+
+    rang = difprops.getRang()
 
     vertsCadre = [
         (0, 0, 0),
@@ -35,24 +33,24 @@ def add_cadre_court_mortaise(difprops):
 
     for k in range(1, N):
         vertsMortaisesInt += [
-            (bord_cadre, bloc * k, 0),
-            (bord_cadre + tenon_peigne + offset_mortaise_interne, bloc * k, 0),
+            (bord_cadre, rang * k, 0),
+            (bord_cadre + tenon_peigne + offset_mortaise_interne, rang * k, 0),
             (
                 bord_cadre + tenon_peigne + offset_mortaise_interne,
-                bloc * k - epaisseur,
+                rang * k - epaisseur,
                 0,
             ),
-            (bord_cadre, bloc * k - epaisseur, 0),
-            (profondeur - bord_cadre, bloc * k - epaisseur, 0),
-            (profondeur - bord_cadre, bloc * k, 0),
+            (bord_cadre, rang * k - epaisseur, 0),
+            (profondeur - bord_cadre, rang * k - epaisseur, 0),
+            (profondeur - bord_cadre, rang * k, 0),
             (
                 profondeur - bord_cadre - tenon_peigne - offset_mortaise_interne,
-                bloc * k,
+                rang * k,
                 0,
             ),
             (
                 profondeur - bord_cadre - tenon_peigne - offset_mortaise_interne,
-                bloc * k - epaisseur,
+                rang * k - epaisseur,
                 0,
             ),
         ]
@@ -104,12 +102,10 @@ def add_cadre_long_mortaise(difprops):
     longueur_diffuseur = difprops.longueur_diffuseur
     diffuseur_type_is2D = difprops.diffuseur_type_is2D
 
-    N = 7
-    correction = 0.00235
-    largeurTotale = largeur_diffuseur + 2 * epaisseur
-    longueurArray = largeurTotale - 2 * correction
-    bloc = longueurArray / N
-    longueurTotale = N * longueur_diffuseur * bloc
+    N = difprops.type
+
+    rang = difprops.getRang()
+    longueurTotale = N * longueur_diffuseur * rang
 
     vertsCadre = [
         (0, 0, 0),
@@ -131,24 +127,24 @@ def add_cadre_long_mortaise(difprops):
     for k in range(1, round(N * longueur_diffuseur)):
         if diffuseur_type_is2D:
             vertsMortaisesInt += [
-                (bord_cadre, bloc * k, 0),
-                (bord_cadre + tenon_peigne + offset_mortaise_interne, bloc * k, 0),
+                (bord_cadre, rang * k, 0),
+                (bord_cadre + tenon_peigne + offset_mortaise_interne, rang * k, 0),
                 (
                     bord_cadre + tenon_peigne + offset_mortaise_interne,
-                    bloc * k - epaisseur,
+                    rang * k - epaisseur,
                     0,
                 ),
-                (bord_cadre, bloc * k - epaisseur, 0),
-                (profondeur - bord_cadre, bloc * k - epaisseur, 0),
-                (profondeur - bord_cadre, bloc * k, 0),
+                (bord_cadre, rang * k - epaisseur, 0),
+                (profondeur - bord_cadre, rang * k - epaisseur, 0),
+                (profondeur - bord_cadre, rang * k, 0),
                 (
                     profondeur - bord_cadre - tenon_peigne - offset_mortaise_interne,
-                    bloc * k,
+                    rang * k,
                     0,
                 ),
                 (
                     profondeur - bord_cadre - tenon_peigne - offset_mortaise_interne,
-                    bloc * k - epaisseur,
+                    rang * k - epaisseur,
                     0,
                 ),
             ]
@@ -198,11 +194,9 @@ def add_cadre_tenon(difprops):
     offset_mortaise_interne = difprops.offset_mortaise_interne
     tenon_peigne = difprops.tenon_peigne
 
-    N = 7
-    correction = 0.00235
-    largeurTotale = largeur_diffuseur + 2 * epaisseur
-    longueurArray = largeurTotale - 2 * correction
-    bloc = longueurArray / N
+    N = difprops.type
+
+    rang = difprops.getRang()
 
     vertsCadre = [
         (0, epaisseur, 0),
@@ -223,24 +217,24 @@ def add_cadre_tenon(difprops):
 
     for k in range(1, N):
         vertsMortaisesInt += [
-            (bord_cadre, bloc * k, 0),
-            (bord_cadre + tenon_peigne + offset_mortaise_interne, bloc * k, 0),
+            (bord_cadre, rang * k, 0),
+            (bord_cadre + tenon_peigne + offset_mortaise_interne, rang * k, 0),
             (
                 bord_cadre + tenon_peigne + offset_mortaise_interne,
-                bloc * k - epaisseur,
+                rang * k - epaisseur,
                 0,
             ),
-            (bord_cadre, bloc * k - epaisseur, 0),
-            (profondeur - bord_cadre, bloc * k - epaisseur, 0),
-            (profondeur - bord_cadre, bloc * k, 0),
+            (bord_cadre, rang * k - epaisseur, 0),
+            (profondeur - bord_cadre, rang * k - epaisseur, 0),
+            (profondeur - bord_cadre, rang * k, 0),
             (
                 profondeur - bord_cadre - tenon_peigne - offset_mortaise_interne,
-                bloc * k,
+                rang * k,
                 0,
             ),
             (
                 profondeur - bord_cadre - tenon_peigne - offset_mortaise_interne,
-                bloc * k - epaisseur,
+                rang * k - epaisseur,
                 0,
             ),
         ]
@@ -287,22 +281,19 @@ def add_carreau(difprops):
     longueur_diffuseur = difprops.longueur_diffuseur
     diffuseur_type_is2D = difprops.diffuseur_type_is2D
     is_accroche = difprops.is_accroche
+    N = difprops.type
+    rang = difprops.getRang()
 
-    N = 7
-    correction = 0.00235
-    largeurTotale = largeur_diffuseur + 2 * epaisseur
-    longueurArray = largeurTotale - 2 * correction
-    bloc = longueurArray / N
-    longueurTotale = N * longueur_diffuseur * bloc
+    longueurTotale = N * longueur_diffuseur * rang
 
     if diffuseur_type_is2D:
-        vertsCadre = [(0, 0, 0), (0, bloc, 0), (bloc, bloc, 0), (bloc, 0, 0), (0, 0, 0)]
+        vertsCadre = [(0, 0, 0), (0, rang, 0), (rang, rang, 0), (rang, 0, 0), (0, 0, 0)]
     else:
         vertsCadre = [
             (0, 0, 0),
             (0, longueurTotale, 0),
-            (bloc, longueurTotale, 0),
-            (bloc, 0, 0),
+            (rang, longueurTotale, 0),
+            (rang, 0, 0),
             (0, 0, 0),
         ]
 
@@ -311,7 +302,7 @@ def add_carreau(difprops):
             radius=0.01,
             enter_editmode=True,
             align="WORLD",
-            location=(bloc / 2, bloc / 2, 0),
+            location=(rang / 2, rang / 2, 0),
             scale=(1, 1, 1),
         )
 
@@ -320,14 +311,14 @@ def add_carreau(difprops):
             radius=0.01,
             enter_editmode=True,
             align="WORLD",
-            location=(bloc / 2, longueurTotale / 5, 0),
+            location=(rang / 2, longueurTotale / 5, 0),
             scale=(1, 1, 1),
         )
         bpy.ops.mesh.primitive_circle_add(
             radius=0.01,
             enter_editmode=True,
             align="WORLD",
-            location=(bloc / 2, longueurTotale / 5 * 4, 0),
+            location=(rang / 2, longueurTotale / 5 * 4, 0),
             scale=(1, 1, 1),
         )
 
@@ -348,19 +339,17 @@ def add_peigne_court(difprops):
     largeur_diffuseur = difprops.largeur_diffuseur
     tenon_peigne = difprops.tenon_peigne
 
-    N = 7
-    correction = 0.00235
-    largeurTotale = largeur_diffuseur + 2 * epaisseur
-    longueurArray = largeurTotale - 2 * correction
-    bloc = longueurArray / N
+    N = difprops.type
+
+    rang = difprops.getRang()
 
     peignes = []
     for k in range(1, N):
         peignes += [
-            (profondeur, largeur_diffuseur - epaisseur - bloc * k, 0),
-            (profondeur / 2, largeur_diffuseur - epaisseur - bloc * k, 0),
-            (profondeur / 2, largeur_diffuseur - epaisseur - bloc * k - epaisseur, 0),
-            (profondeur, largeur_diffuseur - epaisseur - bloc * k - epaisseur, 0),
+            (profondeur, largeur_diffuseur - epaisseur - rang * k, 0),
+            (profondeur / 2, largeur_diffuseur - epaisseur - rang * k, 0),
+            (profondeur / 2, largeur_diffuseur - epaisseur - rang * k - epaisseur, 0),
+            (profondeur, largeur_diffuseur - epaisseur - rang * k - epaisseur, 0),
         ]
 
     vertsCadre = [
@@ -407,20 +396,18 @@ def add_peigne_long(difprops):
     tenon_peigne = difprops.tenon_peigne
     longueur_diffuseur = difprops.longueur_diffuseur
 
-    N = 7
-    correction = 0.00235
-    largeurTotale = largeur_diffuseur + 2 * epaisseur
-    longueurArray = largeurTotale - 2 * correction
-    bloc = longueurArray / N
-    longueurTotale = N * longueur_diffuseur * bloc
+    N = difprops.type
+
+    rang = difprops.getRang()
+    longueurTotale = N * longueur_diffuseur * rang
 
     peignes = []
     for k in range(1, round(N * longueur_diffuseur)):
         peignes += [
-            (profondeur, longueurTotale - epaisseur - bloc * k, 0),
-            (profondeur / 2, longueurTotale - epaisseur - bloc * k, 0),
-            (profondeur / 2, longueurTotale - epaisseur - bloc * k - epaisseur, 0),
-            (profondeur, longueurTotale - epaisseur - bloc * k - epaisseur, 0),
+            (profondeur, longueurTotale - epaisseur - rang * k, 0),
+            (profondeur / 2, longueurTotale - epaisseur - rang * k, 0),
+            (profondeur / 2, longueurTotale - epaisseur - rang * k - epaisseur, 0),
+            (profondeur, longueurTotale - epaisseur - rang * k - epaisseur, 0),
         ]
 
     vertsCadre = [
