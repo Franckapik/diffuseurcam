@@ -1,12 +1,8 @@
-import bpy
-
-
 def add_cadre_mortaise(difprops):
     epaisseur = difprops.epaisseur
     profondeur = difprops.profondeur
     tenon_cadre = difprops.tenon_cadre
     bord_cadre = difprops.bord_cadre
-    largeur_diffuseur = difprops.largeur_diffuseur
     offset_mortaise_interne = difprops.offset_mortaise_interne
     tenon_peigne = difprops.tenon_peigne
     longueur_diffuseur = difprops.longueur_diffuseur
@@ -186,8 +182,6 @@ def add_cadre_tenon(difprops):
 
 
 def add_carreau(difprops):
-    epaisseur = difprops.epaisseur
-    largeur_diffuseur = difprops.largeur_diffuseur
     longueur_diffuseur = difprops.longueur_diffuseur
     diffuseur_type_is2D = difprops.diffuseur_type_is2D
     N = difprops.type
@@ -326,7 +320,6 @@ def add_peigne_long(difprops):
     epaisseur = difprops.epaisseur
     profondeur = difprops.profondeur
     bord_cadre = difprops.bord_cadre
-    largeur_diffuseur = difprops.largeur_diffuseur
     tenon_peigne = difprops.tenon_peigne
     longueur_diffuseur = difprops.longueur_diffuseur
     diffuseur_type_is2D = difprops.diffuseur_type_is2D
