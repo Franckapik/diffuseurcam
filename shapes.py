@@ -91,7 +91,7 @@ def add_cadre_mortaise(difprops):
     verts = [*list(vertsCadre), *list(vertsMortaisesInt)]
     edges = [*list(edgesCadre), *list(edgesMortaisesInt)]
 
-    return verts, edges
+    return verts, edges, "Cadre mortaise"
 
 
 def add_cadre_tenon(difprops):
@@ -181,7 +181,7 @@ def add_cadre_tenon(difprops):
     verts = [*list(vertsCadre), *list(vertsMortaisesInt)]
     edges = [*list(edgesCadre), *list(edgesMortaisesInt)]
 
-    return verts, edges
+    return verts, edges, "Cadre tenon"
 
 
 def add_carreau(difprops):
@@ -238,7 +238,7 @@ def add_carreau(difprops):
             (k, k + 1),
         ]
 
-    return vertsCadre, edgesCadre
+    return vertsCadre, edgesCadre, "Carreau"
 
 
 def add_peigne_court(difprops):
@@ -294,7 +294,7 @@ def add_peigne_court(difprops):
             (k, k + 1),
         ]
 
-    return vertsCadre, edgesCadre
+    return vertsCadre, edgesCadre, "Peigne court"
 
 
 def add_peigne_long(difprops):
@@ -355,4 +355,11 @@ def add_peigne_long(difprops):
             (k, k + 1),
         ]
 
-    return vertsCadre, edgesCadre
+    return vertsCadre, edgesCadre, "Peigne long"
+
+def add_diffuseur(difprops):
+    
+    [verts1, edges1] = add_cadre_tenon(difprops)
+    [verts2, edges2] = add_peigne_long(difprops)
+
+    return (verts2), (edges2)

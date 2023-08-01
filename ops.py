@@ -7,6 +7,7 @@ from .shapes import (
     add_carreau,
     add_peigne_court,
     add_peigne_long,
+    add_diffuseur,
 )
 from .difarray import difArray
 from bpy_extras.object_utils import AddObjectHelper
@@ -20,7 +21,7 @@ class AddCadreMortaise(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges = add_cadre_mortaise(difprops)
+        vertex, edges, name = add_cadre_mortaise(difprops)
 
         arrayprops = scene.array_props
 
@@ -28,9 +29,8 @@ class AddCadreMortaise(bpy.types.Operator, AddObjectHelper):
         bm = bmesh.new()
 
         # Create new mesh data.
-        mesh = bpy.data.meshes.new("cadre_mortaise")
+        mesh = bpy.data.meshes.new(name)
         mesh.from_pydata(vertex, edges, [])
-
 
         # Positionning according to position props
         posprops = scene.pos_props
@@ -76,7 +76,7 @@ class AddCadreTenon(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges = add_cadre_tenon(difprops)
+        vertex, edges, name = add_cadre_tenon(difprops)
 
         arrayprops = scene.array_props
 
@@ -84,7 +84,7 @@ class AddCadreTenon(bpy.types.Operator, AddObjectHelper):
         bm = bmesh.new()
 
         # Create new mesh data.
-        mesh = bpy.data.meshes.new("Cadre_court_tenon")
+        mesh = bpy.data.meshes.new(name)
         mesh.from_pydata(vertex, edges, [])
 
         # Positionning according to position props
@@ -131,7 +131,7 @@ class AddCarreau(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges = add_carreau(difprops)
+        vertex, edges, name = add_carreau(difprops)
         arrayprops = scene.array_props
 
         # create a bmesh
@@ -165,8 +165,6 @@ class AddCarreau(bpy.types.Operator, AddObjectHelper):
         mesh_obj = bpy.data.objects.new(mesh.name, mesh)
         bpy.context.collection.objects.link(mesh_obj)
 
-
-
         difArray(
             mesh_obj,
             arrayprops.array_offset,
@@ -187,7 +185,7 @@ class AddPeigneCourt(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges = add_peigne_court(difprops)
+        vertex, edges, name = add_peigne_court(difprops)
 
         arrayprops = scene.array_props
 
@@ -195,7 +193,7 @@ class AddPeigneCourt(bpy.types.Operator, AddObjectHelper):
         bm = bmesh.new()
 
         # Create new mesh data.
-        mesh = bpy.data.meshes.new("Peigne_court")
+        mesh = bpy.data.meshes.new(name)
         mesh.from_pydata(vertex, edges, [])
 
         # Positionning according to position props
@@ -242,7 +240,7 @@ class AddPeigneLong(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges = add_peigne_long(difprops)
+        vertex, edges, name = add_peigne_long(difprops)
 
         arrayprops = scene.array_props
 
@@ -250,7 +248,7 @@ class AddPeigneLong(bpy.types.Operator, AddObjectHelper):
         bm = bmesh.new()
 
         # Create new mesh data.
-        mesh = bpy.data.meshes.new("Peigne_long")
+        mesh = bpy.data.meshes.new(name)
         mesh.from_pydata(vertex, edges, [])
 
         # Positionning according to position props
@@ -264,7 +262,7 @@ class AddPeigneLong(bpy.types.Operator, AddObjectHelper):
                 )
             )
         )
-        mesh.update(calc_edges=True)        
+        mesh.update(calc_edges=True)
 
         # Load BMesh with mesh data
         bm.from_mesh(mesh)
@@ -295,31 +293,12 @@ class AddDiffuseur(bpy.types.Operator, AddObjectHelper):
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
-        scene = context.scene
-        difprops = scene.dif_props
-        vertex, edges = add_peigne_long(difprops)
-        vertex2, edges2 = add_cadre_tenon(difprops)
 
-        mesh = bpy.data.meshes.new("Peigne_long")
-
-        mesh.from_pydata(vertex, edges, [])
-        bm = bmesh.new()
-        bm.from_mesh(mesh)
-        bm.to_mesh(mesh)
-        mesh.update()
-
-        mesh2 = bpy.data.meshes.new("Cadre Tenon")
-
-        mesh2.from_pydata(vertex, edges, [])
-        bm = bmesh.new()
-        bm.from_mesh(mesh2)
-        bm.to_mesh(mesh2)
-        mesh.update()
-
-        # add the mesh as an object into the scene with this utility module
-        from bpy_extras import object_utils
-
-        object_utils.object_data_add(context, mesh, operator=self)
+        AddCadreMortaise.execute(self, context)
+        AddCadreTenon.execute(self, context)
+        AddCarreau.execute(self, context)
+        AddPeigneCourt.execute(self, context)
+        AddPeigneLong.execute(self, context)
 
         return {"FINISHED"}
 
