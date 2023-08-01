@@ -135,7 +135,7 @@ def add_cadre_tenon(difprops):
 
     vertsMortaisesInt = []
 
-    for k in range(1, round(N * longueur_diffuseur)):
+    for k in range(1, round(N)):
             vertsMortaisesInt += [
                 (bord_cadre - offset / 2, startup + rang * k + epaisseur / 2, 0),
                 (
