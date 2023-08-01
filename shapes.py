@@ -343,21 +343,22 @@ def add_carreau(difprops):
 
 
 def add_accroche(difprops):
-    longueur_diffuseur = difprops.longueur_diffuseur
     diffuseur_type_is2D = difprops.diffuseur_type_is2D
-    N = difprops.type
     rang = difprops.getRang()
+    epaisseur = difprops.epaisseur
+    offset = difprops.offset
 
-    longueurTotale = N * longueur_diffuseur * rang
+
+    longueurTotale = difprops.getLongueur()
 
     if diffuseur_type_is2D:
-        vertsCadre = [(0, 0, 0), (0, rang, 0), (rang, rang, 0), (rang, 0, 0), (0, 0, 0)]
+        vertsCadre = [(0, 0, 0), (0, rang-epaisseur - offset, 0), (rang-epaisseur - offset, rang-epaisseur - offset, 0), (rang-epaisseur - offset, 0, 0), (0, 0, 0)]
     else:
         vertsCadre = [
             (0, 0, 0),
-            (0, longueurTotale, 0),
-            (rang, longueurTotale, 0),
-            (rang, 0, 0),
+            (0, longueurTotale - offset - epaisseur * 2, 0),
+            (rang - epaisseur - offset, longueurTotale - offset - epaisseur * 2, 0),
+            (rang - epaisseur - offset, 0, 0),
             (0, 0, 0),
         ]
 
