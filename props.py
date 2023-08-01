@@ -93,8 +93,12 @@ class DiffuseurProps(bpy.types.PropertyGroup):
     )
 
     def getRang(self):
-        rang = (self.largeur_diffuseur + 2 * self.epaisseur - 2 * 0.00235 ) / self.type
-        return round(rang, 3)
+        rang = (self.largeur_diffuseur - self.epaisseur ) / self.type
+        return round(rang, 4)
+    
+    def getLongueur(self):
+        longueurTotale = round(self.type * self.longueur_diffuseur) * self.getRang() + self.epaisseur
+        return longueurTotale
     
     def listAttributes(self):
         attributes = [
@@ -107,6 +111,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                 or "rna_type" in a
                 or "listAttributes" in a
                 or "getRang" in a
+                or "getLongueur" in a
             )
         ]
         return attributes
@@ -213,6 +218,7 @@ class ArrayProps(bpy.types.PropertyGroup):
                 or "rna_type" in a
                 or "listAttributes" in a
                 or "getRang" in a
+                or "getLongueur" in a
             )
         ]
         return attributes
@@ -265,6 +271,7 @@ class PositionProps(bpy.types.PropertyGroup):
                 or "rna_type" in a
                 or "listAttributes" in a
                 or "getRang" in a
+                or "getLongueur" in a
             )
         ]
         return attributes
