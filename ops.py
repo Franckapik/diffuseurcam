@@ -414,6 +414,7 @@ class PrepareToCam(bpy.types.Operator, AddObjectHelper):
 
         # convert to curve
         if prepprops.isConvertToCurve_prepare:
+            bpy.context.view_layer.objects.active = bpy.context.selectable_objects[0]
             bpy.ops.object.convert(target="CURVE")
             # remove double if curve
             if prepprops.isCRemove_prepare:
@@ -423,6 +424,8 @@ class PrepareToCam(bpy.types.Operator, AddObjectHelper):
         if prepprops.isJoin_prepare:
             bpy.ops.object.join()
             bpy.context.object.name = "Diffuseur"
+            if prepprops.isOvercuts:
+                bpy.ops.object.curve_overcuts()
 
         return {"FINISHED"}
 

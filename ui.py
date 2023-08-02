@@ -37,8 +37,7 @@ class Diffuseur_SideBar(Panel):
     bl_region_type = "UI"
     bl_category = "DIFFUSEURS"
 
-    enum_items = (('0','Cube',''),('1','Pyramid',''))
-
+    enum_items = (("0", "Cube", ""), ("1", "Pyramid", ""))
 
     def draw(self, context):
         layout = self.layout
@@ -50,7 +49,7 @@ class Diffuseur_SideBar(Panel):
         dif_attributes = difprops.listAttributes()
         array_attributes = arrayprops.listAttributes()
         prep_attributes = prepprops.listAttributes()
-        
+
         row1 = layout.row(align=True)
         row1.menu(DIF_MT_Presets.__name__, text=DIF_MT_Presets.bl_label)
         row1.operator(OT_AddMyPreset.bl_idname, text="", icon="ADD")
@@ -61,7 +60,7 @@ class Diffuseur_SideBar(Panel):
         layout.separator()
         for att in dif_attributes:
             layout.prop(difprops, att)
-        
+
         layout.separator()
         layout.label(text=f"Rang : {difprops.getRang() * 1000} mm")
 
@@ -73,9 +72,11 @@ class Diffuseur_SideBar(Panel):
         col1 = split.column()
         col2 = split.column()
 
-        col1.label(text="X count", )
+        col1.label(
+            text="X count",
+        )
         col2.label(text="Y count")
-        
+
         for arr in (x for x in array_attributes if x != "array_offset"):
             if arr[-1] == "x":
                 col1.prop(arrayprops, arr)
@@ -84,20 +85,38 @@ class Diffuseur_SideBar(Panel):
 
         layout.separator()
 
-        for piece in ['peigne_court', 'cadre_mortaise','cadre_tenon', 'carreau', 'peigne_long', 'accroche' ]:
+        for piece in [
+            "peigne_court",
+            "cadre_mortaise",
+            "cadre_tenon",
+            "carreau",
+            "peigne_long",
+            "accroche",
+        ]:
             row = layout.row()
             row.prop(posprops, f"{piece}_position")
             row.operator(f"mesh.{piece}")
 
         layout.operator("mesh.add_diffuseur")
-        
-        for prep in (x for x in prep_attributes if x != "selection_prepare"):
-            layout.prop(prepprops, prep)
 
-        layout.prop(prepprops, 'selection_prepare', expand=True)
+        layout.prop(prepprops, "selection_prepare", expand=True)
+
+        layout.prop(prepprops, "isNewMesh_prepare")
+
+        if prepprops.isNewMesh_prepare:
+            layout.prop(prepprops, "isDeleteOldMesh_prepare")
+
+        layout.prop(prepprops, "isConvertToCurve_prepare")
+        if prepprops.isConvertToCurve_prepare:
+            layout.prop(prepprops, "isCRemove_prepare")
+
+            if prepprops.isJoin_prepare:
+                layout.prop(prepprops, "isOvercuts")
+
+        layout.prop(prepprops, "isJoin_prepare")
+
         layout.operator("mesh.prepare_cam")
 
-        
 
 ui_classes = [DIF_MT_Presets, OT_AddMyPreset]
 
