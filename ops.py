@@ -12,7 +12,6 @@ from .shapes import (
 from .difarray import difArray
 from bpy_extras.object_utils import AddObjectHelper
 
-
 class AddCadreMortaise(bpy.types.Operator, AddObjectHelper):
     bl_idname = "mesh.cadre_mortaise"
     bl_label = "Ajouter Cadre mortaise"
@@ -376,6 +375,7 @@ class PrepareToCam(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         prepprops = scene.prep_props
+        preset = scene.preset
 
         # mesh selection
 
@@ -424,7 +424,7 @@ class PrepareToCam(bpy.types.Operator, AddObjectHelper):
         # join selected object
         if prepprops.isJoin_prepare:
             bpy.ops.object.join()
-            bpy.context.object.name = "Diffuseur"
+            bpy.context.object.name = preset
             if prepprops.isOvercuts:
                 bpy.ops.object.curve_overcuts()
 
