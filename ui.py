@@ -105,6 +105,8 @@ class Diffuseur_SideBar(Panel):
 
         if prepprops.isNewMesh_prepare:
             layout.prop(prepprops, "isDeleteOldMesh_prepare")
+        """ else:
+            prepprops.isDeleteOldMesh_prepare = False """
 
         layout.prop(prepprops, "isConvertToCurve_prepare")
         if prepprops.isConvertToCurve_prepare:

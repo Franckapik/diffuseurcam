@@ -383,10 +383,11 @@ class PrepareToCam(bpy.types.Operator, AddObjectHelper):
             bpy.ops.object.select_all(action="DESELECT")
             for o in bpy.data.objects:
                 if o.name in bpy.types.Scene.dif_parts:
+                    bpy.context.view_layer.objects.active = o
                     o.select_set(True)
 
         if prepprops.selection_prepare == "1":
-            pass
+            bpy.context.view_layer.objects.active = bpy.context.selected_objects[0]
 
         if prepprops.selection_prepare == "2":
             bpy.ops.object.select_all(action="SELECT")
@@ -414,8 +415,8 @@ class PrepareToCam(bpy.types.Operator, AddObjectHelper):
 
         # convert to curve
         if prepprops.isConvertToCurve_prepare:
-            bpy.context.view_layer.objects.active = bpy.context.selectable_objects[0]
             bpy.ops.object.convert(target="CURVE")
+            
             # remove double if curve
             if prepprops.isCRemove_prepare:
                 bpy.ops.object.curve_remove_doubles()
