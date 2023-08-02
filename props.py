@@ -13,9 +13,8 @@ class DiffuseurProps(bpy.types.PropertyGroup):
     epaisseur: FloatProperty(
         name="epaisseur",
         description="Box epaisseur",
-        min=0.003,
-        max=0.008,
         default=0.003,
+        step=0.001,
         unit="LENGTH",
         precision=4,
     )
@@ -97,6 +96,23 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         description="Box Type de diffuseur",
     )
 
+    def getDifName(self):
+        dif_name = (
+            "D"
+            + ("2" if self.diffuseur_type_is2D else "1")
+            + "N"
+            + str(self.type)
+            + "W"
+            + str(round(self.largeur_diffuseur * 100))
+            + "P"
+            + str(round(self.profondeur * 100))
+            + "L"
+            + str(round(self.longueur_diffuseur))
+            + "E"
+            + str(round(self.epaisseur * 1000))
+        )
+        return dif_name
+
     def getRang(self):
         rang = (self.largeur_diffuseur - self.epaisseur) / self.type
         return round(rang, 4)
@@ -119,6 +135,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                 or "listAttributes" in a
                 or "getRang" in a
                 or "getLongueur" in a
+                or "getDifName" in a
             )
         ]
         return attributes
@@ -226,6 +243,7 @@ class ArrayProps(bpy.types.PropertyGroup):
                 or "listAttributes" in a
                 or "getRang" in a
                 or "getLongueur" in a
+                or "getDifName" in a
             )
         ]
         return attributes
@@ -279,6 +297,7 @@ class PositionProps(bpy.types.PropertyGroup):
                 or "listAttributes" in a
                 or "getRang" in a
                 or "getLongueur" in a
+                or "getDifName" in a
             )
         ]
         return attributes
@@ -326,6 +345,7 @@ class PrepareProps(bpy.types.PropertyGroup):
                 or "listAttributes" in a
                 or "getRang" in a
                 or "getLongueur" in a
+                or "getDifName" in a
             )
         ]
         return attributes

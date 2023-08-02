@@ -376,6 +376,7 @@ class PrepareToCam(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         prepprops = scene.prep_props
+        difprops = scene.dif_props
 
         # mesh selection
 
@@ -424,7 +425,7 @@ class PrepareToCam(bpy.types.Operator, AddObjectHelper):
         # join selected object
         if prepprops.isJoin_prepare:
             bpy.ops.object.join()
-            bpy.context.object.name = "Diffuseur"
+            bpy.context.object.name = difprops.getDifName()
             if prepprops.isOvercuts:
                 bpy.ops.object.curve_overcuts()
 

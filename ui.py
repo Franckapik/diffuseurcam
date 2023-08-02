@@ -50,12 +50,16 @@ class Diffuseur_SideBar(Panel):
         array_attributes = arrayprops.listAttributes()
         prep_attributes = prepprops.listAttributes()
 
+        
         row1 = layout.row(align=True)
         row1.menu(DIF_MT_Presets.__name__, text=DIF_MT_Presets.bl_label)
         row1.operator(OT_AddMyPreset.bl_idname, text="", icon="ADD")
         row1.operator(
             OT_AddMyPreset.bl_idname, text="", icon="REMOVE"
         ).remove_active = True
+
+        layout.label(text=difprops.getDifName())
+
 
         layout.separator()
         for att in dif_attributes:
@@ -135,8 +139,10 @@ def register():
     bpy.types.VIEW3D_MT_mesh_add.append(menu_func)
 
 
+
 def unregister():
     for cls in ui_classes:
         bpy.utils.unregister_class(cls)
     bpy.types.VIEW3D_MT_mesh_add.remove(menu_func)
     bpy.utils.unregister_class(Diffuseur_SideBar)
+
