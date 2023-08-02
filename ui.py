@@ -37,14 +37,19 @@ class Diffuseur_SideBar(Panel):
     bl_region_type = "UI"
     bl_category = "DIFFUSEURS"
 
+    enum_items = (('0','Cube',''),('1','Pyramid',''))
+
+
     def draw(self, context):
         layout = self.layout
         scene = context.scene
         difprops = scene.dif_props
         arrayprops = scene.array_props
         posprops = scene.pos_props
+        prepprops = scene.prep_props
         dif_attributes = difprops.listAttributes()
         array_attributes = arrayprops.listAttributes()
+        prep_attributes = prepprops.listAttributes()
         
         row1 = layout.row(align=True)
         row1.menu(DIF_MT_Presets.__name__, text=DIF_MT_Presets.bl_label)
@@ -85,7 +90,14 @@ class Diffuseur_SideBar(Panel):
             row.operator(f"mesh.{piece}")
 
         layout.operator("mesh.add_diffuseur")
+        
+        for prep in (x for x in prep_attributes if x != "selection_prepare"):
+            layout.prop(prepprops, prep)
 
+        layout.prop(prepprops, 'selection_prepare', expand=True)
+        layout.operator("mesh.prepare_cam")
+
+        
 
 ui_classes = [DIF_MT_Presets, OT_AddMyPreset]
 

@@ -1,6 +1,12 @@
 import bpy
 
-from bpy.props import FloatProperty, BoolProperty, IntProperty, FloatVectorProperty
+from bpy.props import (
+    FloatProperty,
+    BoolProperty,
+    IntProperty,
+    FloatVectorProperty,
+    EnumProperty,
+)
 
 
 class DiffuseurProps(bpy.types.PropertyGroup):
@@ -77,7 +83,6 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         precision=4,
     )
 
-
     longueur_diffuseur: FloatProperty(
         name="longueur_diffuseur",
         description="Box longueur_diffuseur",
@@ -93,13 +98,15 @@ class DiffuseurProps(bpy.types.PropertyGroup):
     )
 
     def getRang(self):
-        rang = (self.largeur_diffuseur - self.epaisseur ) / self.type
+        rang = (self.largeur_diffuseur - self.epaisseur) / self.type
         return round(rang, 4)
-    
+
     def getLongueur(self):
-        longueurTotale = round(self.type * self.longueur_diffuseur) * self.getRang() + self.epaisseur
+        longueurTotale = (
+            round(self.type * self.longueur_diffuseur) * self.getRang() + self.epaisseur
+        )
         return longueurTotale
-    
+
     def listAttributes(self):
         attributes = [
             a
@@ -277,7 +284,54 @@ class PositionProps(bpy.types.PropertyGroup):
         return attributes
 
 
-classes = [DiffuseurProps, ArrayProps, PositionProps]
+class PrepareProps(bpy.types.PropertyGroup):
+    selection_prepare: EnumProperty(
+        items=(("0", "Generated", ""), ("1", "Selected", ""), ("2", "All", ""))
+    )
+
+    isConvertToCurve_prepare: BoolProperty(
+        name="Convert to curve",
+        description="Convert mesh to curve",
+    )
+    isCRemove_prepare: BoolProperty(
+        name="Remove curve doubles",
+        description="Remove curve doubles",
+    )
+    isOvercuts: BoolProperty(
+        name="Overcuts",
+        description="Add overcuts",
+    )
+    isJoin_prepare: BoolProperty(
+        name="Join all",
+        description="Join all parts to one",
+    )
+    isNewMesh_prepare: BoolProperty(
+        name="Create new mesh",
+        description="Create a copy from selection",
+    )
+    isDeleteOldMesh_prepare: BoolProperty(
+        name="Delete old mesh",
+        description="Delete old mesh",
+    )
+
+    def listAttributes(self):
+        attributes = [
+            a
+            for a in dir(self)
+            if not (
+                a.startswith("__")
+                or "bl_rna" in a
+                or "name" in a
+                or "rna_type" in a
+                or "listAttributes" in a
+                or "getRang" in a
+                or "getLongueur" in a
+            )
+        ]
+        return attributes
+
+
+classes = [DiffuseurProps, ArrayProps, PositionProps, PrepareProps]
 
 
 def register():
@@ -286,6 +340,8 @@ def register():
     bpy.types.Scene.dif_props = bpy.props.PointerProperty(type=DiffuseurProps)
     bpy.types.Scene.array_props = bpy.props.PointerProperty(type=ArrayProps)
     bpy.types.Scene.pos_props = bpy.props.PointerProperty(type=PositionProps)
+    bpy.types.Scene.prep_props = bpy.props.PointerProperty(type=PrepareProps)
+    bpy.types.Scene.dif_parts = []
 
 
 def unregister():
@@ -294,3 +350,5 @@ def unregister():
     del bpy.types.Scene.dif_props
     del bpy.types.Scene.array_props
     del bpy.types.Scene.pos_props
+    del bpy.types.Scene.prep_props
+    del bpy.types.Scene.dif_parts
