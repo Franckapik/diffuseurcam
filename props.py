@@ -91,15 +91,14 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         step=25,
     )
 
-    diffuseur_type_is2D: BoolProperty(
-        name="Diffuseur 2D",
-        description="Box Type de diffuseur",
+    diffuseur_type_is2D: EnumProperty(
+        items=(("0", "Diffuseur 2D", ""), ("1", "Diffuseur 1D", ""))
     )
 
     def getDifName(self):
         dif_name = (
             "D"
-            + ("2" if self.diffuseur_type_is2D else "1")
+            + ("2" if self.diffuseur_type_is2D == "0" else "1")
             + "N"
             + str(self.type)
             + "W"
@@ -285,6 +284,9 @@ class PositionProps(bpy.types.PropertyGroup):
         precision=4,
     )
 
+    def update(self, target, cursor):
+        self[target] = cursor
+
     def listAttributes(self):
         attributes = [
             a
@@ -298,6 +300,7 @@ class PositionProps(bpy.types.PropertyGroup):
                 or "getRang" in a
                 or "getLongueur" in a
                 or "getDifName" in a
+                or "update" in a
             )
         ]
         return attributes

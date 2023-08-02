@@ -49,7 +49,7 @@ def add_cadre_mortaise(
     vertsMortaisesInt = []
 
     for k in range(1, round(N * longueur_diffuseur)):
-        if diffuseur_type_is2D : 
+        if diffuseur_type_is2D == "0" : 
             vertsMortaisesInt += [
                 (bord_cadre, bloc * k, 0),
                 (bord_cadre + tenon_peigne + offset, bloc * k, 0),

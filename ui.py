@@ -50,7 +50,7 @@ class Diffuseur_SideBar(Panel):
         array_attributes = arrayprops.listAttributes()
         prep_attributes = prepprops.listAttributes()
 
-        
+        # presets
         row1 = layout.row(align=True)
         row1.menu(DIF_MT_Presets.__name__, text=DIF_MT_Presets.bl_label)
         row1.operator(OT_AddMyPreset.bl_idname, text="", icon="ADD")
@@ -58,70 +58,87 @@ class Diffuseur_SideBar(Panel):
             OT_AddMyPreset.bl_idname, text="", icon="REMOVE"
         ).remove_active = True
 
-        layout.label(text=difprops.getDifName())
+        # Diffuseur name
+        box = layout.box()
+        box.label(text="Diffuseur ", icon="X")
+        box.label(text=difprops.getDifName())
 
-
+        # Dimensions
         layout.separator()
-        for att in dif_attributes:
-            layout.prop(difprops, att)
+        box = layout.box()
+        box.label(text="Dimensions", icon="X")
+        row = box.row()
+        row.prop(difprops, "diffuseur_type_is2D", expand=True)
+        for att in (x for x in dif_attributes if x != "diffuseur_type_is2D"):
+            box.prop(difprops, att)
+        box.label(text=f"Rang : {difprops.getRang() * 1000} mm")
 
+        # Array
         layout.separator()
-        layout.label(text=f"Rang : {difprops.getRang() * 1000} mm")
-
-        layout.separator()
-        row2 = layout.row()
-        row2.prop(arrayprops, "array_offset")
-
-        split = layout.split()
+        box = layout.box()
+        box.label(text="Array", icon="X")
+        box.prop(arrayprops, "array_offset")
+        split = box.split()
         col1 = split.column()
         col2 = split.column()
-
         col1.label(
             text="X count",
         )
         col2.label(text="Y count")
-
         for arr in (x for x in array_attributes if x != "array_offset"):
             if arr[-1] == "x":
                 col1.prop(arrayprops, arr)
             if arr[-1] == "y":
                 col2.prop(arrayprops, arr)
 
+        # Generateur
         layout.separator()
+        box = layout.box()
+        box.label(text="Générateur", icon="X")
 
-        for piece in [
-            "peigne_court",
-            "cadre_mortaise",
-            "cadre_tenon",
-            "carreau",
-            "peigne_long",
-            "accroche",
-        ]:
-            row = layout.row()
-            row.prop(posprops, f"{piece}_position")
-            row.operator(f"mesh.{piece}")
+        cursor = bpy.context.scene.cursor.location
+        box.label(
+            text=f"Cursor 3D : X{round(cursor[0], 2)}  Y{round(cursor[1], 2)}  Z{round(cursor[2], 2)}"
+        )
 
-        layout.operator("mesh.add_diffuseur")
+        listPos = posprops.listAttributes()
 
-        layout.prop(prepprops, "selection_prepare", expand=True)
+        for piece in listPos:
+            row = box.row()
+            row.prop(posprops, piece)
+            op =  row.operator("mesh.pick_position", text="", icon="EYEDROPPER")
+            op.cursor = cursor
+            op.target = piece
+            row.operator(f"mesh.{piece.replace('_position', '')}", text="", icon="ADD")
+        
 
-        layout.prop(prepprops, "isNewMesh_prepare")
+        box.operator("mesh.add_diffuseur")
+
+        # Prepare to Cam
+        layout.separator()
+        box = layout.box()
+        box.label(text="Préparation CAM", icon="X")
+
+        row = box.row()
+        row.prop(prepprops, "selection_prepare", expand=True)
+
+        box.prop(prepprops, "isNewMesh_prepare")
 
         if prepprops.isNewMesh_prepare:
-            layout.prop(prepprops, "isDeleteOldMesh_prepare")
+            box.prop(prepprops, "isDeleteOldMesh_prepare")
         """ else:
             prepprops.isDeleteOldMesh_prepare = False """
 
-        layout.prop(prepprops, "isConvertToCurve_prepare")
+        box.prop(prepprops, "isConvertToCurve_prepare")
         if prepprops.isConvertToCurve_prepare:
-            layout.prop(prepprops, "isCRemove_prepare")
+            box.prop(prepprops, "isCRemove_prepare")
 
             if prepprops.isJoin_prepare:
-                layout.prop(prepprops, "isOvercuts")
+                box.prop(prepprops, "isOvercuts")
 
-        layout.prop(prepprops, "isJoin_prepare")
+        box.prop(prepprops, "isJoin_prepare")
 
-        layout.operator("mesh.prepare_cam")
+        box.operator("mesh.prepare_cam")
 
 
 ui_classes = [DIF_MT_Presets, OT_AddMyPreset]
@@ -139,10 +156,8 @@ def register():
     bpy.types.VIEW3D_MT_mesh_add.append(menu_func)
 
 
-
 def unregister():
     for cls in ui_classes:
         bpy.utils.unregister_class(cls)
     bpy.types.VIEW3D_MT_mesh_add.remove(menu_func)
     bpy.utils.unregister_class(Diffuseur_SideBar)
-

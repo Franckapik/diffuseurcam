@@ -29,15 +29,15 @@ def add_carreau(
     bloc = longueurArray / N
     longueurTotale = N * longueur_diffuseur * bloc
 
-    if diffuseur_type_is2D:
+    if diffuseur_type_is2D == "0":
         vertsCadre = [(0, 0, 0), (0, bloc, 0), (bloc, bloc, 0), (bloc, 0, 0), (0, 0, 0)]
     else:
         vertsCadre = [(0, 0, 0), (0, longueurTotale, 0), (bloc, longueurTotale, 0), (bloc, 0, 0), (0, 0, 0)]
 
-    if is_accroche and diffuseur_type_is2D:
+    if is_accroche and diffuseur_type_is2D == "0":
         bpy.ops.mesh.primitive_circle_add(radius=0.01, enter_editmode=True, align='WORLD', location= (bloc/2,bloc/2, 0), scale=(1, 1, 1))
         
-    if is_accroche and not diffuseur_type_is2D :    
+    if is_accroche and not diffuseur_type_is2D == "0" :    
         bpy.ops.mesh.primitive_circle_add(radius=0.01, enter_editmode=True, align='WORLD', location= (bloc/2,longueurTotale/5, 0), scale=(1, 1, 1))
         bpy.ops.mesh.primitive_circle_add(radius=0.01, enter_editmode=True, align='WORLD', location= (bloc/2,longueurTotale/5 * 4, 0), scale=(1, 1, 1))
 

@@ -11,6 +11,8 @@ from .shapes import (
 )
 from .difarray import difArray
 from bpy_extras.object_utils import AddObjectHelper
+from bpy.props import FloatVectorProperty, StringProperty
+
 
 
 class AddCadreMortaise(bpy.types.Operator, AddObjectHelper):
@@ -354,7 +356,7 @@ class AddPeigneLong(bpy.types.Operator, AddObjectHelper):
 
 class AddDiffuseur(bpy.types.Operator, AddObjectHelper):
     bl_idname = "mesh.add_diffuseur"
-    bl_label = "Ajouter Diffuseur"
+    bl_label = "Generer Diffuseur"
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
@@ -366,11 +368,31 @@ class AddDiffuseur(bpy.types.Operator, AddObjectHelper):
         AddAccroche.execute(self, context)
 
         return {"FINISHED"}
+    
+class PickPosition(bpy.types.Operator, AddObjectHelper):
+    bl_idname = "mesh.pick_position"
+    bl_label = "Set position from Cursor 3D"
+    bl_options = {"REGISTER", "UNDO"}
+    cursor : FloatVectorProperty(
+        name="cursor3d_position"
+    )
+    target : StringProperty(
+        name="Name of part to change position"
+    )
+
+    def execute(self, context):
+        print(self.target)
+        scene = context.scene
+        posprops = scene.pos_props
+        posprops.update(self.target, self.cursor)
+
+
+        return {"FINISHED"}
 
 
 class PrepareToCam(bpy.types.Operator, AddObjectHelper):
     bl_idname = "mesh.prepare_cam"
-    bl_label = "Transforer pour les opérations CAM"
+    bl_label = "Transformer"
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
@@ -441,6 +463,7 @@ classes = [
     AddAccroche,
     AddDiffuseur,
     PrepareToCam,
+    PickPosition
 ]
 
 

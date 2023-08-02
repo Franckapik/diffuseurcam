@@ -31,7 +31,7 @@ def add_cadre_mortaise(difprops):
     vertsMortaisesInt = []
 
     for k in range(1, round(N * longueur_diffuseur)):
-        if diffuseur_type_is2D:
+        if diffuseur_type_is2D == "0":
             vertsMortaisesInt += [
                 (bord_cadre - offset / 2, startup + rang * k + epaisseur / 2, 0),
                 (
@@ -298,7 +298,7 @@ def add_peigne_long(difprops):
         (profondeur - bord_cadre, longueurTotale - epaisseur, 0),
         (profondeur, longueurTotale - epaisseur, 0),
         # peignes
-        *[x for x in peignes if diffuseur_type_is2D == True],
+        *[x for x in peignes if diffuseur_type_is2D == "0"],
         (profondeur, epaisseur, 0),
         (profondeur - bord_cadre, epaisseur, 0),
         (profondeur - bord_cadre, 0, 0),
@@ -331,7 +331,7 @@ def add_carreau(difprops):
 
     longueurTotale = difprops.getLongueur()
 
-    if diffuseur_type_is2D:
+    if diffuseur_type_is2D == "0":
         vertsCadre = [
             (0, 0, 0),
             (0, rang - epaisseur - offset, 0),
@@ -366,7 +366,7 @@ def add_accroche(difprops):
 
     longueurTotale = difprops.getLongueur()
 
-    if diffuseur_type_is2D:
+    if diffuseur_type_is2D == "0":
         vertsCadre = [
             (0, 0, 0),
             (0, rang - epaisseur - offset, 0),
