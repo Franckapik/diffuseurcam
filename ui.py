@@ -39,7 +39,6 @@ class Diffuseur_SideBar(Panel):
 
     enum_items = (("0", "Cube", ""), ("1", "Pyramid", ""))
 
-
     def draw(self, context):
         layout = self.layout
         scene = context.scene
@@ -134,7 +133,6 @@ def register():
         bpy.utils.register_class(cls)
     bpy.utils.register_class(Diffuseur_SideBar)
     bpy.types.VIEW3D_MT_mesh_add.append(menu_func)
-    bpy.types.Scene.preset = DIF_MT_Presets.bl_label
 
 
 def unregister():
@@ -142,4 +140,3 @@ def unregister():
         bpy.utils.unregister_class(cls)
     bpy.types.VIEW3D_MT_mesh_add.remove(menu_func)
     bpy.utils.unregister_class(Diffuseur_SideBar)
-    del bpy.types.Scene.preset 
