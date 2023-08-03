@@ -380,7 +380,6 @@ def add_accroche(difprops):
     diffuseur_type_is2D = difprops.diffuseur_type_is2D
     rang = difprops.getRang()
     epaisseur = difprops.epaisseur
-    offset = difprops.offset
 
     longueurTotale = difprops.getLongueur()
 
@@ -401,13 +400,18 @@ def add_accroche(difprops):
             (0, 0, 0),
         ]
 
+    division = (rang - epaisseur) / 12
+
     vertsAccroche = [
-        (rang / 3, rang / 4, 0),
-        (rang / 3 * 2, rang / 4, 0),
-        (rang / 3 * 2, rang / 4 * 2, 0),
-        (rang / 2, rang / 4 * 3, 0),
-        (rang / 3, rang / 4 * 2, 0),
+        (division * 4, division * 4, 0),
+        (division * 4 , division *6, 0),
+        (division * 6 , division * 8, 0),
+        (division * 8 , division * 6, 0),
+        (division * 8, division * 4, 0),
     ]
+
+    #bpy.ops.mesh.bevel(offset=0.003, offset_pct=0, segments=3, profile=0.987013, affect='VERTICES', release_confirm=True)
+
 
     edgesCadre = []
     edgesAccroche = []
