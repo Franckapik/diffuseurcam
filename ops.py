@@ -23,7 +23,7 @@ class AddCadreMortaise(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_cadre_mortaise(difprops)
+        vertex, edges, name = add_cadre_mortaise(difprops, scene.product_props)
 
         arrayprops = scene.array_props
 
@@ -80,7 +80,7 @@ class AddCadreTenon(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_cadre_tenon(difprops)
+        vertex, edges, name = add_cadre_tenon(difprops, scene.product_props)
 
         arrayprops = scene.array_props
 

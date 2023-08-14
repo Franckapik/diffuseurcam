@@ -1,4 +1,4 @@
-def add_cadre_mortaise(difprops):
+def add_cadre_mortaise(difprops, productprops):
     epaisseur = difprops.epaisseur
     profondeur = difprops.profondeur
     tenon_cadre = difprops.tenon_cadre
@@ -6,32 +6,260 @@ def add_cadre_mortaise(difprops):
     offset = difprops.offset
     tenon_peigne = difprops.tenon_peigne
     longueur_diffuseur = difprops.longueur_diffuseur
-    product_type = difprops.product_type
+    largeur_accroche = difprops.largeur_accroche
+
+    product_type = productprops.product_type
     startup = epaisseur / 2
     N = difprops.type
 
     rang = difprops.getRang()
     longueurTotale = difprops.getLongueur()
 
-    vertsCadre = [
-        (0, 0, 0),
-        (0, longueurTotale, 0),
-        ((profondeur / 2 - tenon_cadre / 2), longueurTotale, 0),
-        ((profondeur / 2 - tenon_cadre / 2) - offset, longueurTotale - epaisseur, 0),
-        ((profondeur / 2 + tenon_cadre / 2) + offset, longueurTotale - epaisseur, 0),
-        ((profondeur / 2 + tenon_cadre / 2), longueurTotale, 0),
-        ((profondeur), longueurTotale, 0),
-        ((profondeur), 0, 0),
-        ((profondeur / 2 + tenon_cadre / 2), 0, 0),
-        ((profondeur / 2 + tenon_cadre / 2) + offset, epaisseur, 0),
-        ((profondeur / 2 - tenon_cadre / 2) - offset, epaisseur, 0),
-        ((profondeur / 2 - tenon_cadre / 2), 0, 0),
+    if product_type == "0" or product_type == "1":
+        vertsCadre = [
+            (0, 0, 0),
+            (0, longueurTotale, 0),
+            ((profondeur / 2 - tenon_cadre / 2), longueurTotale, 0),
+            (
+                (profondeur / 2 - tenon_cadre / 2) - offset,
+                longueurTotale - epaisseur,
+                0,
+            ),
+            (
+                (profondeur / 2 + tenon_cadre / 2) + offset,
+                longueurTotale - epaisseur,
+                0,
+            ),
+            ((profondeur / 2 + tenon_cadre / 2), longueurTotale, 0),
+            ((profondeur), longueurTotale, 0),
+            ((profondeur), 0, 0),
+            ((profondeur / 2 + tenon_cadre / 2), 0, 0),
+            ((profondeur / 2 + tenon_cadre / 2) + offset, epaisseur, 0),
+            ((profondeur / 2 - tenon_cadre / 2) - offset, epaisseur, 0),
+            ((profondeur / 2 - tenon_cadre / 2), 0, 0),
+        ]
+
+        vertsMortaisesInt = []
+
+        for k in range(1, round(N * longueur_diffuseur)):
+            if product_type == "0":
+                vertsMortaisesInt += [
+                    (
+                        bord_cadre - offset,
+                        startup + rang * k + epaisseur / 2 + offset,
+                        0,
+                    ),
+                    (
+                        bord_cadre + tenon_peigne + offset,
+                        startup + rang * k + epaisseur / 2 + offset,
+                        0,
+                    ),
+                    (
+                        bord_cadre + tenon_peigne + offset,
+                        startup + rang * k - epaisseur / 2 - offset,
+                        0,
+                    ),
+                    (
+                        bord_cadre - offset,
+                        startup + rang * k - epaisseur / 2 - offset,
+                        0,
+                    ),
+                    (
+                        profondeur - bord_cadre + offset,
+                        startup + rang * k + epaisseur / 2 + offset,
+                        0,
+                    ),
+                    (
+                        profondeur - bord_cadre + offset,
+                        startup + rang * k - epaisseur / 2 - offset,
+                        0,
+                    ),
+                    (
+                        profondeur - bord_cadre - tenon_peigne - offset,
+                        startup + rang * k - epaisseur / 2 - offset,
+                        0,
+                    ),
+                    (
+                        profondeur - bord_cadre - tenon_peigne - offset,
+                        startup + rang * k + epaisseur / 2 + offset,
+                        0,
+                    ),
+                ]
+
+        edgesMortaisesInt = []
+
+        i = 0
+
+        for k in range(len(vertsCadre), len(vertsCadre) + len(vertsMortaisesInt)):
+            i += 1
+            if i == 4 or k == len(vertsCadre):
+                i = 0
+                edgesMortaisesInt += [
+                    (k, k + 1),
+                    (k + 1, k + 2),
+                    (k + 2, k + 3),
+                    (k + 3, k),
+                ]
+
+        edgesCadre = [
+            (0, 1),
+            (1, 2),
+            (2, 3),
+            (3, 4),
+            (4, 5),
+            (5, 6),
+            (6, 7),
+            (7, 8),
+            (8, 9),
+            (9, 10),
+            (10, 11),
+            (11, 0),
+        ]
+
+    if product_type == "2":
+        vertsCadre = [
+            (0, 0, 0),
+            (0, largeur_accroche / 2 - tenon_cadre / 2, 0),
+            (epaisseur, (largeur_accroche / 2 - tenon_cadre / 2) - offset, 0),
+            (epaisseur, (largeur_accroche / 2 + tenon_cadre / 2) + offset, 0),
+            (0, largeur_accroche / 2 + tenon_cadre / 2, 0),
+            (0, longueurTotale - largeur_accroche / 2 - tenon_cadre / 2, 0),
+            (
+                epaisseur,
+                (longueurTotale - largeur_accroche / 2 - tenon_cadre / 2) - offset,
+                0,
+            ),
+            (
+                epaisseur,
+                (longueurTotale - largeur_accroche / 2 + tenon_cadre / 2) + offset,
+                0,
+            ),
+            (0, longueurTotale - largeur_accroche / 2 + tenon_cadre / 2, 0),
+            (0, longueurTotale, 0),
+            ((profondeur / 2 - tenon_cadre / 2), longueurTotale, 0),
+            (
+                (profondeur / 2 - tenon_cadre / 2) - offset,
+                longueurTotale - epaisseur,
+                0,
+            ),
+            (
+                (profondeur / 2 + tenon_cadre / 2) + offset,
+                longueurTotale - epaisseur,
+                0,
+            ),
+            ((profondeur / 2 + tenon_cadre / 2), longueurTotale, 0),
+            ((profondeur), longueurTotale, 0),
+            (profondeur, longueurTotale - largeur_accroche / 2 + tenon_cadre / 2, 0),
+            (
+                profondeur - epaisseur,
+                (longueurTotale - largeur_accroche / 2 + tenon_cadre / 2) + offset,
+                0,
+            ),
+            (
+                profondeur - epaisseur,
+                (longueurTotale - largeur_accroche / 2 - tenon_cadre / 2) - offset,
+                0,
+            ),
+            (profondeur, longueurTotale - largeur_accroche / 2 - tenon_cadre / 2, 0),
+            (profondeur, largeur_accroche / 2 + tenon_cadre / 2, 0),
+            (
+                profondeur - epaisseur,
+                (largeur_accroche / 2 + tenon_cadre / 2) + offset,
+                0,
+            ),
+            (
+                profondeur - epaisseur,
+                (largeur_accroche / 2 - tenon_cadre / 2) - offset,
+                0,
+            ),
+            (profondeur, largeur_accroche / 2 - tenon_cadre / 2, 0),
+            ((profondeur), 0, 0),
+            ((profondeur / 2 + tenon_cadre / 2), 0, 0),
+            ((profondeur / 2 + tenon_cadre / 2) + offset, epaisseur, 0),
+            ((profondeur / 2 - tenon_cadre / 2) - offset, epaisseur, 0),
+            ((profondeur / 2 - tenon_cadre / 2), 0, 0),
+        ]
+
+        vertsMortaisesInt = []
+
+        edgesMortaisesInt = []
+
+        i = 0
+
+        for k in range(len(vertsCadre), len(vertsCadre) + len(vertsMortaisesInt)):
+            i += 1
+            if i == 4 or k == len(vertsCadre):
+                i = 0
+                edgesMortaisesInt += [
+                    (k, k + 1),
+                    (k + 1, k + 2),
+                    (k + 2, k + 3),
+                    (k + 3, k),
+                ]
+
+        edgesCadre = []
+
+    for k in range(0, len(vertsCadre) - 1):
+        edgesCadre += [
+            (k, k + 1),
+        ]
+
+    edgesCadre += [
+        (len(vertsCadre) - 1, 0),
     ]
 
-    vertsMortaisesInt = []
+    verts = [*list(vertsCadre), *list(vertsMortaisesInt)]
+    edges = [*list(edgesCadre), *list(edgesMortaisesInt)]
 
-    for k in range(1, round(N * longueur_diffuseur)):
-        if product_type == "0":
+    return verts, edges, "Cadre mortaise"
+
+
+def add_cadre_tenon(difprops, productprops):
+    epaisseur = difprops.epaisseur
+    profondeur = difprops.profondeur
+    tenon_cadre = difprops.tenon_cadre
+    bord_cadre = difprops.bord_cadre
+    largeur_diffuseur = difprops.largeur_diffuseur
+    offset = difprops.offset
+    tenon_peigne = difprops.tenon_peigne
+    startup = epaisseur / 2
+    longueur_diffuseur = difprops.longueur_diffuseur
+    product_type = productprops.product_type
+    largeur_accroche = difprops.largeur_accroche
+
+    N = difprops.type
+
+    rang = difprops.getRang()
+
+    edgesCadre = []
+
+    if product_type == "0" or product_type == "1":
+        vertsCadre = [
+            (0, epaisseur, 0),
+            (0, largeur_diffuseur - epaisseur, 0),
+            (
+                (profondeur / 2 - tenon_cadre / 2) + offset,
+                largeur_diffuseur - epaisseur,
+                0,
+            ),
+            ((profondeur / 2 - tenon_cadre / 2), largeur_diffuseur, 0),
+            ((profondeur / 2 + tenon_cadre / 2), largeur_diffuseur, 0),
+            (
+                (profondeur / 2 + tenon_cadre / 2) - offset,
+                largeur_diffuseur - epaisseur,
+                0,
+            ),
+            ((profondeur), largeur_diffuseur - epaisseur, 0),
+            ((profondeur), epaisseur, 0),
+            ((profondeur / 2 + tenon_cadre / 2) - offset, epaisseur, 0),
+            ((profondeur / 2 + tenon_cadre / 2), 0, 0),
+            ((profondeur / 2 - tenon_cadre / 2), 0, 0),
+            ((profondeur / 2 - tenon_cadre / 2) + offset, epaisseur, 0),
+        ]
+
+        vertsMortaisesInt = []
+
+        for k in range(1, round(N * longueur_diffuseur)):
             vertsMortaisesInt += [
                 (bord_cadre - offset, startup + rang * k + epaisseur / 2 + offset, 0),
                 (
@@ -67,138 +295,72 @@ def add_cadre_mortaise(difprops):
                 ),
             ]
 
-    edgesMortaisesInt = []
+        edgesMortaisesInt = []
 
-    i = 0
+        i = 0
 
-    for k in range(len(vertsCadre), len(vertsCadre) + len(vertsMortaisesInt)):
-        i += 1
-        if i == 4 or k == len(vertsCadre):
-            i = 0
-            edgesMortaisesInt += [
-                (k, k + 1),
-                (k + 1, k + 2),
-                (k + 2, k + 3),
-                (k + 3, k),
-            ]
+        for k in range(len(vertsCadre), len(vertsCadre) + len(vertsMortaisesInt)):
+            i += 1
+            if i == 4 or k == len(vertsCadre):
+                i = 0
+                edgesMortaisesInt += [
+                    (k, k + 1),
+                    (k + 1, k + 2),
+                    (k + 2, k + 3),
+                    (k + 3, k),
+                ]
 
-    edgesCadre = [
-        (0, 1),
-        (1, 2),
-        (2, 3),
-        (3, 4),
-        (4, 5),
-        (5, 6),
-        (6, 7),
-        (7, 8),
-        (8, 9),
-        (9, 10),
-        (10, 11),
-        (11, 0),
-    ]
-
-    verts = [*list(vertsCadre), *list(vertsMortaisesInt)]
-    edges = [*list(edgesCadre), *list(edgesMortaisesInt)]
-
-    return verts, edges, "Cadre mortaise"
-
-
-def add_cadre_tenon(difprops):
-    epaisseur = difprops.epaisseur
-    profondeur = difprops.profondeur
-    tenon_cadre = difprops.tenon_cadre
-    bord_cadre = difprops.bord_cadre
-    largeur_diffuseur = difprops.largeur_diffuseur
-    offset = difprops.offset
-    tenon_peigne = difprops.tenon_peigne
-    startup = epaisseur / 2
-    longueur_diffuseur = difprops.longueur_diffuseur
-
-    N = difprops.type
-
-    rang = difprops.getRang()
-
-    vertsCadre = [
-        (0, epaisseur, 0),
-        (0, largeur_diffuseur - epaisseur, 0),
-        ((profondeur / 2 - tenon_cadre / 2) + offset, largeur_diffuseur - epaisseur, 0),
-        ((profondeur / 2 - tenon_cadre / 2), largeur_diffuseur, 0),
-        ((profondeur / 2 + tenon_cadre / 2), largeur_diffuseur, 0),
-        ((profondeur / 2 + tenon_cadre / 2) - offset, largeur_diffuseur - epaisseur, 0),
-        ((profondeur), largeur_diffuseur - epaisseur, 0),
-        ((profondeur), epaisseur, 0),
-        ((profondeur / 2 + tenon_cadre / 2) - offset, epaisseur, 0),
-        ((profondeur / 2 + tenon_cadre / 2), 0, 0),
-        ((profondeur / 2 - tenon_cadre / 2), 0, 0),
-        ((profondeur / 2 - tenon_cadre / 2) + offset, epaisseur, 0),
-    ]
-
-    vertsMortaisesInt = []
-
-    for k in range(1, round(N * longueur_diffuseur)):
-        vertsMortaisesInt += [
-            (bord_cadre - offset, startup + rang * k + epaisseur / 2 + offset, 0),
+    if product_type == "2":
+        vertsCadre = [
+            (0, epaisseur, 0),
+            (0, largeur_accroche / 2 - tenon_cadre / 2, 0),
+            (epaisseur, (largeur_accroche / 2 - tenon_cadre / 2) - offset, 0),
+            (epaisseur, (largeur_accroche / 2 + tenon_cadre / 2) + offset, 0),
+            (0, largeur_accroche / 2 + tenon_cadre / 2, 0),
+            (0, largeur_diffuseur - largeur_accroche / 2 - tenon_cadre / 2, 0),
             (
-                bord_cadre + tenon_peigne + offset,
-                startup + rang * k + epaisseur / 2 + offset,
+                epaisseur,
+                (largeur_diffuseur - largeur_accroche / 2 - tenon_cadre / 2) - offset,
                 0,
             ),
             (
-                bord_cadre + tenon_peigne + offset,
-                startup + rang * k - epaisseur / 2 - offset,
+                epaisseur,
+                (largeur_diffuseur - largeur_accroche / 2 + tenon_cadre / 2) + offset,
                 0,
             ),
-            (bord_cadre - offset, startup + rang * k - epaisseur / 2 - offset, 0),
+            (0, largeur_diffuseur - largeur_accroche / 2 + tenon_cadre / 2, 0),
+            (0, largeur_diffuseur - epaisseur, 0),
             (
-                profondeur - bord_cadre + offset,
-                startup + rang * k + epaisseur / 2 + offset,
+                (profondeur / 2 - tenon_cadre / 2) + offset,
+                largeur_diffuseur - epaisseur,
                 0,
             ),
+            ((profondeur / 2 - tenon_cadre / 2), largeur_diffuseur, 0),
+            ((profondeur / 2 + tenon_cadre / 2), largeur_diffuseur, 0),
             (
-                profondeur - bord_cadre + offset,
-                startup + rang * k - epaisseur / 2 - offset,
+                (profondeur / 2 + tenon_cadre / 2) - offset,
+                largeur_diffuseur - epaisseur,
                 0,
             ),
-            (
-                profondeur - bord_cadre - tenon_peigne - offset,
-                startup + rang * k - epaisseur / 2 - offset,
-                0,
-            ),
-            (
-                profondeur - bord_cadre - tenon_peigne - offset,
-                startup + rang * k + epaisseur / 2 + offset,
-                0,
-            ),
+            ((profondeur), largeur_diffuseur - epaisseur, 0),
+            ((profondeur), epaisseur, 0),
+            ((profondeur / 2 + tenon_cadre / 2) - offset, epaisseur, 0),
+            ((profondeur / 2 + tenon_cadre / 2), 0, 0),
+            ((profondeur / 2 - tenon_cadre / 2), 0, 0),
+            ((profondeur / 2 - tenon_cadre / 2) + offset, epaisseur, 0),
         ]
 
-    edgesMortaisesInt = []
+        vertsMortaisesInt = []
 
-    i = 0
+        edgesMortaisesInt = []
 
-    for k in range(len(vertsCadre), len(vertsCadre) + len(vertsMortaisesInt)):
-        i += 1
-        if i == 4 or k == len(vertsCadre):
-            i = 0
-            edgesMortaisesInt += [
-                (k, k + 1),
-                (k + 1, k + 2),
-                (k + 2, k + 3),
-                (k + 3, k),
-            ]
+    for k in range(0, len(vertsCadre) - 1):
+        edgesCadre += [
+            (k, k + 1),
+        ]
 
-    edgesCadre = [
-        (0, 1),
-        (1, 2),
-        (2, 3),
-        (3, 4),
-        (4, 5),
-        (5, 6),
-        (6, 7),
-        (7, 8),
-        (8, 9),
-        (9, 10),
-        (10, 11),
-        (11, 0),
+    edgesCadre += [
+        (len(vertsCadre) - 1, 0),
     ]
 
     verts = [*list(vertsCadre), *list(vertsMortaisesInt)]
@@ -384,6 +546,7 @@ def add_accroche(difprops, productprops):
     largeur_diffuseur = difprops.largeur_diffuseur
     bord_cadre = difprops.bord_cadre
     tenon_cadre = difprops.tenon_cadre
+    offset = difprops.offset
 
     longueurTotale = difprops.getLongueur()
     division = (rang - epaisseur) / 12
@@ -420,21 +583,56 @@ def add_accroche(difprops, productprops):
         ]
     elif product_type == "2":
         vertsCadre = [
-            (0, 0, 0),
+            (epaisseur, 0, 0),
+            (epaisseur, (largeur_accroche / 2 - tenon_cadre / 2) + offset, 0),
             (0, largeur_accroche / 2 - tenon_cadre / 2, 0),
-            (-epaisseur, largeur_accroche / 2 - tenon_cadre / 2, 0),
-            (-epaisseur, largeur_accroche / 2 + tenon_cadre / 2, 0),
             (0, largeur_accroche / 2 + tenon_cadre / 2, 0),
-            (0, largeur_accroche, 0),
-            (largeur_diffuseur, largeur_accroche, 0),
-            (largeur_diffuseur, largeur_accroche / 2 + tenon_cadre / 2, 0),
-            (largeur_diffuseur+epaisseur, largeur_accroche / 2 + tenon_cadre / 2, 0),
-            (largeur_diffuseur+epaisseur, largeur_accroche / 2 - tenon_cadre / 2, 0),
-            (largeur_diffuseur, largeur_accroche / 2 - tenon_cadre / 2, 0),
-            (largeur_diffuseur, 0, 0),
-            (largeur_diffuseur - largeur_diffuseur / 8, 0, 0),
+            (epaisseur, largeur_accroche / 2 + tenon_cadre / 2 - offset, 0),
+            (epaisseur, largeur_accroche, 0),
+            ((largeur_accroche / 2 - tenon_cadre / 2), largeur_accroche, 0),
             (
-                largeur_diffuseur - largeur_diffuseur / 8 - largeur_diffuseur / 8,
+                (largeur_accroche / 2 - tenon_cadre / 2) - offset,
+                largeur_accroche + epaisseur,
+                0,
+            ),
+            (
+                (largeur_accroche / 2 + tenon_cadre / 2) + offset,
+                largeur_accroche + epaisseur,
+                0,
+            ),
+            ((largeur_accroche / 2 + tenon_cadre / 2), largeur_accroche, 0),
+            (
+                (largeur_diffuseur - largeur_accroche / 2 - tenon_cadre / 2),
+                largeur_accroche,
+                0,
+            ),
+            (
+                (largeur_diffuseur - largeur_accroche / 2 - tenon_cadre / 2) - offset,
+                largeur_accroche + epaisseur,
+                0,
+            ),
+            (
+                (largeur_diffuseur - largeur_accroche / 2 + tenon_cadre / 2) + offset,
+                largeur_accroche + epaisseur,
+                0,
+            ),
+            (
+                (largeur_diffuseur - largeur_accroche / 2 + tenon_cadre / 2),
+                largeur_accroche,
+                0,
+            ),
+            (largeur_diffuseur - epaisseur, largeur_accroche, 0),
+            (largeur_diffuseur - epaisseur, (largeur_accroche / 2 + tenon_cadre / 2) - offset, 0),
+            (largeur_diffuseur, largeur_accroche / 2 + tenon_cadre / 2, 0),
+            (largeur_diffuseur, largeur_accroche / 2 - tenon_cadre / 2, 0),
+            (largeur_diffuseur - epaisseur, (largeur_accroche / 2 - tenon_cadre / 2) + offset, 0),
+            (largeur_diffuseur - epaisseur, 0, 0),
+            (largeur_diffuseur - epaisseur - largeur_diffuseur / 8, 0, 0),
+            (
+                largeur_diffuseur
+                - epaisseur
+                - largeur_diffuseur / 8
+                - largeur_diffuseur / 8,
                 largeur_accroche / 3,
                 0,
             ),
