@@ -8,6 +8,11 @@ from bpy.props import (
     EnumProperty,
 )
 
+class UIProductProps(bpy.types.PropertyGroup):
+    product_type: EnumProperty(
+        items=(("0", "Diffuseur 2D", ""), ("1", "Diffuseur 1D", ""), ("2", "Absorbeur", ""))
+    )
+
 
 class DiffuseurProps(bpy.types.PropertyGroup):
     epaisseur: FloatProperty(
@@ -91,14 +96,24 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         step=25,
     )
 
-    diffuseur_type_is2D: EnumProperty(
-        items=(("0", "Diffuseur 2D", ""), ("1", "Diffuseur 1D", ""))
+    largeur_accroche: FloatProperty(
+        name="largeur_accroche",
+        description="Box largeur_accroche",
+        min=0.05,
+        max=1,
+        default=0.5,
+        unit="LENGTH",
+        precision=4,
+    )
+
+    product_type: EnumProperty(
+        items=(("0", "Diffuseur 2D", ""), ("1", "Diffuseur 1D", ""), ("2", "Absorbeur", ""))
     )
 
     def getDifName(self):
         dif_name = (
             "D"
-            + ("2" if self.diffuseur_type_is2D == "0" else "1")
+            + ("2" if self.product_type == "0" else "1")
             + "N"
             + str(self.type)
             + "W"
@@ -122,22 +137,23 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         )
         return longueurTotale
 
-    def listAttributes(self):
-        attributes = [
-            a
-            for a in dir(self)
-            if not (
-                a.startswith("__")
-                or "bl_rna" in a
-                or "name" in a
-                or "rna_type" in a
-                or "listAttributes" in a
-                or "getRang" in a
-                or "getLongueur" in a
-                or "getDifName" in a
-            )
-        ]
-        return attributes
+    def listAttributes(self, product):
+        match product:
+            case "0":
+                return [
+                        "epaisseur","type","profondeur", "bord_cadre", "largeur_diffuseur","tenon_cadre", "offset", "tenon_peigne", "longueur_diffuseur"
+                    ]
+            case "1":
+                return [
+                        "epaisseur","type","profondeur", "bord_cadre", "largeur_diffuseur","tenon_cadre", "offset", "tenon_peigne", "longueur_diffuseur"
+                    ]
+            case "2":
+                return [
+                        "epaisseur","profondeur", "bord_cadre", "largeur_diffuseur","tenon_cadre", "offset", "longueur_diffuseur", "largeur_accroche"
+                    ]
+            case _:
+                return 
+        
 
 
 class ArrayProps(bpy.types.PropertyGroup):
@@ -230,22 +246,22 @@ class ArrayProps(bpy.types.PropertyGroup):
         min=0,
     )
 
-    def listAttributes(self):
-        attributes = [
-            a
-            for a in dir(self)
-            if not (
-                a.startswith("__")
-                or "bl_rna" in a
-                or "name" in a
-                or "rna_type" in a
-                or "listAttributes" in a
-                or "getRang" in a
-                or "getLongueur" in a
-                or "getDifName" in a
-            )
-        ]
-        return attributes
+    def listAttributes(self, product):
+        match product:
+            case "0":
+                return [
+                        "peigne_court_x","peigne_court_y","peigne_long_x", "peigne_long_y", "cadre_mortaise_x","cadre_mortaise_y", "cadre_tenon_x", "cadre_tenon_y", "carreau_x", "carreau_y","accroche_x","accroche_y" 
+                    ]
+            case "1":
+                return [
+                        "peigne_court_x","peigne_court_y","peigne_long_x", "peigne_long_y", "cadre_mortaise_x","cadre_mortaise_y", "cadre_tenon_x", "cadre_tenon_y", "carreau_x", "carreau_y","accroche_x","accroche_y" 
+                    ]
+            case "2":
+                return [
+                        "cadre_mortaise_x","cadre_mortaise_y", "cadre_tenon_x", "cadre_tenon_y", "accroche_x","accroche_y" 
+                    ]
+            case _:
+                return 
 
 
 class PositionProps(bpy.types.PropertyGroup):
@@ -287,23 +303,22 @@ class PositionProps(bpy.types.PropertyGroup):
     def update(self, target, cursor):
         self[target] = cursor
 
-    def listAttributes(self):
-        attributes = [
-            a
-            for a in dir(self)
-            if not (
-                a.startswith("__")
-                or "bl_rna" in a
-                or "name" in a
-                or "rna_type" in a
-                or "listAttributes" in a
-                or "getRang" in a
-                or "getLongueur" in a
-                or "getDifName" in a
-                or "update" in a
-            )
-        ]
-        return attributes
+    def listAttributes(self, product):
+        match product:
+            case "0":
+                return [
+                        "peigne_court_position","peigne_long_position","cadre_mortaise_position", "cadre_tenon_position", "carreau_position","accroche_position" 
+                    ]
+            case "1":
+                return [
+                        "peigne_court_position","peigne_long_position","cadre_mortaise_position", "cadre_tenon_position", "carreau_position","accroche_position" 
+                    ]
+            case "2":
+                return [
+                        "cadre_mortaise_position", "cadre_tenon_position", "accroche_position" 
+                    ]
+            case _:
+                return 
 
 
 class PrepareProps(bpy.types.PropertyGroup):
@@ -354,7 +369,7 @@ class PrepareProps(bpy.types.PropertyGroup):
         return attributes
 
 
-classes = [DiffuseurProps, ArrayProps, PositionProps, PrepareProps]
+classes = [DiffuseurProps, ArrayProps, PositionProps, PrepareProps, UIProductProps]
 
 
 def register():
@@ -364,6 +379,7 @@ def register():
     bpy.types.Scene.array_props = bpy.props.PointerProperty(type=ArrayProps)
     bpy.types.Scene.pos_props = bpy.props.PointerProperty(type=PositionProps)
     bpy.types.Scene.prep_props = bpy.props.PointerProperty(type=PrepareProps)
+    bpy.types.Scene.product_props = bpy.props.PointerProperty(type=UIProductProps)
     bpy.types.Scene.dif_parts = []
 
 
@@ -375,3 +391,4 @@ def unregister():
     del bpy.types.Scene.pos_props
     del bpy.types.Scene.prep_props
     del bpy.types.Scene.dif_parts
+    del bpy.types.Scene.product_props

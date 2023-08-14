@@ -37,7 +37,6 @@ class Diffuseur_SideBar(Panel):
     bl_region_type = "UI"
     bl_category = "DIFFUSEURS"
 
-    enum_items = (("0", "Cube", ""), ("1", "Pyramid", ""))
 
     def draw(self, context):
         layout = self.layout
@@ -46,9 +45,7 @@ class Diffuseur_SideBar(Panel):
         arrayprops = scene.array_props
         posprops = scene.pos_props
         prepprops = scene.prep_props
-        dif_attributes = difprops.listAttributes()
-        array_attributes = arrayprops.listAttributes()
-        prep_attributes = prepprops.listAttributes()
+        productprops = scene.product_props
 
         # presets
         row1 = layout.row(align=True)
@@ -68,8 +65,8 @@ class Diffuseur_SideBar(Panel):
         box = layout.box()
         box.label(text="Dimensions", icon="X")
         row = box.row()
-        row.prop(difprops, "diffuseur_type_is2D", expand=True)
-        for att in (x for x in dif_attributes if x != "diffuseur_type_is2D"):
+        row.prop(productprops, "product_type", expand=True)
+        for att in (x for x in difprops.listAttributes(productprops.product_type)):
             box.prop(difprops, att)
         box.label(text=f"Rang : {difprops.getRang() * 1000} mm")
 
@@ -85,7 +82,7 @@ class Diffuseur_SideBar(Panel):
             text="X count",
         )
         col2.label(text="Y count")
-        for arr in (x for x in array_attributes if x != "array_offset"):
+        for arr in (x for x in arrayprops.listAttributes(productprops.product_type) if x != "array_offset"):
             if arr[-1] == "x":
                 col1.prop(arrayprops, arr)
             if arr[-1] == "y":
@@ -101,9 +98,7 @@ class Diffuseur_SideBar(Panel):
             text=f"Cursor 3D : X{round(cursor[0], 2)}  Y{round(cursor[1], 2)}  Z{round(cursor[2], 2)}"
         )
 
-        listPos = posprops.listAttributes()
-
-        for piece in listPos:
+        for piece in posprops.listAttributes(productprops.product_type):
             row = box.row()
             row.prop(posprops, piece)
             op =  row.operator("mesh.pick_position", text="", icon="EYEDROPPER")
@@ -111,8 +106,16 @@ class Diffuseur_SideBar(Panel):
             op.target = piece
             row.operator(f"mesh.{piece.replace('_position', '')}", text="", icon="ADD")
         
+        match productprops.product_type :
+            case "0":
+                box.operator("mesh.add_diffuseur")
+            case "1":
+                box.operator("mesh.add_diffuseur")
+            case "2":
+                box.operator("mesh.add_absorbeur")
 
-        box.operator("mesh.add_diffuseur")
+
+
 
         # Prepare to Cam
         layout.separator()

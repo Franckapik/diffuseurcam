@@ -193,7 +193,7 @@ class AddAccroche(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_accroche(difprops)
+        vertex, edges, name = add_accroche(difprops, scene.product_props)
         arrayprops = scene.array_props
 
         # create a bmesh
@@ -214,7 +214,7 @@ class AddAccroche(bpy.types.Operator, AddObjectHelper):
                 )
             )
         )
-        mesh.update(calc_edges=True)
+        mesh.update(calc_edges=True)    
 
         # Load BMesh with mesh data
         bm.from_mesh(mesh)
@@ -369,6 +369,18 @@ class AddDiffuseur(bpy.types.Operator, AddObjectHelper):
 
         return {"FINISHED"}
     
+class AddAbsorbeur(bpy.types.Operator, AddObjectHelper):
+    bl_idname = "mesh.add_absorbeur"
+    bl_label = "Generer Absorbeur"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        AddCadreMortaise.execute(self, context)
+        AddCadreTenon.execute(self, context)
+        AddAccroche.execute(self, context)
+
+        return {"FINISHED"}
+    
 class PickPosition(bpy.types.Operator, AddObjectHelper):
     bl_idname = "mesh.pick_position"
     bl_label = "Set position from Cursor 3D"
@@ -462,8 +474,9 @@ classes = [
     AddPeigneLong,
     AddAccroche,
     AddDiffuseur,
+    AddAbsorbeur,
     PrepareToCam,
-    PickPosition
+    PickPosition,
 ]
 
 
