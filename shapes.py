@@ -259,7 +259,7 @@ def add_cadre_tenon(difprops, productprops):
 
         vertsMortaisesInt = []
 
-        for k in range(1, round(N )):
+        for k in range(1, round(N)):
             vertsMortaisesInt += [
                 (bord_cadre - offset, startup + rang * k + epaisseur / 2 + offset, 0),
                 (
@@ -557,7 +557,6 @@ def add_accroche(difprops, productprops):
             (0, rang - epaisseur, 0),
             (rang - epaisseur, rang - epaisseur, 0),
             (rang - epaisseur, 0, 0),
-            (0, 0, 0),
         ]
         vertsAccroche = [
             (division * 4, division * 4, 0),
@@ -572,7 +571,6 @@ def add_accroche(difprops, productprops):
             (0, longueurTotale - epaisseur * 2, 0),
             (rang - epaisseur, longueurTotale - epaisseur * 2, 0),
             (rang - epaisseur, 0, 0),
-            (0, 0, 0),
         ]
         vertsAccroche = [
             (division * 4, division * 4, 0),
@@ -584,10 +582,10 @@ def add_accroche(difprops, productprops):
     elif product_type == "2":
         vertsCadre = [
             (epaisseur, 0, 0),
-            (epaisseur, (largeur_accroche / 2 - tenon_cadre / 2) + offset, 0),
-            (0, largeur_accroche / 2 - tenon_cadre / 2, 0),
-            (0, largeur_accroche / 2 + tenon_cadre / 2, 0),
-            (epaisseur, largeur_accroche / 2 + tenon_cadre / 2 - offset, 0),
+            (epaisseur, epaisseur + (largeur_accroche / 2 - tenon_cadre / 2) + offset, 0),
+            (0, epaisseur + largeur_accroche / 2 - tenon_cadre / 2, 0),
+            (0, epaisseur + largeur_accroche / 2 + tenon_cadre / 2, 0),
+            (epaisseur, epaisseur + largeur_accroche / 2 + tenon_cadre / 2 - offset, 0),
             (epaisseur, largeur_accroche, 0),
             ((largeur_accroche / 2 - tenon_cadre / 2), largeur_accroche, 0),
             (
@@ -622,10 +620,18 @@ def add_accroche(difprops, productprops):
                 0,
             ),
             (largeur_diffuseur - epaisseur, largeur_accroche, 0),
-            (largeur_diffuseur - epaisseur, (largeur_accroche / 2 + tenon_cadre / 2) - offset, 0),
-            (largeur_diffuseur, largeur_accroche / 2 + tenon_cadre / 2, 0),
-            (largeur_diffuseur, largeur_accroche / 2 - tenon_cadre / 2, 0),
-            (largeur_diffuseur - epaisseur, (largeur_accroche / 2 - tenon_cadre / 2) + offset, 0),
+            (
+                largeur_diffuseur - epaisseur,
+                epaisseur + (largeur_accroche / 2 + tenon_cadre / 2) - offset,
+                0,
+            ),
+            (largeur_diffuseur, epaisseur + largeur_accroche / 2 + tenon_cadre / 2, 0),
+            (largeur_diffuseur, epaisseur + largeur_accroche / 2 - tenon_cadre / 2, 0),
+            (
+                largeur_diffuseur - epaisseur,
+                epaisseur + (largeur_accroche / 2 - tenon_cadre / 2) + offset,
+                0,
+            ),
             (largeur_diffuseur - epaisseur, 0, 0),
             (largeur_diffuseur - epaisseur - largeur_diffuseur / 8, 0, 0),
             (
@@ -643,7 +649,6 @@ def add_accroche(difprops, productprops):
             ),
             (largeur_diffuseur / 8 + largeur_diffuseur / 8, largeur_accroche / 3, 0),
             (largeur_diffuseur / 8, 0, 0),
-            (0, 0, 0),
         ]
         vertsAccroche = [
             (division * 4, division * 4, 0),
@@ -662,6 +667,11 @@ def add_accroche(difprops, productprops):
         edgesCadre += [
             (k, k + 1),
         ]
+
+    edgesCadre += [
+        (len(vertsCadre) - 1, 0),
+    ]
+
     for k in range(len(vertsCadre), len(vertsCadre) + len(vertsAccroche) - 1):
         edgesAccroche += [
             (k, k + 1),
