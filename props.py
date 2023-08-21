@@ -105,6 +105,10 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         unit="LENGTH",
         precision=4,
     )
+    cadre_avant: BoolProperty(
+        name="Cadre_avant",
+        description="Cadre avant absorbeur",
+    )
 
     product_type: EnumProperty(
         items=(("0", "Diffuseur 2D", ""), ("1", "Diffuseur 1D", ""), ("2", "Absorbeur", ""))
@@ -149,7 +153,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     ]
             case "2":
                 return [
-                        "epaisseur","profondeur", "bord_cadre", "largeur_diffuseur","tenon_cadre", "offset", "longueur_diffuseur", "largeur_accroche"
+                        "epaisseur","profondeur", "bord_cadre", "largeur_diffuseur","tenon_cadre", "offset", "longueur_diffuseur", "largeur_accroche", "cadre_avant"
                     ]
             case _:
                 return 

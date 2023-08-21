@@ -9,6 +9,7 @@ def add_cadre_mortaise(difprops, productprops):
     tenon_peigne = difprops.tenon_peigne
     longueur_diffuseur = difprops.longueur_diffuseur
     largeur_accroche = difprops.largeur_accroche
+    cadre_avant = difprops.cadre_avant
     product_type = productprops.product_type
     startup = epaisseur / 2
     N = difprops.type
@@ -48,12 +49,16 @@ def add_cadre_mortaise(difprops, productprops):
             (0, longueurTotale, 0),
             *mortaiseHaut((profondeur / 2 - tenon_cadre / 2), longueurTotale, difprops),
             ((profondeur), longueurTotale, 0),
-            *mortaiseDroite(
-                profondeur,
-                longueurTotale - largeur_accroche / 2 + tenon_cadre / 2,
-                difprops,
+            *(
+                a
+                for a in mortaiseDroite(profondeur, longueurTotale - largeur_accroche / 2 + tenon_cadre / 2, difprops)
+                if cadre_avant == True
             ),
-            *mortaiseDroite(profondeur, largeur_accroche / 2 + tenon_cadre / 2, difprops),
+            *(
+                a
+                for a in mortaiseDroite(profondeur, largeur_accroche / 2 + tenon_cadre / 2, difprops)
+                if cadre_avant == True
+            ),
             ((profondeur), 0, 0),
             *mortaiseBas((profondeur / 2 + tenon_cadre / 2), 0, difprops),
         ]
@@ -97,6 +102,8 @@ def add_cadre_tenon(difprops, productprops):
     startup = epaisseur / 2
     product_type = productprops.product_type
     largeur_accroche = difprops.largeur_accroche
+    cadre_avant = difprops.cadre_avant
+
 
     N = difprops.type
 
@@ -138,6 +145,16 @@ def add_cadre_tenon(difprops, productprops):
                 difprops,
             ),
             ((profondeur), largeur_diffuseur - epaisseur, 0),
+            *(
+                a
+                for a in mortaiseDroite(profondeur, largeur_diffuseur - largeur_accroche / 2 + tenon_cadre / 2, difprops)
+                if cadre_avant == True
+            ),
+            *(
+                a
+                for a in mortaiseDroite(profondeur, largeur_accroche / 2 + tenon_cadre / 2, difprops)
+                if cadre_avant == True
+            ),
             ((profondeur), epaisseur, 0),
             *tenonBas((profondeur / 2 + tenon_cadre / 2) - offset, epaisseur, difprops),
         ]
