@@ -402,7 +402,7 @@ def add_accroche(difprops, productprops):
             (largeur_diffuseur / 8, 0, 0),
         ]
         vertsAccroche = trou_accroche(division * 4, division * 4, division)
-        vertsAccroche2 = trou_accroche(longueurTotale - division * 9, division * 4, division)
+        vertsAccroche2 = trou_accroche(largeur_diffuseur - division * 9, division * 4, division)
 
     # bpy.ops.mesh.bevel(offset=0.003, offset_pct=0, segments=3, profile=0.987013, affect='VERTICES', release_confirm=True)
 
