@@ -23,7 +23,7 @@ class OT_AddMyPreset(AddPresetBase, Operator):
     # Common variable used for all preset values
     preset_defines = ["obj = bpy.context.object", "scene = bpy.context.scene"]
     # Properties to store in the preset
-    preset_values = ["scene.dif_props", "scene.array_props", "scene.pos_props"]
+    preset_values = ["scene.dif_props", "scene.array_props", "scene.pos_props", "scene.prep_props", "scene.product_props"]
     # Directory to store the presets
     preset_subdir = "object/display"
 
