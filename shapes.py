@@ -118,13 +118,13 @@ def add_cadre_tenon(difprops, productprops):
             (0, epaisseur, 0),
             (0, largeur_diffuseur - epaisseur, 0),
             *tenonHaut(
-                (profondeur / 2 - tenon_cadre / 2) + offset,
+                (profondeur / 2 - tenon_cadre / 2),
                 largeur_diffuseur - epaisseur,
                 difprops,
             ),
             ((profondeur), largeur_diffuseur - epaisseur, 0),
             ((profondeur), epaisseur, 0),
-            *tenonBas((profondeur / 2 + tenon_cadre / 2) - offset, epaisseur, difprops),
+            *tenonBas((profondeur / 2 + tenon_cadre / 2), epaisseur, difprops),
         ]
 
         for k in range(1, round(N)):
@@ -156,7 +156,7 @@ def add_cadre_tenon(difprops, productprops):
                 if cadre_avant == True
             ),
             ((profondeur), epaisseur, 0),
-            *tenonBas((profondeur / 2 + tenon_cadre / 2) - offset, epaisseur, difprops),
+            *tenonBas((profondeur / 2 + tenon_cadre / 2), epaisseur, difprops),
         ]
 
     i = 0
