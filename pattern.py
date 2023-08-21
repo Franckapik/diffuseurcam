@@ -132,19 +132,19 @@ def tenonHaut(x,y,difprops):
     tenon_cadre = difprops.tenon_cadre
 
     return [
-        (x, y, 0),
+        (x + offset, y, 0),
         (
-            x - offset,
-            y + epaisseur,
-            0,
-        ),
-        (
-            x + offset + tenon_cadre,
+            x,
             y + epaisseur,
             0,
         ),
         (
             x + tenon_cadre,
+            y + epaisseur,
+            0,
+        ),
+        (
+            x - offset + tenon_cadre,
             y,
             0,
         ),
@@ -156,20 +156,20 @@ def tenonGauche(x,y,difprops):
     tenon_cadre = difprops.tenon_cadre
 
     return [
-        (x, y, 0),
+        (x, y + offset, 0),
         (
             x - epaisseur,
-            y - offset,
+            y ,
             0,
         ),
         (
             x - epaisseur,
-            y + tenon_cadre + offset,
+            y + tenon_cadre ,
             0,
         ),
         (
             x,
-            y + tenon_cadre ,
+            y + tenon_cadre - offset ,
             0,
         ),
     ]
@@ -180,20 +180,20 @@ def tenonDroit(x,y,difprops):
     tenon_cadre = difprops.tenon_cadre
 
     return [
-        (x, y, 0),
+        (x, y - offset, 0),
         (
             x + epaisseur,
-            y + offset,
+            y ,
             0,
         ),
         (
             x + epaisseur,
-            y - tenon_cadre - offset,
+            y - tenon_cadre ,
             0,
         ),
         (
             x,
-            y - tenon_cadre  ,
+            y - tenon_cadre + offset ,
             0,
         ),
     ]
@@ -204,19 +204,19 @@ def tenonBas(x,y,difprops):
     tenon_cadre = difprops.tenon_cadre
 
     return [
-        (x, y, 0),
+        (x - offset, y, 0),
         (
-            x + offset,
-            y - epaisseur,
-            0,
-        ),
-        (
-            x - offset - tenon_cadre,
+            x ,
             y - epaisseur,
             0,
         ),
         (
             x - tenon_cadre,
+            y - epaisseur,
+            0,
+        ),
+        (
+            x +offset -  tenon_cadre,
             y,
             0,
         ),
