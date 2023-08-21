@@ -97,7 +97,6 @@ def add_cadre_tenon(difprops, productprops):
     tenon_cadre = difprops.tenon_cadre
     bord_cadre = difprops.bord_cadre
     largeur_diffuseur = difprops.largeur_diffuseur
-    offset = difprops.offset
     tenon_peigne = difprops.tenon_peigne
     startup = epaisseur / 2
     product_type = productprops.product_type
@@ -217,7 +216,6 @@ def add_peigne_court(difprops):
         (0, largeur_diffuseur - epaisseur, 0),
         *tenonPeigneHaut(bord_cadre, largeur_diffuseur - epaisseur, difprops),
         *tenonPeigneHaut(profondeur - bord_cadre - tenon_peigne, largeur_diffuseur - epaisseur, difprops),
-        (profondeur - bord_cadre - offset, largeur_diffuseur - epaisseur, 0),
         (profondeur, largeur_diffuseur - epaisseur, 0),
         # peignes
         *list(peignes),
@@ -295,7 +293,6 @@ def add_peigne_long(difprops):
 def add_carreau(difprops):
     product_type = difprops.product_type
     epaisseur = difprops.epaisseur
-    offset = difprops.offset
 
     N = difprops.type
     rang = difprops.getRang()
