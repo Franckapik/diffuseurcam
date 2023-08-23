@@ -445,8 +445,8 @@ def add_accroche(difprops, productprops):
             ),
             (largeur_diffuseur / 8, 0, 0),
         ]
-        vertsAccroche = trou_accroche(division * 4, division * 4, division)
-        vertsAccroche2 = trou_accroche(largeur_diffuseur - division * 9, division * 4, division)
+    vertsAccroche = trou_accroche(largeur_diffuseur / 12, epaisseur + largeur_accroche / 4, division)
+    vertsAccroche2 = trou_accroche(largeur_diffuseur - largeur_diffuseur / 12, epaisseur + largeur_accroche/4, division)
 
     # bpy.ops.mesh.bevel(offset=0.003, offset_pct=0, segments=3, profile=0.987013, affect='VERTICES', release_confirm=True)
 
@@ -487,3 +487,170 @@ def add_accroche(difprops, productprops):
     edges = [*list(edgesCadre), *list(edgesAccroche), *list(edgesAccroche2)]
 
     return verts, edges, "Accroche"
+
+def add_accroche_inverse(difprops, productprops):
+    product_type = productprops.product_type
+    rang = difprops.getRang()
+    epaisseur = difprops.epaisseur
+    largeur_accroche = difprops.largeur_accroche
+    largeur_diffuseur = difprops.largeur_diffuseur
+    tenon_cadre = difprops.tenon_cadre
+
+    longueurTotale = difprops.getLongueur()
+    division = (rang - epaisseur) / 12
+
+    vertsAccroche = []
+    vertsAccroche2 = []
+
+
+    vertsCadre = [
+        (epaisseur, 0, 0),
+        *tenonGauche(
+            epaisseur,
+            epaisseur + (largeur_accroche / 2 - tenon_cadre / 2),
+            difprops,
+        ),
+        (epaisseur, largeur_accroche, 0),
+        *tenonHaut((largeur_accroche / 2 - tenon_cadre / 2), largeur_accroche, difprops),
+        *tenonHaut(
+            (largeur_diffuseur - largeur_accroche / 2 - tenon_cadre / 2),
+            largeur_accroche,
+            difprops,
+        ),
+        (largeur_diffuseur - epaisseur, largeur_accroche, 0),
+        *tenonDroit(
+            largeur_diffuseur - epaisseur,
+            epaisseur + (largeur_accroche / 2 + tenon_cadre / 2),
+            difprops,
+        ),
+        (largeur_diffuseur - epaisseur, 0, 0),
+        (largeur_diffuseur - epaisseur - largeur_diffuseur / 8, 0, 0),
+        (
+            largeur_diffuseur - epaisseur - largeur_diffuseur / 8 - largeur_diffuseur / 8,
+            largeur_accroche / 3,
+            0,
+        ),
+        (
+            largeur_diffuseur / 8 + largeur_diffuseur / 8 + largeur_diffuseur / 8,
+            largeur_accroche / 3,
+            0,
+        ),
+        (
+            largeur_diffuseur / 8 + largeur_diffuseur / 8,
+            largeur_accroche / 3,
+            0,
+        ),
+        (largeur_diffuseur / 8, 0, 0),
+    ]
+    vertsAccroche = trou_accroche_inverse(largeur_diffuseur / 12, epaisseur + largeur_accroche / 4, division)
+    vertsAccroche2 = trou_accroche_inverse(largeur_diffuseur - largeur_diffuseur / 12, epaisseur + largeur_accroche/4, division)
+
+    # bpy.ops.mesh.bevel(offset=0.003, offset_pct=0, segments=3, profile=0.987013, affect='VERTICES', release_confirm=True)
+
+    edgesCadre = []
+    edgesAccroche = []
+    edgesAccroche2 = []
+
+    for k in range(0, len(vertsCadre) - 1):
+        edgesCadre += [
+            (k, k + 1),
+        ]
+
+    edgesCadre += [
+        (len(vertsCadre) - 1, 0),
+    ]
+
+    for k in range(len(vertsCadre), len(vertsCadre) + len(vertsAccroche) - 1):
+        edgesAccroche += [
+            (k, k + 1),
+        ]
+    edgesAccroche += [
+        (len(vertsCadre), len(vertsCadre) + len(vertsAccroche) - 1),
+    ]
+
+    if product_type == "1" or product_type == "2":
+        for k in range(
+            len(vertsCadre) + len(vertsAccroche), len(vertsCadre) + len(vertsAccroche) + len(vertsAccroche2) - 1
+        ):
+            edgesAccroche2 += [
+                (k, k + 1),
+            ]
+
+        edgesAccroche2 += [
+            (len(vertsCadre) + len(vertsAccroche), len(vertsCadre) + len(vertsAccroche) + len(vertsAccroche2) - 1),
+        ]
+
+    verts = [*list(vertsCadre), *list(vertsAccroche), *list(vertsAccroche2)]
+    edges = [*list(edgesCadre), *list(edgesAccroche), *list(edgesAccroche2)]
+
+    return verts, edges, "Accroche"
+
+def add_cadre_avant(difprops, productprops):
+    product_type = productprops.product_type
+    rang = difprops.getRang()
+    epaisseur = difprops.epaisseur
+    largeur_accroche = difprops.largeur_accroche
+    largeur_diffuseur = difprops.largeur_diffuseur
+    tenon_cadre = difprops.tenon_cadre
+
+    longueurTotale = difprops.getLongueur()
+    division = (rang - epaisseur) / 12
+
+    if product_type == "2":
+        vertsCadre = [
+            (epaisseur, 0, 0),
+            *tenonGauche(
+                epaisseur,
+                epaisseur + (largeur_accroche / 2 - tenon_cadre / 2),
+                difprops,
+            ),
+            (epaisseur, largeur_accroche, 0),
+            *tenonHaut((largeur_accroche / 2 - tenon_cadre / 2), largeur_accroche, difprops),
+            *tenonHaut(
+                (largeur_diffuseur - largeur_accroche / 2 - tenon_cadre / 2),
+                largeur_accroche,
+                difprops,
+            ),
+            (largeur_diffuseur - epaisseur, largeur_accroche, 0),
+            *tenonDroit(
+                largeur_diffuseur - epaisseur,
+                epaisseur + (largeur_accroche / 2 + tenon_cadre / 2),
+                difprops,
+            ),
+            (largeur_diffuseur - epaisseur, 0, 0),
+            (largeur_diffuseur - epaisseur - largeur_diffuseur / 8, 0, 0),
+            (
+                largeur_diffuseur - epaisseur - largeur_diffuseur / 8 - largeur_diffuseur / 8,
+                largeur_accroche / 3,
+                0,
+            ),
+            (
+                largeur_diffuseur / 8 + largeur_diffuseur / 8 + largeur_diffuseur / 8,
+                largeur_accroche / 3,
+                0,
+            ),
+            (
+                largeur_diffuseur / 8 + largeur_diffuseur / 8,
+                largeur_accroche / 3,
+                0,
+            ),
+            (largeur_diffuseur / 8, 0, 0),
+        ]
+
+    # bpy.ops.mesh.bevel(offset=0.003, offset_pct=0, segments=3, profile=0.987013, affect='VERTICES', release_confirm=True)
+
+    edgesCadre = []
+
+    for k in range(0, len(vertsCadre) - 1):
+        edgesCadre += [
+            (k, k + 1),
+        ]
+
+    edgesCadre += [
+        (len(vertsCadre) - 1, 0),
+    ]
+
+    verts = [*list(vertsCadre)]
+    edges = [*list(edgesCadre)]
+
+    return verts, edges, "Cadre Avant"

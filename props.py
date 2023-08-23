@@ -262,6 +262,17 @@ class ArrayProps(bpy.types.PropertyGroup):
         default=1,
         min=0,
     )
+    accroche_inverse_x: IntProperty(
+        name="Accroche Inverse",
+        default=1,
+        min=0,
+    )
+
+    accroche_inverse_y: IntProperty(
+        name="Accroche Invserse",
+        default=1,
+        min=0,
+    )
     cadre_central_x: IntProperty(
         name="Cadre Central",
         default=1,
@@ -270,6 +281,17 @@ class ArrayProps(bpy.types.PropertyGroup):
 
     cadre_central_y: IntProperty(
         name="Cadre Central",
+        default=1,
+        min=0,
+    )
+    cadre_avant_x: IntProperty(
+        name="Cadre Avant",
+        default=1,
+        min=0,
+    )
+
+    cadre_avant_y: IntProperty(
+        name="Cadre Avant",
         default=1,
         min=0,
     )
@@ -286,7 +308,7 @@ class ArrayProps(bpy.types.PropertyGroup):
                     ]
             case "2":
                 return [
-                        "cadre_mortaise_x","cadre_mortaise_y", "cadre_tenon_x", "cadre_tenon_y", "accroche_x","accroche_y", "cadre_central_x", "cadre_central_y" 
+                        "cadre_mortaise_x","cadre_mortaise_y", "cadre_tenon_x", "cadre_tenon_y", "accroche_x","accroche_y","accroche_inverse_x", "accroche_inverse_y", "cadre_central_x", "cadre_central_y", "cadre_avant_x", "cadre_avant_y" 
                     ]
             case _:
                 return 
@@ -327,8 +349,18 @@ class PositionProps(bpy.types.PropertyGroup):
         unit="LENGTH",
         precision=4,
     )
+    accroche_inverse_position: FloatVectorProperty(
+        name="Accroche inverse",
+        unit="LENGTH",
+        precision=4,
+    )
     cadre_central_position: FloatVectorProperty(
         name="Cadre Central",
+        unit="LENGTH",
+        precision=4,
+    )
+    cadre_avant_position: FloatVectorProperty(
+        name="Cadre Avant",
         unit="LENGTH",
         precision=4,
     )
@@ -348,7 +380,7 @@ class PositionProps(bpy.types.PropertyGroup):
                     ]
             case "2":
                 return [
-                        "cadre_mortaise_position", "cadre_tenon_position", "accroche_position", "cadre_central_position" 
+                        "cadre_mortaise_position", "cadre_tenon_position", "accroche_position","accroche_inverse_position", "cadre_central_position", "cadre_avant_position" 
                     ]
             case _:
                 return 

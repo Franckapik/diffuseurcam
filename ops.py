@@ -8,7 +8,9 @@ from .shapes import (
     add_peigne_court,
     add_peigne_long,
     add_accroche,
-    add_cadre_central
+    add_cadre_central,
+    add_cadre_avant,
+    add_accroche_inverse
 )
 from .difarray import difArray
 from bpy_extras.object_utils import AddObjectHelper
@@ -240,6 +242,116 @@ class AddAccroche(bpy.types.Operator, AddObjectHelper):
         )
 
         return {"FINISHED"}
+    
+class AddAccrocheInverse(bpy.types.Operator, AddObjectHelper):
+    bl_idname = "mesh.accroche_inverse"
+    bl_label = "Ajouter une accroche inverse"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        scene = context.scene
+        difprops = scene.dif_props
+        vertex, edges, name = add_accroche_inverse(difprops, scene.product_props)
+        arrayprops = scene.array_props
+
+        # create a bmesh
+        bm = bmesh.new()
+
+        # Create new mesh data.
+        mesh = bpy.data.meshes.new(name)
+        mesh.from_pydata(vertex, edges, [])
+
+        # Positionning according to position props
+        posprops = scene.pos_props
+        mesh.transform(
+            mathutils.Matrix.Translation(
+                (
+                    posprops.accroche_inverse_position[0],
+                    posprops.accroche_inverse_position[1],
+                    posprops.accroche_inverse_position[2],
+                )
+            )
+        )
+        mesh.update(calc_edges=True)    
+
+        # Load BMesh with mesh data
+        bm.from_mesh(mesh)
+
+        # Convert BMesh to mesh data, then release BMesh.
+        bm.to_mesh(mesh)
+        bm.free()
+
+        # Add Object to the default collection from mesh
+        mesh_obj = bpy.data.objects.new(mesh.name, mesh)
+        bpy.context.collection.objects.link(mesh_obj)
+
+        bpy.types.Scene.dif_parts.append(mesh_obj.name)
+
+        difArray(
+            mesh_obj,
+            arrayprops.array_offset,
+            arrayprops.accroche_inverse_x,
+            arrayprops.accroche_inverse_y,
+            difprops.getRang(),
+            difprops.getRang(),
+        )
+
+        return {"FINISHED"}
+    
+class AddCadreAvant(bpy.types.Operator, AddObjectHelper):
+    bl_idname = "mesh.cadre_avant"
+    bl_label = "Ajouter un cadre avant"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        scene = context.scene
+        difprops = scene.dif_props
+        vertex, edges, name = add_cadre_avant(difprops, scene.product_props)
+        arrayprops = scene.array_props
+
+        # create a bmesh
+        bm = bmesh.new()
+
+        # Create new mesh data.
+        mesh = bpy.data.meshes.new(name)
+        mesh.from_pydata(vertex, edges, [])
+
+        # Positionning according to position props
+        posprops = scene.pos_props
+        mesh.transform(
+            mathutils.Matrix.Translation(
+                (
+                    posprops.cadre_avant_position[0],
+                    posprops.cadre_avant_position[1],
+                    posprops.cadre_avant_position[2],
+                )
+            )
+        )
+        mesh.update(calc_edges=True)    
+
+        # Load BMesh with mesh data
+        bm.from_mesh(mesh)
+
+        # Convert BMesh to mesh data, then release BMesh.
+        bm.to_mesh(mesh)
+        bm.free()
+
+        # Add Object to the default collection from mesh
+        mesh_obj = bpy.data.objects.new(mesh.name, mesh)
+        bpy.context.collection.objects.link(mesh_obj)
+
+        bpy.types.Scene.dif_parts.append(mesh_obj.name)
+
+        difArray(
+            mesh_obj,
+            arrayprops.array_offset,
+            arrayprops.cadre_avant_x,
+            arrayprops.cadre_avant_y,
+            difprops.getRang(),
+            difprops.getRang(),
+        )
+
+        return {"FINISHED"}
 
 
 class AddPeigneCourt(bpy.types.Operator, AddObjectHelper):
@@ -435,7 +547,9 @@ class AddAbsorbeur(bpy.types.Operator, AddObjectHelper):
         AddCadreMortaise.execute(self, context)
         AddCadreTenon.execute(self, context)
         AddAccroche.execute(self, context)
+        AddAccrocheInverse.execute(self, context)
         AddCadreCentral.execute(self, context)
+        AddCadreAvant.execute(self, context)
 
         return {"FINISHED"}
     
@@ -532,7 +646,9 @@ classes = [
     AddPeigneLong,
     AddCadreCentral,
     AddAccroche,
+    AddCadreAvant,
     AddDiffuseur,
+    AddAccrocheInverse,
     AddAbsorbeur,
     PrepareToCam,
     PickPosition,
