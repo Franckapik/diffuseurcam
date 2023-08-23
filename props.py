@@ -105,9 +105,22 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         unit="LENGTH",
         precision=4,
     )
+    largeur_cadre_central: FloatProperty(
+        name="largeur cadre central",
+        description="Box largeur cadre central",
+        min=0.05,
+        max=1,
+        default=0.5,
+        unit="LENGTH",
+        precision=4,
+    )
     cadre_avant: BoolProperty(
-        name="Cadre_avant",
+        name="Cadre avant",
         description="Cadre avant absorbeur",
+    )
+    cadre_central: BoolProperty(
+        name="Cadre central",
+        description="Cadre central absorbeur",
     )
 
     product_type: EnumProperty(
@@ -153,7 +166,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     ]
             case "2":
                 return [
-                        "epaisseur","profondeur", "bord_cadre", "largeur_diffuseur","tenon_cadre", "offset", "longueur_diffuseur", "largeur_accroche", "cadre_avant"
+                        "epaisseur","profondeur", "bord_cadre", "largeur_diffuseur","tenon_cadre", "offset", "longueur_diffuseur", "largeur_accroche", "largeur_cadre_central", "cadre_avant", "cadre_central"
                     ]
             case _:
                 return 
@@ -249,6 +262,17 @@ class ArrayProps(bpy.types.PropertyGroup):
         default=1,
         min=0,
     )
+    cadre_central_x: IntProperty(
+        name="Cadre Central",
+        default=1,
+        min=0,
+    )
+
+    cadre_central_y: IntProperty(
+        name="Cadre Central",
+        default=1,
+        min=0,
+    )
 
     def listAttributes(self, product):
         match product:
@@ -262,7 +286,7 @@ class ArrayProps(bpy.types.PropertyGroup):
                     ]
             case "2":
                 return [
-                        "cadre_mortaise_x","cadre_mortaise_y", "cadre_tenon_x", "cadre_tenon_y", "accroche_x","accroche_y" 
+                        "cadre_mortaise_x","cadre_mortaise_y", "cadre_tenon_x", "cadre_tenon_y", "accroche_x","accroche_y", "cadre_central_x", "cadre_central_y" 
                     ]
             case _:
                 return 
@@ -303,6 +327,11 @@ class PositionProps(bpy.types.PropertyGroup):
         unit="LENGTH",
         precision=4,
     )
+    cadre_central_position: FloatVectorProperty(
+        name="Cadre Central",
+        unit="LENGTH",
+        precision=4,
+    )
 
     def update(self, target, cursor):
         self[target] = cursor
@@ -319,7 +348,7 @@ class PositionProps(bpy.types.PropertyGroup):
                     ]
             case "2":
                 return [
-                        "cadre_mortaise_position", "cadre_tenon_position", "accroche_position" 
+                        "cadre_mortaise_position", "cadre_tenon_position", "accroche_position", "cadre_central_position" 
                     ]
             case _:
                 return 

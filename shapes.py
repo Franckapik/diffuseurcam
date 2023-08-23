@@ -10,6 +10,7 @@ def add_cadre_mortaise(difprops, productprops):
     longueur_diffuseur = difprops.longueur_diffuseur
     largeur_accroche = difprops.largeur_accroche
     cadre_avant = difprops.cadre_avant
+    cadre_central = difprops.cadre_central
     product_type = productprops.product_type
     startup = epaisseur / 2
     N = difprops.type
@@ -53,6 +54,11 @@ def add_cadre_mortaise(difprops, productprops):
                 a
                 for a in mortaiseDroite(profondeur, longueurTotale - largeur_accroche / 2 + tenon_cadre / 2, difprops)
                 if cadre_avant == True
+            ),
+            *(
+                a
+                for a in mortaiseDroite(profondeur, longueurTotale / 2 + tenon_cadre / 2, difprops)
+                if cadre_central == True
             ),
             *(
                 a
@@ -103,7 +109,6 @@ def add_cadre_tenon(difprops, productprops):
     largeur_accroche = difprops.largeur_accroche
     cadre_avant = difprops.cadre_avant
 
-
     N = difprops.type
 
     rang = difprops.getRang()
@@ -146,7 +151,9 @@ def add_cadre_tenon(difprops, productprops):
             ((profondeur), largeur_diffuseur - epaisseur, 0),
             *(
                 a
-                for a in mortaiseDroite(profondeur, largeur_diffuseur - largeur_accroche / 2 + tenon_cadre / 2, difprops)
+                for a in mortaiseDroite(
+                    profondeur, largeur_diffuseur - largeur_accroche / 2 + tenon_cadre / 2, difprops
+                )
                 if cadre_avant == True
             ),
             *(
@@ -324,6 +331,43 @@ def add_carreau(difprops):
         ]
 
     return vertsCadre, edgesCadre, "Carreau"
+
+
+def add_cadre_central(difprops):
+    largeur_cadre_central = difprops.largeur_cadre_central
+    largeur_diffuseur = difprops.largeur_diffuseur
+    tenon_cadre = difprops.tenon_cadre
+    epaisseur = difprops.epaisseur
+
+    vertsCadre = [
+        (epaisseur, 0, 0),
+        *tenonGauche(epaisseur, largeur_cadre_central / 2 - tenon_cadre / 2, difprops),
+        (epaisseur, largeur_cadre_central, 0),
+        ((largeur_diffuseur - epaisseur) / 6, largeur_cadre_central - largeur_cadre_central / 4, 0),
+        (
+            (largeur_diffuseur - epaisseur) - (largeur_diffuseur - epaisseur) / 6,
+            largeur_cadre_central - largeur_cadre_central / 4,
+            0,
+        ),
+        (largeur_diffuseur - epaisseur, largeur_cadre_central, 0),
+        *tenonDroit(largeur_diffuseur - epaisseur, largeur_cadre_central / 2 + tenon_cadre / 2, difprops),
+        (largeur_diffuseur - epaisseur, 0, 0),
+        ((largeur_diffuseur - epaisseur) - (largeur_diffuseur - epaisseur) / 6, largeur_cadre_central / 4, 0),
+        ((largeur_diffuseur - epaisseur) / 6, largeur_cadre_central / 4, 0),
+    ]
+
+    edgesCadre = []
+
+    for k in range(0, len(vertsCadre) - 1):
+        edgesCadre += [
+            (k, k + 1),
+        ]
+
+    edgesCadre += [
+        (len(vertsCadre) - 1, 0),
+    ]
+
+    return vertsCadre, edgesCadre, "Cadre central"
 
 
 def add_accroche(difprops, productprops):
