@@ -100,11 +100,13 @@ class Diffuseur_SideBar(Panel):
 
         for piece in posprops.listAttributes(productprops.product_type):
             row = box.row()
-            row.prop(posprops, piece)
-            op =  row.operator("mesh.pick_position", text="", icon="EYEDROPPER")
-            op.cursor = cursor
-            op.target = piece
-            row.operator(f"mesh.{piece.replace('_position', '')}", text="", icon="ADD")
+            if "_position" in piece:
+                row.prop(posprops, piece)
+                op =  row.operator("mesh.pick_position", text="", icon="EYEDROPPER")
+                op.cursor = cursor
+                op.target = piece
+                row.prop(posprops, piece.replace('_position', '_rotation'), icon='EVENT_R', text="")
+                row.operator(f"mesh.{piece.replace('_position', '')}", text="", icon="ADD")
         
         match productprops.product_type :
             case "0":

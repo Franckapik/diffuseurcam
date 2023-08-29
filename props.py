@@ -364,6 +364,46 @@ class PositionProps(bpy.types.PropertyGroup):
         unit="LENGTH",
         precision=4,
     )
+    peigne_court_rotation: BoolProperty(
+        name="Peigne court",
+        description="Rotation"
+    )
+
+    peigne_long_rotation: BoolProperty(
+        name="Peigne long",
+        description="Rotation"
+    )
+
+    cadre_mortaise_rotation: BoolProperty(
+        name="Cadre mortaise",
+        description="Rotation"
+    )
+
+    cadre_tenon_rotation: BoolProperty(
+        name="Cadre tenon",
+        description="Rotation"
+    )
+
+    carreau_rotation: BoolProperty(
+        name="Carreau",
+        description="Rotation"
+    )
+    accroche_rotation: BoolProperty(
+        name="Accroche",
+        description="Rotation"
+    )
+    accroche_inverse_rotation: BoolProperty(
+        name="Accroche inverse",
+        description="Rotation"
+    )
+    cadre_central_rotation: BoolProperty(
+        name="Cadre Central",
+        description="Rotation"
+    )
+    cadre_avant_rotation: BoolProperty(
+        name="Cadre Avant",
+        description="Rotation"
+    )
 
     def update(self, target, cursor):
         self[target] = cursor
@@ -372,15 +412,15 @@ class PositionProps(bpy.types.PropertyGroup):
         match product:
             case "0":
                 return [
-                        "peigne_court_position","peigne_long_position","cadre_mortaise_position", "cadre_tenon_position", "carreau_position","accroche_position" 
+                        "peigne_court_position","peigne_long_position","cadre_mortaise_position", "cadre_tenon_position", "carreau_position","accroche_position", "peigne_court_rotation","peigne_long_rotation","cadre_mortaise_rotation", "cadre_tenon_rotation", "carreau_rotation","accroche_rotation"  
                     ]
             case "1":
                 return [
-                        "peigne_court_position","peigne_long_position","cadre_mortaise_position", "cadre_tenon_position", "carreau_position","accroche_position" 
+                        "peigne_court_position","peigne_long_position","cadre_mortaise_position", "cadre_tenon_position", "carreau_position","accroche_position" , "peigne_court_rotation","peigne_long_rotation","cadre_mortaise_rotation", "cadre_tenon_rotation", "carreau_rotation","accroche_rotation"
                     ]
             case "2":
                 return [
-                        "cadre_mortaise_position", "cadre_tenon_position", "accroche_position","accroche_inverse_position", "cadre_central_position", "cadre_avant_position" 
+                        "cadre_mortaise_position", "cadre_tenon_position", "accroche_position","accroche_inverse_position", "cadre_central_position", "cadre_avant_position", "cadre_mortaise_rotation", "cadre_tenon_rotation", "accroche_rotation","accroche_inverse_rotation", "cadre_central_rotation", "cadre_avant_rotation" 
                     ]
             case _:
                 return 

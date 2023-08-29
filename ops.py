@@ -10,12 +10,12 @@ from .shapes import (
     add_accroche,
     add_cadre_central,
     add_cadre_avant,
-    add_accroche_inverse
+    add_accroche_inverse,
 )
 from .difarray import difArray
 from bpy_extras.object_utils import AddObjectHelper
 from bpy.props import FloatVectorProperty, StringProperty
-
+import math
 
 
 class AddCadreMortaise(bpy.types.Operator, AddObjectHelper):
@@ -39,15 +39,6 @@ class AddCadreMortaise(bpy.types.Operator, AddObjectHelper):
 
         # Positionning according to position props
         posprops = scene.pos_props
-        mesh.transform(
-            mathutils.Matrix.Translation(
-                (
-                    posprops.cadre_mortaise_position[0],
-                    posprops.cadre_mortaise_position[1],
-                    posprops.cadre_mortaise_position[2],
-                )
-            )
-        )
         mesh.update(calc_edges=True)
 
         # Load BMesh with mesh data
@@ -63,6 +54,12 @@ class AddCadreMortaise(bpy.types.Operator, AddObjectHelper):
 
         bpy.types.Scene.dif_parts.append(mesh_obj.name)
 
+        mesh_obj.location = (
+            posprops.cadre_mortaise_position[0],
+            posprops.cadre_mortaise_position[1],
+            posprops.cadre_mortaise_position[2],
+        )
+
         difArray(
             mesh_obj,
             arrayprops.array_offset,
@@ -71,6 +68,9 @@ class AddCadreMortaise(bpy.types.Operator, AddObjectHelper):
             difprops.profondeur,
             difprops.longueur_diffuseur,
         )
+
+        if posprops.cadre_mortaise_rotation:
+            mesh_obj.rotation_euler = [0, 0, math.radians(90)]
 
         return {"FINISHED"}
 
@@ -96,15 +96,7 @@ class AddCadreTenon(bpy.types.Operator, AddObjectHelper):
 
         # Positionning according to position props
         posprops = scene.pos_props
-        mesh.transform(
-            mathutils.Matrix.Translation(
-                (
-                    posprops.cadre_tenon_position[0],
-                    posprops.cadre_tenon_position[1],
-                    posprops.cadre_tenon_position[2],
-                )
-            )
-        )
+
         mesh.update(calc_edges=True)
 
         # Load BMesh with mesh data
@@ -120,6 +112,12 @@ class AddCadreTenon(bpy.types.Operator, AddObjectHelper):
 
         bpy.types.Scene.dif_parts.append(mesh_obj.name)
 
+        mesh_obj.location = (
+            posprops.cadre_tenon_position[0],
+            posprops.cadre_tenon_position[1],
+            posprops.cadre_tenon_position[2],
+        )
+
         difArray(
             mesh_obj,
             arrayprops.array_offset,
@@ -128,6 +126,9 @@ class AddCadreTenon(bpy.types.Operator, AddObjectHelper):
             difprops.profondeur,
             difprops.longueur_diffuseur,
         )
+
+        if posprops.cadre_tenon_rotation:
+            mesh_obj.rotation_euler = [0, 0, math.pi / 2]
 
         return {"FINISHED"}
 
@@ -152,15 +153,7 @@ class AddCarreau(bpy.types.Operator, AddObjectHelper):
 
         # Positionning according to position props
         posprops = scene.pos_props
-        mesh.transform(
-            mathutils.Matrix.Translation(
-                (
-                    posprops.carreau_position[0],
-                    posprops.carreau_position[1],
-                    posprops.carreau_position[2],
-                )
-            )
-        )
+
         mesh.update(calc_edges=True)
 
         # Load BMesh with mesh data
@@ -176,6 +169,12 @@ class AddCarreau(bpy.types.Operator, AddObjectHelper):
 
         bpy.types.Scene.dif_parts.append(mesh_obj.name)
 
+        mesh_obj.location = (
+            posprops.carreau_position[0],
+            posprops.carreau_position[1],
+            posprops.carreau_position[2],
+        )
+
         difArray(
             mesh_obj,
             arrayprops.array_offset,
@@ -184,6 +183,9 @@ class AddCarreau(bpy.types.Operator, AddObjectHelper):
             difprops.getRang(),
             difprops.getRang(),
         )
+
+        if posprops.carreau_rotation:
+            mesh_obj.rotation_euler = [0, 0, math.radians(90)]
 
         return {"FINISHED"}
 
@@ -208,16 +210,8 @@ class AddAccroche(bpy.types.Operator, AddObjectHelper):
 
         # Positionning according to position props
         posprops = scene.pos_props
-        mesh.transform(
-            mathutils.Matrix.Translation(
-                (
-                    posprops.accroche_position[0],
-                    posprops.accroche_position[1],
-                    posprops.accroche_position[2],
-                )
-            )
-        )
-        mesh.update(calc_edges=True)    
+
+        mesh.update(calc_edges=True)
 
         # Load BMesh with mesh data
         bm.from_mesh(mesh)
@@ -232,6 +226,12 @@ class AddAccroche(bpy.types.Operator, AddObjectHelper):
 
         bpy.types.Scene.dif_parts.append(mesh_obj.name)
 
+        mesh_obj.location = (
+            posprops.accroche_position[0],
+            posprops.accroche_position[1],
+            posprops.accroche_position[2],
+        )
+
         difArray(
             mesh_obj,
             arrayprops.array_offset,
@@ -241,8 +241,12 @@ class AddAccroche(bpy.types.Operator, AddObjectHelper):
             difprops.getRang(),
         )
 
+        if posprops.accroche_rotation:
+            mesh_obj.rotation_euler = [0, 0, math.radians(90)]
+
         return {"FINISHED"}
-    
+
+
 class AddAccrocheInverse(bpy.types.Operator, AddObjectHelper):
     bl_idname = "mesh.accroche_inverse"
     bl_label = "Ajouter une accroche inverse"
@@ -263,16 +267,8 @@ class AddAccrocheInverse(bpy.types.Operator, AddObjectHelper):
 
         # Positionning according to position props
         posprops = scene.pos_props
-        mesh.transform(
-            mathutils.Matrix.Translation(
-                (
-                    posprops.accroche_inverse_position[0],
-                    posprops.accroche_inverse_position[1],
-                    posprops.accroche_inverse_position[2],
-                )
-            )
-        )
-        mesh.update(calc_edges=True)    
+
+        mesh.update(calc_edges=True)
 
         # Load BMesh with mesh data
         bm.from_mesh(mesh)
@@ -287,6 +283,12 @@ class AddAccrocheInverse(bpy.types.Operator, AddObjectHelper):
 
         bpy.types.Scene.dif_parts.append(mesh_obj.name)
 
+        mesh_obj.location = (
+            posprops.accroche_inverse_position[0],
+            posprops.accroche_inverse_position[1],
+            posprops.accroche_inverse_position[2],
+        )
+
         difArray(
             mesh_obj,
             arrayprops.array_offset,
@@ -296,8 +298,12 @@ class AddAccrocheInverse(bpy.types.Operator, AddObjectHelper):
             difprops.getRang(),
         )
 
+        if posprops.accroche_inverse_rotation:
+            mesh_obj.rotation_euler = [0, 0, math.radians(90)]
+
         return {"FINISHED"}
-    
+
+
 class AddCadreAvant(bpy.types.Operator, AddObjectHelper):
     bl_idname = "mesh.cadre_avant"
     bl_label = "Ajouter un cadre avant"
@@ -318,16 +324,8 @@ class AddCadreAvant(bpy.types.Operator, AddObjectHelper):
 
         # Positionning according to position props
         posprops = scene.pos_props
-        mesh.transform(
-            mathutils.Matrix.Translation(
-                (
-                    posprops.cadre_avant_position[0],
-                    posprops.cadre_avant_position[1],
-                    posprops.cadre_avant_position[2],
-                )
-            )
-        )
-        mesh.update(calc_edges=True)    
+
+        mesh.update(calc_edges=True)
 
         # Load BMesh with mesh data
         bm.from_mesh(mesh)
@@ -342,6 +340,12 @@ class AddCadreAvant(bpy.types.Operator, AddObjectHelper):
 
         bpy.types.Scene.dif_parts.append(mesh_obj.name)
 
+        mesh_obj.location = (
+            posprops.cadre_avant_position[0],
+            posprops.cadre_avant_position[1],
+            posprops.cadre_avant_position[2],
+        )
+
         difArray(
             mesh_obj,
             arrayprops.array_offset,
@@ -350,6 +354,8 @@ class AddCadreAvant(bpy.types.Operator, AddObjectHelper):
             difprops.getRang(),
             difprops.getRang(),
         )
+        if posprops.cadre_avant_rotation:
+            mesh_obj.rotation_euler = [0, 0, math.radians(90)]
 
         return {"FINISHED"}
 
@@ -375,15 +381,7 @@ class AddPeigneCourt(bpy.types.Operator, AddObjectHelper):
 
         # Positionning according to position props
         posprops = scene.pos_props
-        mesh.transform(
-            mathutils.Matrix.Translation(
-                (
-                    posprops.peigne_court_position[0],
-                    posprops.peigne_court_position[1],
-                    posprops.peigne_court_position[2],
-                )
-            )
-        )
+
         mesh.update(calc_edges=True)
 
         # Load BMesh with mesh data
@@ -399,6 +397,12 @@ class AddPeigneCourt(bpy.types.Operator, AddObjectHelper):
 
         bpy.types.Scene.dif_parts.append(mesh_obj.name)
 
+        mesh_obj.location = (
+            posprops.peigne_court_position[0],
+            posprops.peigne_court_position[1],
+            posprops.peigne_court_position[2],
+        )
+
         difArray(
             mesh_obj,
             arrayprops.array_offset,
@@ -407,9 +411,12 @@ class AddPeigneCourt(bpy.types.Operator, AddObjectHelper):
             difprops.profondeur,
             difprops.longueur_diffuseur,
         )
+        if posprops.peigne_court_rotation:
+            mesh_obj.rotation_euler = [0, 0, math.radians(90)]
 
         return {"FINISHED"}
-    
+
+
 class AddCadreCentral(bpy.types.Operator, AddObjectHelper):
     bl_idname = "mesh.cadre_central"
     bl_label = "Ajouter Cadre Central"
@@ -431,15 +438,7 @@ class AddCadreCentral(bpy.types.Operator, AddObjectHelper):
 
         # Positionning according to position props
         posprops = scene.pos_props
-        mesh.transform(
-            mathutils.Matrix.Translation(
-                (
-                    posprops.cadre_central_position[0],
-                    posprops.cadre_central_position[1],
-                    posprops.cadre_central_position[2],
-                )
-            )
-        )
+
         mesh.update(calc_edges=True)
 
         # Load BMesh with mesh data
@@ -455,6 +454,12 @@ class AddCadreCentral(bpy.types.Operator, AddObjectHelper):
 
         bpy.types.Scene.dif_parts.append(mesh_obj.name)
 
+        mesh_obj.location = (
+            posprops.cadre_central_position[0],
+            posprops.cadre_central_position[1],
+            posprops.cadre_central_position[2],
+        )
+
         difArray(
             mesh_obj,
             arrayprops.array_offset,
@@ -463,6 +468,9 @@ class AddCadreCentral(bpy.types.Operator, AddObjectHelper):
             difprops.profondeur,
             difprops.longueur_diffuseur,
         )
+
+        if posprops.cadre_central_rotation:
+            mesh_obj.rotation_euler = [0, 0, math.radians(90)]
 
         return {"FINISHED"}
 
@@ -488,15 +496,7 @@ class AddPeigneLong(bpy.types.Operator, AddObjectHelper):
 
         # Positionning according to position props
         posprops = scene.pos_props
-        mesh.transform(
-            mathutils.Matrix.Translation(
-                (
-                    posprops.peigne_long_position[0],
-                    posprops.peigne_long_position[1],
-                    posprops.peigne_long_position[2],
-                )
-            )
-        )
+
         mesh.update(calc_edges=True)
 
         # Load BMesh with mesh data
@@ -511,6 +511,12 @@ class AddPeigneLong(bpy.types.Operator, AddObjectHelper):
         bpy.context.collection.objects.link(mesh_obj)
         bpy.types.Scene.dif_parts.append(mesh_obj.name)
 
+        mesh_obj.location = (
+            posprops.peigne_long_position[0],
+            posprops.peigne_long_position[1],
+            posprops.peigne_long_position[2],
+        )
+
         difArray(
             mesh_obj,
             arrayprops.array_offset,
@@ -519,6 +525,9 @@ class AddPeigneLong(bpy.types.Operator, AddObjectHelper):
             difprops.profondeur,
             difprops.longueur_diffuseur,
         )
+
+        if posprops.peigne_long_rotation:
+            mesh_obj.rotation_euler = [0, 0, math.radians(90)]
 
         return {"FINISHED"}
 
@@ -537,7 +546,8 @@ class AddDiffuseur(bpy.types.Operator, AddObjectHelper):
         AddAccroche.execute(self, context)
 
         return {"FINISHED"}
-    
+
+
 class AddAbsorbeur(bpy.types.Operator, AddObjectHelper):
     bl_idname = "mesh.add_absorbeur"
     bl_label = "Generer Absorbeur"
@@ -552,24 +562,20 @@ class AddAbsorbeur(bpy.types.Operator, AddObjectHelper):
         AddCadreAvant.execute(self, context)
 
         return {"FINISHED"}
-    
+
+
 class PickPosition(bpy.types.Operator, AddObjectHelper):
     bl_idname = "mesh.pick_position"
     bl_label = "Set position from Cursor 3D"
     bl_options = {"REGISTER", "UNDO"}
-    cursor : FloatVectorProperty(
-        name="cursor3d_position"
-    )
-    target : StringProperty(
-        name="Name of part to change position"
-    )
+    cursor: FloatVectorProperty(name="cursor3d_position")
+    target: StringProperty(name="Name of part to change position")
 
     def execute(self, context):
         print(self.target)
         scene = context.scene
         posprops = scene.pos_props
         posprops.update(self.target, self.cursor)
-
 
         return {"FINISHED"}
 
@@ -623,7 +629,7 @@ class PrepareToCam(bpy.types.Operator, AddObjectHelper):
         # convert to curve
         if prepprops.isConvertToCurve_prepare:
             bpy.ops.object.convert(target="CURVE")
-            
+
             # remove double if curve
             if prepprops.isCRemove_prepare:
                 bpy.ops.object.curve_remove_doubles()
