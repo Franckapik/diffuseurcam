@@ -66,7 +66,7 @@ class AddCadreMortaise(bpy.types.Operator, AddObjectHelper):
             arrayprops.cadre_mortaise_x,
             arrayprops.cadre_mortaise_y,
             difprops.profondeur,
-            difprops.longueur_diffuseur,
+            difprops.largeur_diffuseur,
         )
 
         if posprops.cadre_mortaise_rotation:
@@ -124,7 +124,7 @@ class AddCadreTenon(bpy.types.Operator, AddObjectHelper):
             arrayprops.cadre_tenon_x,
             arrayprops.cadre_tenon_y,
             difprops.profondeur,
-            difprops.longueur_diffuseur,
+            difprops.largeur_diffuseur,
         )
 
         if posprops.cadre_tenon_rotation:
