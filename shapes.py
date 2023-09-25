@@ -384,6 +384,7 @@ def add_accroche(difprops, productprops):
     vertsAccroche = []
     vertsAccroche2 = []
 
+    
     if product_type == "0":
         vertsCadre = [
             (0, 0, 0),
@@ -391,8 +392,8 @@ def add_accroche(difprops, productprops):
             (rang - epaisseur, rang - epaisseur, 0),
             (rang - epaisseur, 0, 0),
         ]
-
-        vertsAccroche = trou_accroche(division * 4, division * 4, division)
+        
+        vertsAccroche = trou_accroche(division * 6 , division * 4, division)
 
     elif product_type == "1":
         vertsCadre = [
@@ -402,8 +403,8 @@ def add_accroche(difprops, productprops):
             (rang - epaisseur, 0, 0),
         ]
 
-        vertsAccroche = trou_accroche(division * 4, division * 4, division)
-        vertsAccroche2 = trou_accroche(division * 4, longueurTotale - division * 8, division)
+        vertsAccroche = trou_accroche(division * 6, division * 4, division)
+        vertsAccroche2 = trou_accroche(division * 6, longueurTotale - division * 10, division)
 
     elif product_type == "2":
         vertsCadre = [
@@ -445,10 +446,10 @@ def add_accroche(difprops, productprops):
             ),
             (largeur_diffuseur / 8, 0, 0),
         ]
-    vertsAccroche = trou_accroche(largeur_diffuseur / 12, epaisseur + largeur_accroche / 4, division)
-    vertsAccroche2 = trou_accroche(largeur_diffuseur - largeur_diffuseur / 12, epaisseur + largeur_accroche/4, division)
 
-    # bpy.ops.mesh.bevel(offset=0.003, offset_pct=0, segments=3, profile=0.987013, affect='VERTICES', release_confirm=True)
+        vertsAccroche = trou_accroche(largeur_diffuseur / 12, epaisseur + largeur_accroche / 4, division)
+        vertsAccroche2 = trou_accroche(largeur_diffuseur - largeur_diffuseur / 12, epaisseur + largeur_accroche/4, division)
+
 
     edgesCadre = []
     edgesAccroche = []

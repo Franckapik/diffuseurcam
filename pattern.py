@@ -274,7 +274,10 @@ def trou_accroche(x,y,division):
     return [
             (x - division * 2, y, 0),
             (x - division *2, y + division * 2, 0),
-            (x , y + division * 4, 0),
+            (x-division , y + division * 3, 0),
+            (x-division/3 , y + division * 5, 0),
+            (x+division/3 , y + division * 5, 0),
+            (x+division , y + division * 3, 0),
             (x + division * 2, y + division * 2, 0),
             (x + division * 2, y  , 0),
             
@@ -282,9 +285,12 @@ def trou_accroche(x,y,division):
 
 def trou_accroche_inverse(x,y,division):
     return [
-            (x, y, 0),
-            (x - division * 2, y + division * 2, 0),
-            (x - division * 2, y + division * 4, 0),
-            (x + division * 2, y + division * 4, 0),
-            (x + division * 2, y + division * 2, 0),            
+            (x-division/3, y, 0),
+            (x-division, y + division *2, 0),
+            (x - division * 2, y + division * 3, 0),
+            (x - division * 2, y + division * 5, 0),
+            (x + division * 2, y + division * 5, 0),
+            (x + division * 2 , y + division * 3, 0),
+            (x+division, y + division *2, 0),
+            (x+division/3, y, 0),          
     ]
