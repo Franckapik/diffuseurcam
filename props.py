@@ -8,9 +8,12 @@ from bpy.props import (
     EnumProperty,
 )
 
+productType=(("0", "Diffuseur 2D", ""), ("1", "Diffuseur 1D", ""), ("2", "Absorbeur", ""),("3", "Moule", "") )
+
+
 class UIProductProps(bpy.types.PropertyGroup):
     product_type: EnumProperty(
-        items=(("0", "Diffuseur 2D", ""), ("1", "Diffuseur 1D", ""), ("2", "Absorbeur", ""))
+        items=productType
     )
 
 
@@ -123,9 +126,10 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         description="Cadre central absorbeur",
     )
 
-    product_type: EnumProperty(
-        items=(("0", "Diffuseur 2D", ""), ("1", "Diffuseur 1D", ""), ("2", "Absorbeur", ""))
+    product_type : EnumProperty(
+        items=productType
     )
+
 
     def getDifName(self):
         dif_name = (
@@ -167,6 +171,10 @@ class DiffuseurProps(bpy.types.PropertyGroup):
             case "2":
                 return [
                         "epaisseur","profondeur", "bord_cadre", "largeur_diffuseur","tenon_cadre", "offset", "longueur_diffuseur", "largeur_accroche", "largeur_cadre_central", "cadre_avant", "cadre_central"
+                    ]
+            case "3":
+                return [
+                        "epaisseur","type","profondeur", "largeur_diffuseur","tenon_cadre", "offset", "longueur_diffuseur","cadre_avant"
                     ]
             case _:
                 return 
@@ -310,6 +318,10 @@ class ArrayProps(bpy.types.PropertyGroup):
                 return [
                         "cadre_mortaise_x","cadre_mortaise_y", "cadre_tenon_x", "cadre_tenon_y", "accroche_x","accroche_y","accroche_inverse_x", "accroche_inverse_y", "cadre_central_x", "cadre_central_y", "cadre_avant_x", "cadre_avant_y" 
                     ]
+            case "3":
+                return [
+                        "cadre_mortaise_x","cadre_mortaise_y", "cadre_tenon_x", "cadre_tenon_y"
+                    ]
             case _:
                 return 
 
@@ -421,6 +433,10 @@ class PositionProps(bpy.types.PropertyGroup):
             case "2":
                 return [
                         "cadre_mortaise_position", "cadre_tenon_position", "accroche_position","accroche_inverse_position", "cadre_central_position", "cadre_avant_position", "cadre_mortaise_rotation", "cadre_tenon_rotation", "accroche_rotation","accroche_inverse_rotation", "cadre_central_rotation", "cadre_avant_rotation" 
+                    ]
+            case "3":
+                return [
+                        "cadre_mortaise_position", "cadre_tenon_position"
                     ]
             case _:
                 return 
