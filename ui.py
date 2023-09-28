@@ -115,6 +115,8 @@ class Diffuseur_SideBar(Panel):
                 box.operator("mesh.add_diffuseur")
             case "2":
                 box.operator("mesh.add_absorbeur")
+            case "3":
+                box.operator("mesh.add_moule")
 
 
 

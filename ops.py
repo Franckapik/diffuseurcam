@@ -569,8 +569,7 @@ class AddMoule(bpy.types.Operator, AddObjectHelper):
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
-        AddCadreMortaise.execute(self, context)
-        AddCadreTenon.execute(self, context)
+
 
         return {"FINISHED"}
 
