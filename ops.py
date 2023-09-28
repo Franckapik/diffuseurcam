@@ -562,6 +562,17 @@ class AddAbsorbeur(bpy.types.Operator, AddObjectHelper):
         AddCadreAvant.execute(self, context)
 
         return {"FINISHED"}
+    
+class AddMoule(bpy.types.Operator, AddObjectHelper):
+    bl_idname = "mesh.add_moule"
+    bl_label = "Generer Moule"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        AddCadreMortaise.execute(self, context)
+        AddCadreTenon.execute(self, context)
+
+        return {"FINISHED"}
 
 
 class PickPosition(bpy.types.Operator, AddObjectHelper):
@@ -658,6 +669,7 @@ classes = [
     AddAbsorbeur,
     PrepareToCam,
     PickPosition,
+    AddMoule
 ]
 
 
