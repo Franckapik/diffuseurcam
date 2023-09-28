@@ -738,16 +738,22 @@ def add_fond_moule(difprops, productprops):
     largeur_accroche = difprops.largeur_accroche
     largeur_diffuseur = difprops.largeur_diffuseur
     tenon_cadre = difprops.tenon_cadre
+    rang = difprops.getRang()
 
     longueurTotale = difprops.getLongueur()
     N = difprops.type
 
     if product_type == "3":
         mortaises_pilier = []
+        b = 0
+        for k in range(0, round(N * N)):
+            c = k % N
+            if c == 0 : 
+                b += 1
+            print(c, b)
 
-        for k in range(1, round(N * N)):
             mortaises_pilier += [
-                 *mortaise_pilier_fond_moule(epaisseur * k,epaisseur*k,difprops)
+                 *mortaise_pilier_fond_moule(rang * (c+1),rang*b,difprops) # epaisseur à prendre en compte ? 
             ]
 
         vertsCadre = [
