@@ -125,6 +125,15 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         name="Cadre central",
         description="Cadre central absorbeur",
     )
+    tenon_pilier: FloatProperty(
+        name="tenon_pilier",
+        description="Box largeur_accroche",
+        min=0.005,
+        max=1,
+        default=0.01,
+        unit="LENGTH",
+        precision=4,
+    )
 
     product_type : EnumProperty(
         items=productType
@@ -174,7 +183,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     ]
             case "3":
                 return [
-                        "epaisseur","type","profondeur", "largeur_diffuseur","tenon_cadre", "offset", "longueur_diffuseur","cadre_avant"
+                        "epaisseur","type","profondeur", "largeur_diffuseur","tenon_pilier", "offset", "longueur_diffuseur","cadre_avant"
                     ]
             case _:
                 return 
@@ -304,6 +313,17 @@ class ArrayProps(bpy.types.PropertyGroup):
         min=0,
     )
 
+    fond_moule_x: IntProperty(
+        name="Fond Moule",
+        default=1,
+        min=0,
+    )
+    fond_moule_y: IntProperty(
+        name="Fond Moule",
+        default=1,
+        min=0,
+    )
+
     def listAttributes(self, product):
         match product:
             case "0":
@@ -320,7 +340,7 @@ class ArrayProps(bpy.types.PropertyGroup):
                     ]
             case "3":
                 return [
-                        "cadre_mortaise_x","cadre_mortaise_y", "cadre_tenon_x", "cadre_tenon_y"
+                        "cadre_mortaise_x","cadre_mortaise_y", "cadre_tenon_x", "cadre_tenon_y", "fond_moule_x", "fond_moule_y"
                     ]
             case _:
                 return 
@@ -376,6 +396,11 @@ class PositionProps(bpy.types.PropertyGroup):
         unit="LENGTH",
         precision=4,
     )
+    fond_moule_position: FloatVectorProperty(
+        name="Fond Moule",
+        unit="LENGTH",
+        precision=4,
+    )
     peigne_court_rotation: BoolProperty(
         name="Peigne court",
         description="Rotation"
@@ -416,6 +441,10 @@ class PositionProps(bpy.types.PropertyGroup):
         name="Cadre Avant",
         description="Rotation"
     )
+    fond_moule_rotation: BoolProperty(
+        name="Fond Moule",
+        description="Rotation"
+    )
 
     def update(self, target, cursor):
         self[target] = cursor
@@ -436,7 +465,7 @@ class PositionProps(bpy.types.PropertyGroup):
                     ]
             case "3":
                 return [
-                        "cadre_mortaise_position", "cadre_tenon_position"
+                        "cadre_mortaise_position", "cadre_tenon_position", "fond_moule_position",  "cadre_mortaise_rotation", "cadre_tenon_rotation",
                     ]
             case _:
                 return 

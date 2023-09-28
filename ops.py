@@ -11,6 +11,7 @@ from .shapes import (
     add_cadre_central,
     add_cadre_avant,
     add_accroche_inverse,
+    add_fond_moule
 )
 from .difarray import difArray
 from bpy_extras.object_utils import AddObjectHelper
@@ -530,6 +531,62 @@ class AddPeigneLong(bpy.types.Operator, AddObjectHelper):
             mesh_obj.rotation_euler = [0, 0, math.radians(90)]
 
         return {"FINISHED"}
+    
+class AddFondMoule(bpy.types.Operator, AddObjectHelper):
+    bl_idname = "mesh.fond_moule"
+    bl_label = "Ajouter Fond Moule"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        scene = context.scene
+        difprops = scene.dif_props
+        vertex, edges, name = add_fond_moule(difprops, scene.product_props)
+
+        arrayprops = scene.array_props
+
+        # create a bmesh
+        bm = bmesh.new()
+
+        # Create new mesh data.
+        mesh = bpy.data.meshes.new(name)
+        mesh.from_pydata(vertex, edges, [])
+
+        # Positionning according to position props
+        posprops = scene.pos_props
+
+        mesh.update(calc_edges=True)
+
+        # Load BMesh with mesh data
+        bm.from_mesh(mesh)
+
+        # Convert BMesh to mesh data, then release BMesh.
+        bm.to_mesh(mesh)
+        bm.free()
+
+        # Add Object to the default collection from mesh
+        mesh_obj = bpy.data.objects.new(mesh.name, mesh)
+        bpy.context.collection.objects.link(mesh_obj)
+        bpy.types.Scene.dif_parts.append(mesh_obj.name)
+
+        mesh_obj.location = (
+            posprops.fond_moule_position[0],
+            posprops.fond_moule_position[1],
+            posprops.fond_moule_position[2],
+        )
+
+        difArray(
+            mesh_obj,
+            arrayprops.array_offset,
+            arrayprops.fond_moule_x,
+            arrayprops.fond_moule_y,
+            difprops.profondeur,
+            difprops.longueur_diffuseur,
+        )
+
+        if posprops.fond_moule_rotation:
+            mesh_obj.rotation_euler = [0, 0, math.radians(90)]
+
+        return {"FINISHED"}
 
 
 class AddDiffuseur(bpy.types.Operator, AddObjectHelper):
@@ -668,7 +725,8 @@ classes = [
     AddAbsorbeur,
     PrepareToCam,
     PickPosition,
-    AddMoule
+    AddMoule,
+    AddFondMoule
 ]
 
 
