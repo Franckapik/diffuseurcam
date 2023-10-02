@@ -11,7 +11,8 @@ from .shapes import (
     add_cadre_central,
     add_cadre_avant,
     add_accroche_inverse,
-    add_fond_moule
+    add_fond_moule,
+    add_pilier_moule
 )
 from .difarray import difArray
 from bpy_extras.object_utils import AddObjectHelper
@@ -540,7 +541,7 @@ class AddFondMoule(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_fond_moule(difprops, scene.product_props)
+        vertex, edges, name = add_pilier_moule(difprops, scene.product_props)
 
         arrayprops = scene.array_props
 

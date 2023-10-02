@@ -403,8 +403,8 @@ def mortaise_pilier_fond_moule(x, y, difprops):
     tenon_pilier = difprops.tenon_pilier
 
     return [
-        (x, y, 0),
-        (x+ tenon_pilier, y, 0),
-        (x+ tenon_pilier, y + epaisseur, 0),
-        (x, y + epaisseur, 0),
+        (x-tenon_pilier/2, y-epaisseur/2, 0),
+        (x+ tenon_pilier/2, y-epaisseur/2, 0),
+        (x+ tenon_pilier/2, y + epaisseur/2, 0),
+        (x- tenon_pilier/2, y + epaisseur/2, 0),
     ]

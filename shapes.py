@@ -1,5 +1,5 @@
 from .pattern import *
-
+import math
 
 def add_cadre_mortaise(difprops, productprops):
     epaisseur = difprops.epaisseur
@@ -753,7 +753,6 @@ def add_fond_moule(difprops, productprops):
             c = k % N
             if c == 0:
                 b += 1
-            print(c, b)
 
             vertsMortaisesInt += [
                 *mortaise_pilier_fond_moule(
@@ -804,3 +803,86 @@ def add_fond_moule(difprops, productprops):
     edges = [*list(edgesCadre), *list(edgesMortaisesInt)]
 
     return verts, edges, "Fond moule"
+
+def add_pilier_moule(difprops, productprops):
+    product_type = productprops.product_type
+    rang = difprops.getRang()
+    epaisseur = difprops.epaisseur
+    largeur_accroche = difprops.largeur_accroche
+    largeur_diffuseur = difprops.largeur_diffuseur
+    tenon_cadre = difprops.tenon_cadre
+    rang = difprops.getRang()
+
+    longueurTotale = difprops.getLongueur()
+    N = difprops.type
+
+    edgesCadre = []
+    vertsMortaisesInt = []
+    edgesMortaisesInt = []
+
+    prof = []
+
+    for k in range(0, N * N):
+       n = k % N
+       m = math.floor( k / N)
+       an = math.pow(n, 2) * math.pow(m,2) % N
+       print(an)
+
+
+
+    if product_type == "3":
+        b = 0
+        for k in range(0, round(N * N)):
+            c = k % N
+            if c == 0:
+                b += 1
+
+            vertsMortaisesInt += [
+                *mortaise_pilier_fond_moule(
+                    rang * (c + 1), rang * b, difprops
+                )  # epaisseur à prendre en compte ?
+            ]
+
+        vertsCadre = [
+            *mortaise_bas_fond_moule(0, 0, difprops),
+            *mortaise_droite_fond_moule(
+                largeur_diffuseur + 2 * epaisseur, epaisseur, difprops
+            ),
+            *mortaise_haut_fond_moule(
+                largeur_diffuseur + epaisseur,
+                largeur_diffuseur + 2 * epaisseur,
+                difprops,
+            ),
+            *mortaise_gauche_fond_moule(
+                0,
+                largeur_diffuseur + epaisseur,
+                difprops,
+            ),
+        ]
+
+    for k in range(0, len(vertsCadre) - 1):
+        edgesCadre += [
+            (k, k + 1),
+        ]
+
+    edgesCadre += [
+        (len(vertsCadre) - 1, 0),
+    ]
+
+    i = 0
+
+    for k in range(len(vertsCadre), len(vertsCadre) + len(vertsMortaisesInt)):
+        i += 1
+        if i == 4 or k == len(vertsCadre):
+            i = 0
+            edgesMortaisesInt += [
+                (k, k + 1),
+                (k + 1, k + 2),
+                (k + 2, k + 3),
+                (k + 3, k),
+            ]
+
+    verts = [*list(vertsCadre), *list(vertsMortaisesInt)]
+    edges = [*list(edgesCadre), *list(edgesMortaisesInt)]
+
+    return verts, edges, "Piliers"
