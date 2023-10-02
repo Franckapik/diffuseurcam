@@ -743,17 +743,22 @@ def add_fond_moule(difprops, productprops):
     longueurTotale = difprops.getLongueur()
     N = difprops.type
 
+    edgesCadre = []
+    vertsMortaisesInt = []
+    edgesMortaisesInt = []
+
     if product_type == "3":
-        mortaises_pilier = []
         b = 0
         for k in range(0, round(N * N)):
             c = k % N
-            if c == 0 : 
+            if c == 0:
                 b += 1
             print(c, b)
 
-            mortaises_pilier += [
-                 *mortaise_pilier_fond_moule(rang * (c+1),rang*b,difprops) # epaisseur à prendre en compte ? 
+            vertsMortaisesInt += [
+                *mortaise_pilier_fond_moule(
+                    rang * (c + 1), rang * b, difprops
+                )  # epaisseur à prendre en compte ?
             ]
 
         vertsCadre = [
@@ -771,13 +776,7 @@ def add_fond_moule(difprops, productprops):
                 largeur_diffuseur + epaisseur,
                 difprops,
             ),
-            *mortaises_pilier
-
         ]
-
-    
-
-    edgesCadre = []
 
     for k in range(0, len(vertsCadre) - 1):
         edgesCadre += [
@@ -788,9 +787,20 @@ def add_fond_moule(difprops, productprops):
         (len(vertsCadre) - 1, 0),
     ]
 
-    verts = [*list(vertsCadre)]
-    edges = [*list(edgesCadre)]
+    i = 0
+
+    for k in range(len(vertsCadre), len(vertsCadre) + len(vertsMortaisesInt)):
+        i += 1
+        if i == 4 or k == len(vertsCadre):
+            i = 0
+            edgesMortaisesInt += [
+                (k, k + 1),
+                (k + 1, k + 2),
+                (k + 2, k + 3),
+                (k + 3, k),
+            ]
+
+    verts = [*list(vertsCadre), *list(vertsMortaisesInt)]
+    edges = [*list(edgesCadre), *list(edgesMortaisesInt)]
 
     return verts, edges, "Fond moule"
-
-
