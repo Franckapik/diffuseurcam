@@ -749,17 +749,22 @@ def add_fond_moule(difprops, productprops):
     edgesMortaisesInt = []
 
     if product_type == "3":
-        b = 0
+        y0 = rang/2 + epaisseur
+        x0 = rang/2 + epaisseur
         for k in range(0, round(N * N)):
-            c = k % N
-            if c == 0:
-                b += 1
+            if k % N == 0 and k != 0:
+                print(k)
+                y0 += rang
+                x0 = rang/2 + epaisseur
 
             vertsMortaisesInt += [
                 *mortaise_pilier_fond_moule(
-                    rang * (c + 1), rang * b, difprops
-                )  # epaisseur à prendre en compte ?
+                    x0, y0, difprops
+                )  
             ]
+
+            x0 += rang
+            
 
         vertsCadre = [
             *mortaise_bas_fond_moule(0, 0, difprops),
