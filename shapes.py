@@ -815,6 +815,8 @@ def add_pilier_moule(difprops, productprops):
     tenon_cadre = difprops.tenon_cadre
     rang = difprops.getRang()
     profondeur = difprops.profondeur
+    tenon_pilier = difprops.tenon_pilier
+    epaisseur_moule = difprops.epaisseur_moule
 
     longueurTotale = difprops.getLongueur()
     N = difprops.type
@@ -839,23 +841,50 @@ def add_pilier_moule(difprops, productprops):
     for k in prof:
         a.append((k, prof.count(k)))
 
-    hauteurs = list( dict.fromkeys(a) ) #remove duplicates items
-    print(hauteurs)
-    
+    ratio = list(dict.fromkeys(a))  # remove duplicates items
+
+    print(ratio)
+
     if product_type == "3":
-        for i in range(len(hauteurs)):
-            y = profondeur - (hauteurs[i][0] * profondeur) / amax
-            x = i * rang + 0.1
-            vertsCadre += [(x, y, 0), (x + rang, y, 0),(x + rang, 0, 0)]
+        y0 = 0
+        x0 = 0
+        for i in range(len(ratio)):
+            if ratio[i][0] != 0 : #delete hauteur = 0
+                if ratio[i][0] == amax:
+                    y = ( (ratio[i][0] * profondeur) / amax) - epaisseur
+                else:
+                    y = (ratio[i][0] * profondeur) / amax
 
-    for k in range(0, len(vertsCadre) - 1):
-        edgesCadre += [
-            (k, k + 1),
-        ]
+                for k in range(ratio[i][1]):
+                    print(k)
+                    vertsCadre += [
+                        (x0, y0 + y + epaisseur_moule, 0),
+                        (x0 + rang, y0 + y + epaisseur_moule, 0),
+                        (x0 + rang, y0 + epaisseur_moule, 0),
+                        (x0 + rang/2 + tenon_pilier/2, y0 + epaisseur_moule , 0),
+                        (x0 + rang/2 + tenon_pilier/2, y0 , 0),
+                        (x0 + rang/2 - tenon_pilier/2, y0 , 0),
+                        (x0 + rang/2 - tenon_pilier/2, y0 + epaisseur_moule , 0),
+                        (x0, y0 + epaisseur_moule, 0),
+                    ]
+                    x0 += rang + 0.01 
 
-    edgesCadre += [
-        (len(vertsCadre) - 1, 0),
-    ]
+                x0 = 0
+                y0 += y + 0.01 + epaisseur_moule
+
+
+    for i in range(len(vertsCadre)):
+        if i % 8 == 0:
+            edgesCadre += [
+                (i, i + 1),
+                (i + 1, i + 2),
+                (i + 2, i + 3),
+                (i + 3, i + 4),
+                (i + 4, i + 5),
+                (i + 5, i + 6),
+                (i + 6, i + 7),
+                (i + 7, i),
+            ]
 
     verts = [*list(vertsCadre)]
     edges = [*list(edgesCadre)]
