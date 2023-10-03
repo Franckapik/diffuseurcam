@@ -726,7 +726,9 @@ class AddMoule(bpy.types.Operator, AddObjectHelper):
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
-
+        AddCadreMoule.execute(self, context)
+        AddFondMoule.execute(self, context)
+        AddPilierMoule.execute(self, context)
 
         return {"FINISHED"}
 
