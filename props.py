@@ -148,6 +148,16 @@ class DiffuseurProps(bpy.types.PropertyGroup):
     )
 
     product_type: EnumProperty(items=productType)
+    pilier_reduction: EnumProperty(items=(
+    ("0", "Aucune", ""),
+     ("0.125", "1/8", ""),
+     ("0.16", "1/6", ""),
+     ("0.25", "1/4", ""),
+    ("0.33", "1/3", ""),
+    
+    
+   
+))
 
     def getDifName(self):
         dif_name = (
@@ -226,6 +236,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "offset",
                     "longueur_diffuseur",
                     "epaisseur_moule",
+                    "pilier_reduction"
                 ]
             case _:
                 return

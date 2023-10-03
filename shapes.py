@@ -1,5 +1,6 @@
 from .pattern import *
 import math
+from fractions import Fraction
 
 
 def add_cadre_mortaise(difprops, productprops):
@@ -868,7 +869,8 @@ def add_pilier_moule(difprops, productprops):
 
     longueurTotale = difprops.getLongueur()
     N = difprops.type
-    rang = difprops.getRang() - epaisseur / N
+    pilier_reduction = float(difprops.pilier_reduction)
+    rang = (difprops.getRang() - epaisseur / N) - (difprops.getRang() - epaisseur / N)* pilier_reduction
 
     edgesCadre = []
     vertsMortaisesInt = []
@@ -907,10 +909,26 @@ def add_pilier_moule(difprops, productprops):
                         (x0, y0 + y + epaisseur_moule, 0),
                         (x0 + rang, y0 + y + epaisseur_moule, 0),
                         (x0 + rang, y0 + epaisseur_moule, 0),
-                        (x0 + rang / 2 + tenon_pilier / 2, y0 + epaisseur_moule, 0),
-                        (x0 + rang / 2 + tenon_pilier / 2, y0, 0),
-                        (x0 + rang / 2 - tenon_pilier / 2, y0, 0),
-                        (x0 + rang / 2 - tenon_pilier / 2, y0 + epaisseur_moule, 0),
+                        (
+                            x0 + rang / 2 + tenon_pilier / 2,
+                            y0 + epaisseur_moule,
+                            0,
+                        ),
+                        (
+                            x0 + rang / 2 + tenon_pilier / 2,
+                            y0,
+                            0,
+                        ),
+                        (
+                            x0 + rang / 2 - tenon_pilier / 2,
+                            y0,
+                            0,
+                        ),
+                        (
+                            x0 + rang / 2 - tenon_pilier / 2,
+                            y0 + epaisseur_moule,
+                            0,
+                        ),
                         (x0, y0 + epaisseur_moule, 0),
                     ]
                     x0 += rang + 0.01
