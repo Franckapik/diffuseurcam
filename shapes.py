@@ -857,7 +857,7 @@ def add_cadre_moule(difprops, productprops):
     return verts, edges, "Cadre moule"
 
 
-def add_pilier_moule(difprops, productprops):
+def add_pilier_moule(difprops, productprops, arrayprops):
     product_type = productprops.product_type
     epaisseur = difprops.epaisseur
     largeur_accroche = difprops.largeur_accroche
@@ -866,6 +866,7 @@ def add_pilier_moule(difprops, productprops):
     profondeur = difprops.profondeur
     tenon_pilier = difprops.tenon_pilier
     epaisseur_moule = difprops.epaisseur_moule
+    array_offset = arrayprops.array_offset
 
     longueurTotale = difprops.getLongueur()
     N = difprops.type
@@ -931,10 +932,10 @@ def add_pilier_moule(difprops, productprops):
                         ),
                         (x0, y0 + epaisseur_moule, 0),
                     ]
-                    x0 += rang + 0.01
+                    x0 += rang + array_offset
 
                 x0 = 0
-                y0 += y + 0.01 + epaisseur_moule
+                y0 += y + array_offset + epaisseur_moule
 
     for i in range(len(vertsCadre)):
         if i % 8 == 0:

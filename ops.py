@@ -624,7 +624,7 @@ class AddCadreMoule(bpy.types.Operator, AddObjectHelper):
             arrayprops.cadre_moule_x,
             arrayprops.cadre_moule_y,
             difprops.largeur_diffuseur,
-            difprops.profondeur,
+            difprops.profondeur + difprops.epaisseur_moule,
         )
 
         if posprops.cadre_moule_rotation:
@@ -640,7 +640,8 @@ class AddPilierMoule(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_pilier_moule(difprops, scene.product_props)
+        arrayprops = scene.array_props
+        vertex, edges, name = add_pilier_moule(difprops, scene.product_props, arrayprops)
 
         arrayprops = scene.array_props
 
