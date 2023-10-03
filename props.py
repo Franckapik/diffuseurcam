@@ -401,6 +401,11 @@ class PositionProps(bpy.types.PropertyGroup):
         unit="LENGTH",
         precision=4,
     )
+    pilier_moule_position: FloatVectorProperty(
+        name="Pilier Moule",
+        unit="LENGTH",
+        precision=4,
+    )
     peigne_court_rotation: BoolProperty(
         name="Peigne court",
         description="Rotation"
@@ -445,6 +450,10 @@ class PositionProps(bpy.types.PropertyGroup):
         name="Fond Moule",
         description="Rotation"
     )
+    pilier_moule_rotation: BoolProperty(
+        name="Pilier Moule",
+        description="Rotation"
+    )
 
     def update(self, target, cursor):
         self[target] = cursor
@@ -465,7 +474,7 @@ class PositionProps(bpy.types.PropertyGroup):
                     ]
             case "3":
                 return [
-                        "cadre_mortaise_position", "cadre_tenon_position", "fond_moule_position",  "cadre_mortaise_rotation", "cadre_tenon_rotation",
+                        "cadre_mortaise_position", "cadre_tenon_position", "fond_moule_position",  "cadre_mortaise_rotation", "cadre_tenon_rotation","pilier_moule_position", "pilier_moule_rotation"
                     ]
             case _:
                 return 

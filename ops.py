@@ -541,7 +541,7 @@ class AddFondMoule(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_pilier_moule(difprops, scene.product_props)
+        vertex, edges, name = add_fond_moule(difprops, scene.product_props)
 
         arrayprops = scene.array_props
 
@@ -585,6 +585,62 @@ class AddFondMoule(bpy.types.Operator, AddObjectHelper):
         )
 
         if posprops.fond_moule_rotation:
+            mesh_obj.rotation_euler = [0, 0, math.radians(90)]
+
+        return {"FINISHED"}
+    
+class AddPilierMoule(bpy.types.Operator, AddObjectHelper):
+    bl_idname = "mesh.pilier_moule"
+    bl_label = "Ajouter Piliers Moule"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        scene = context.scene
+        difprops = scene.dif_props
+        vertex, edges, name = add_pilier_moule(difprops, scene.product_props)
+
+        arrayprops = scene.array_props
+
+        # create a bmesh
+        bm = bmesh.new()
+
+        # Create new mesh data.
+        mesh = bpy.data.meshes.new(name)
+        mesh.from_pydata(vertex, edges, [])
+
+        # Positionning according to position props
+        posprops = scene.pos_props
+
+        mesh.update(calc_edges=True)
+
+        # Load BMesh with mesh data
+        bm.from_mesh(mesh)
+
+        # Convert BMesh to mesh data, then release BMesh.
+        bm.to_mesh(mesh)
+        bm.free()
+
+        # Add Object to the default collection from mesh
+        mesh_obj = bpy.data.objects.new(mesh.name, mesh)
+        bpy.context.collection.objects.link(mesh_obj)
+        bpy.types.Scene.dif_parts.append(mesh_obj.name)
+
+        mesh_obj.location = (
+            posprops.pilier_moule_position[0],
+            posprops.pilier_moule_position[1],
+            posprops.pilier_moule_position[2],
+        )
+
+        difArray(
+            mesh_obj,
+            arrayprops.array_offset,
+            arrayprops.fond_moule_x,
+            arrayprops.fond_moule_y,
+            difprops.profondeur,
+            difprops.longueur_diffuseur,
+        )
+
+        if posprops.pilier_moule_rotation:
             mesh_obj.rotation_euler = [0, 0, math.radians(90)]
 
         return {"FINISHED"}
@@ -727,7 +783,8 @@ classes = [
     PrepareToCam,
     PickPosition,
     AddMoule,
-    AddFondMoule
+    AddFondMoule,
+    AddPilierMoule
 ]
 
 
