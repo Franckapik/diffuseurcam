@@ -8,13 +8,16 @@ from bpy.props import (
     EnumProperty,
 )
 
-productType=(("0", "Diffuseur 2D", ""), ("1", "Diffuseur 1D", ""), ("2", "Absorbeur", ""),("3", "Moule", "") )
+productType = (
+    ("0", "Diffuseur 2D", ""),
+    ("1", "Diffuseur 1D", ""),
+    ("2", "Absorbeur", ""),
+    ("3", "Moule", ""),
+)
 
 
 class UIProductProps(bpy.types.PropertyGroup):
-    product_type: EnumProperty(
-        items=productType
-    )
+    product_type: EnumProperty(items=productType)
 
 
 class DiffuseurProps(bpy.types.PropertyGroup):
@@ -144,10 +147,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         precision=4,
     )
 
-    product_type : EnumProperty(
-        items=productType
-    )
-
+    product_type: EnumProperty(items=productType)
 
     def getDifName(self):
         dif_name = (
@@ -180,23 +180,55 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         match product:
             case "0":
                 return [
-                        "epaisseur","type","profondeur", "bord_cadre", "largeur_diffuseur","tenon_cadre", "offset", "tenon_peigne", "longueur_diffuseur"
-                    ]
+                    "epaisseur",
+                    "type",
+                    "profondeur",
+                    "bord_cadre",
+                    "largeur_diffuseur",
+                    "tenon_cadre",
+                    "offset",
+                    "tenon_peigne",
+                    "longueur_diffuseur",
+                ]
             case "1":
                 return [
-                        "epaisseur","type","profondeur", "bord_cadre", "largeur_diffuseur","tenon_cadre", "offset", "tenon_peigne", "longueur_diffuseur"
-                    ]
+                    "epaisseur",
+                    "type",
+                    "profondeur",
+                    "bord_cadre",
+                    "largeur_diffuseur",
+                    "tenon_cadre",
+                    "offset",
+                    "tenon_peigne",
+                    "longueur_diffuseur",
+                ]
             case "2":
                 return [
-                        "epaisseur","profondeur", "bord_cadre", "largeur_diffuseur","tenon_cadre", "offset", "longueur_diffuseur", "largeur_accroche", "largeur_cadre_central", "cadre_avant", "cadre_central"
-                    ]
+                    "epaisseur",
+                    "profondeur",
+                    "bord_cadre",
+                    "largeur_diffuseur",
+                    "tenon_cadre",
+                    "offset",
+                    "longueur_diffuseur",
+                    "largeur_accroche",
+                    "largeur_cadre_central",
+                    "cadre_avant",
+                    "cadre_central",
+                ]
             case "3":
                 return [
-                        "epaisseur","type","profondeur", "largeur_diffuseur","tenon_pilier", "offset", "longueur_diffuseur","cadre_avant", "epaisseur_moule"
-                    ]
+                    "epaisseur",
+                    "type",
+                    "profondeur",
+                    "largeur_diffuseur",
+                    "tenon_pilier",
+                    "offset",
+                    "longueur_diffuseur",
+                    "epaisseur_moule",
+                ]
             case _:
-                return 
-        
+                return
 
 
 class ArrayProps(bpy.types.PropertyGroup):
@@ -332,27 +364,73 @@ class ArrayProps(bpy.types.PropertyGroup):
         default=1,
         min=0,
     )
+    cadre_moule_x: IntProperty(
+        name="Cadre Moule",
+        default=1,
+        min=0,
+    )
+    cadre_moule_y: IntProperty(
+        name="Cadre Moule",
+        default=1,
+        min=0,
+    )
 
     def listAttributes(self, product):
         match product:
             case "0":
                 return [
-                        "peigne_court_x","peigne_court_y","peigne_long_x", "peigne_long_y", "cadre_mortaise_x","cadre_mortaise_y", "cadre_tenon_x", "cadre_tenon_y", "carreau_x", "carreau_y","accroche_x","accroche_y" 
-                    ]
+                    "peigne_court_x",
+                    "peigne_court_y",
+                    "peigne_long_x",
+                    "peigne_long_y",
+                    "cadre_mortaise_x",
+                    "cadre_mortaise_y",
+                    "cadre_tenon_x",
+                    "cadre_tenon_y",
+                    "carreau_x",
+                    "carreau_y",
+                    "accroche_x",
+                    "accroche_y",
+                ]
             case "1":
                 return [
-                        "peigne_court_x","peigne_court_y","peigne_long_x", "peigne_long_y", "cadre_mortaise_x","cadre_mortaise_y", "cadre_tenon_x", "cadre_tenon_y", "carreau_x", "carreau_y","accroche_x","accroche_y" 
-                    ]
+                    "peigne_court_x",
+                    "peigne_court_y",
+                    "peigne_long_x",
+                    "peigne_long_y",
+                    "cadre_mortaise_x",
+                    "cadre_mortaise_y",
+                    "cadre_tenon_x",
+                    "cadre_tenon_y",
+                    "carreau_x",
+                    "carreau_y",
+                    "accroche_x",
+                    "accroche_y",
+                ]
             case "2":
                 return [
-                        "cadre_mortaise_x","cadre_mortaise_y", "cadre_tenon_x", "cadre_tenon_y", "accroche_x","accroche_y","accroche_inverse_x", "accroche_inverse_y", "cadre_central_x", "cadre_central_y", "cadre_avant_x", "cadre_avant_y" 
-                    ]
+                    "cadre_mortaise_x",
+                    "cadre_mortaise_y",
+                    "cadre_tenon_x",
+                    "cadre_tenon_y",
+                    "accroche_x",
+                    "accroche_y",
+                    "accroche_inverse_x",
+                    "accroche_inverse_y",
+                    "cadre_central_x",
+                    "cadre_central_y",
+                    "cadre_avant_x",
+                    "cadre_avant_y",
+                ]
             case "3":
                 return [
-                        "cadre_mortaise_x","cadre_mortaise_y", "cadre_tenon_x", "cadre_tenon_y", "fond_moule_x", "fond_moule_y"
-                    ]
+                    "fond_moule_x",
+                    "fond_moule_y",
+                    "cadre_moule_x",
+                    "cadre_moule_y",
+                ]
             case _:
-                return 
+                return
 
 
 class PositionProps(bpy.types.PropertyGroup):
@@ -415,54 +493,29 @@ class PositionProps(bpy.types.PropertyGroup):
         unit="LENGTH",
         precision=4,
     )
-    peigne_court_rotation: BoolProperty(
-        name="Peigne court",
-        description="Rotation"
+    cadre_moule_position: FloatVectorProperty(
+        name="Cadre Moule",
+        unit="LENGTH",
+        precision=4,
     )
+    peigne_court_rotation: BoolProperty(name="Peigne court", description="Rotation")
 
-    peigne_long_rotation: BoolProperty(
-        name="Peigne long",
-        description="Rotation"
-    )
+    peigne_long_rotation: BoolProperty(name="Peigne long", description="Rotation")
 
-    cadre_mortaise_rotation: BoolProperty(
-        name="Cadre mortaise",
-        description="Rotation"
-    )
+    cadre_mortaise_rotation: BoolProperty(name="Cadre mortaise", description="Rotation")
 
-    cadre_tenon_rotation: BoolProperty(
-        name="Cadre tenon",
-        description="Rotation"
-    )
+    cadre_tenon_rotation: BoolProperty(name="Cadre tenon", description="Rotation")
 
-    carreau_rotation: BoolProperty(
-        name="Carreau",
-        description="Rotation"
-    )
-    accroche_rotation: BoolProperty(
-        name="Accroche",
-        description="Rotation"
-    )
+    carreau_rotation: BoolProperty(name="Carreau", description="Rotation")
+    accroche_rotation: BoolProperty(name="Accroche", description="Rotation")
     accroche_inverse_rotation: BoolProperty(
-        name="Accroche inverse",
-        description="Rotation"
+        name="Accroche inverse", description="Rotation"
     )
-    cadre_central_rotation: BoolProperty(
-        name="Cadre Central",
-        description="Rotation"
-    )
-    cadre_avant_rotation: BoolProperty(
-        name="Cadre Avant",
-        description="Rotation"
-    )
-    fond_moule_rotation: BoolProperty(
-        name="Fond Moule",
-        description="Rotation"
-    )
-    pilier_moule_rotation: BoolProperty(
-        name="Pilier Moule",
-        description="Rotation"
-    )
+    cadre_central_rotation: BoolProperty(name="Cadre Central", description="Rotation")
+    cadre_avant_rotation: BoolProperty(name="Cadre Avant", description="Rotation")
+    fond_moule_rotation: BoolProperty(name="Fond Moule", description="Rotation")
+    pilier_moule_rotation: BoolProperty(name="Pilier Moule", description="Rotation")
+    cadre_moule_rotation: BoolProperty(name="Cadre Moule", description="Rotation")
 
     def update(self, target, cursor):
         self[target] = cursor
@@ -471,22 +524,60 @@ class PositionProps(bpy.types.PropertyGroup):
         match product:
             case "0":
                 return [
-                        "peigne_court_position","peigne_long_position","cadre_mortaise_position", "cadre_tenon_position", "carreau_position","accroche_position", "peigne_court_rotation","peigne_long_rotation","cadre_mortaise_rotation", "cadre_tenon_rotation", "carreau_rotation","accroche_rotation"  
-                    ]
+                    "peigne_court_position",
+                    "peigne_long_position",
+                    "cadre_mortaise_position",
+                    "cadre_tenon_position",
+                    "carreau_position",
+                    "accroche_position",
+                    "peigne_court_rotation",
+                    "peigne_long_rotation",
+                    "cadre_mortaise_rotation",
+                    "cadre_tenon_rotation",
+                    "carreau_rotation",
+                    "accroche_rotation",
+                ]
             case "1":
                 return [
-                        "peigne_court_position","peigne_long_position","cadre_mortaise_position", "cadre_tenon_position", "carreau_position","accroche_position" , "peigne_court_rotation","peigne_long_rotation","cadre_mortaise_rotation", "cadre_tenon_rotation", "carreau_rotation","accroche_rotation"
-                    ]
+                    "peigne_court_position",
+                    "peigne_long_position",
+                    "cadre_mortaise_position",
+                    "cadre_tenon_position",
+                    "carreau_position",
+                    "accroche_position",
+                    "peigne_court_rotation",
+                    "peigne_long_rotation",
+                    "cadre_mortaise_rotation",
+                    "cadre_tenon_rotation",
+                    "carreau_rotation",
+                    "accroche_rotation",
+                ]
             case "2":
                 return [
-                        "cadre_mortaise_position", "cadre_tenon_position", "accroche_position","accroche_inverse_position", "cadre_central_position", "cadre_avant_position", "cadre_mortaise_rotation", "cadre_tenon_rotation", "accroche_rotation","accroche_inverse_rotation", "cadre_central_rotation", "cadre_avant_rotation" 
-                    ]
+                    "cadre_mortaise_position",
+                    "cadre_tenon_position",
+                    "accroche_position",
+                    "accroche_inverse_position",
+                    "cadre_central_position",
+                    "cadre_avant_position",
+                    "cadre_mortaise_rotation",
+                    "cadre_tenon_rotation",
+                    "accroche_rotation",
+                    "accroche_inverse_rotation",
+                    "cadre_central_rotation",
+                    "cadre_avant_rotation",
+                ]
             case "3":
                 return [
-                        "cadre_mortaise_position", "cadre_tenon_position", "fond_moule_position",  "cadre_mortaise_rotation", "cadre_tenon_rotation","pilier_moule_position", "pilier_moule_rotation"
-                    ]
+                    "fond_moule_position",
+                    "fond_moule_rotation",
+                    "pilier_moule_position",
+                    "pilier_moule_rotation",
+                    "cadre_moule_position",
+                    "cadre_moule_rotation",
+                ]
             case _:
-                return 
+                return
 
 
 class PrepareProps(bpy.types.PropertyGroup):

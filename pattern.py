@@ -309,8 +309,7 @@ def mortaise_bas_fond_moule(x, y, difprops):
     tenon_cadre = largeur_diffuseur / 8
 
     return [
-        (x, y, 0),
-        (x + epaisseur_moule, 0, 0),
+        
         (x + epaisseur_moule + tenon_cadre, y, 0),
         (x + epaisseur_moule + tenon_cadre, y + epaisseur_moule, 0),
         (x + epaisseur_moule + tenon_cadre * 2, y + epaisseur_moule, 0),
@@ -323,8 +322,7 @@ def mortaise_bas_fond_moule(x, y, difprops):
         (x + epaisseur_moule + tenon_cadre * 6, y + epaisseur_moule, 0),
         (x + epaisseur_moule + tenon_cadre * 7, y + epaisseur_moule, 0),
         (x + epaisseur_moule + tenon_cadre * 7, y, 0),
-        (x + epaisseur_moule + tenon_cadre * 8, y, 0),
-        (x + epaisseur_moule + epaisseur_moule + tenon_cadre * 8, y, 0),
+
     ]
 
 

@@ -735,42 +735,41 @@ def add_cadre_avant(difprops, productprops):
 def add_fond_moule(difprops, productprops):
     product_type = productprops.product_type
     epaisseur = difprops.epaisseur
-    rang = difprops.getRang() 
+    rang = difprops.getRang()
     epaisseur_moule = difprops.epaisseur_moule
     largeur_accroche = difprops.largeur_accroche
     largeur_diffuseur = difprops.largeur_diffuseur
-    tenon_cadre = difprops.tenon_cadre
+    tenon_cadre = largeur_diffuseur / 8
 
     longueurTotale = difprops.getLongueur()
     N = difprops.type
-    rang2 = rang - epaisseur/N
-    print(rang, epaisseur, rang - epaisseur/N)
+    rang2 = rang - epaisseur / N
+    print(rang, epaisseur, rang - epaisseur / N)
 
     edgesCadre = []
     vertsMortaisesInt = []
     edgesMortaisesInt = []
 
     if product_type == "3":
-        y0 = rang2/2 + epaisseur + epaisseur_moule
-        x0 = rang2/2 + epaisseur + epaisseur_moule
+        y0 = rang2 / 2 + epaisseur + epaisseur_moule
+        x0 = rang2 / 2 + epaisseur + epaisseur_moule
 
         for k in range(0, round(N * N)):
             if k % N == 0 and k != 0:
                 print(k)
-                y0 += rang2 
-                x0 = rang2/2 + epaisseur + epaisseur_moule
+                y0 += rang2
+                x0 = rang2 / 2 + epaisseur + epaisseur_moule
 
-            vertsMortaisesInt += [
-                *mortaise_pilier_fond_moule(
-                    x0, y0, difprops
-                )  
-            ]
+            vertsMortaisesInt += [*mortaise_pilier_fond_moule(x0, y0, difprops)]
 
             x0 += rang2
-            
 
         vertsCadre = [
+            (0, 0, 0),
+            (epaisseur_moule, 0, 0),
             *mortaise_bas_fond_moule(0, 0, difprops),
+            (epaisseur_moule + tenon_cadre * 8, 0, 0),
+            (epaisseur_moule + epaisseur_moule + tenon_cadre * 8, 0, 0),
             *mortaise_droite_fond_moule(
                 largeur_diffuseur + 2 * epaisseur_moule, epaisseur_moule, difprops
             ),
@@ -814,6 +813,49 @@ def add_fond_moule(difprops, productprops):
     return verts, edges, "Fond moule"
 
 
+def add_cadre_moule(difprops, productprops):
+    product_type = productprops.product_type
+    epaisseur = difprops.epaisseur
+    profondeur = difprops.profondeur
+    rang = difprops.getRang()
+    epaisseur_moule = difprops.epaisseur_moule
+    largeur_accroche = difprops.largeur_accroche
+    largeur_diffuseur = difprops.largeur_diffuseur
+    tenon_cadre = difprops.tenon_cadre
+
+    longueurTotale = difprops.getLongueur()
+    N = difprops.type
+    rang2 = rang - epaisseur / N
+    print(rang, epaisseur, rang - epaisseur / N)
+
+    edgesCadre = []
+    vertsMortaisesInt = []
+    edgesMortaisesInt = []
+
+    if product_type == "3":
+        vertsCadre = [
+            (epaisseur_moule * 2, 0, 0),
+            *mortaise_bas_fond_moule(0, 0, difprops),
+            (largeur_diffuseur, 0, 0),
+            (largeur_diffuseur, -profondeur, 0),
+            (epaisseur_moule * 2, -profondeur, 0),
+        ]
+
+    for k in range(0, len(vertsCadre) - 1):
+        edgesCadre += [
+            (k, k + 1),
+        ]
+
+    edgesCadre += [
+        (len(vertsCadre) - 1, 0),
+    ]
+
+    verts = [*list(vertsCadre)]
+    edges = [*list(edgesCadre)]
+
+    return verts, edges, "Cadre moule"
+
+
 def add_pilier_moule(difprops, productprops):
     product_type = productprops.product_type
     epaisseur = difprops.epaisseur
@@ -827,7 +869,6 @@ def add_pilier_moule(difprops, productprops):
     longueurTotale = difprops.getLongueur()
     N = difprops.type
     rang = difprops.getRang() - epaisseur / N
-
 
     edgesCadre = []
     vertsMortaisesInt = []
@@ -855,9 +896,9 @@ def add_pilier_moule(difprops, productprops):
         y0 = 0
         x0 = 0
         for i in range(len(ratio)):
-            if ratio[i][0] != 0 : #delete hauteur = 0
+            if ratio[i][0] != 0:  # delete hauteur = 0
                 if ratio[i][0] == amax:
-                    y = ( (ratio[i][0] * profondeur) / amax) - epaisseur
+                    y = ((ratio[i][0] * profondeur) / amax) - epaisseur
                 else:
                     y = (ratio[i][0] * profondeur) / amax
 
@@ -866,17 +907,16 @@ def add_pilier_moule(difprops, productprops):
                         (x0, y0 + y + epaisseur_moule, 0),
                         (x0 + rang, y0 + y + epaisseur_moule, 0),
                         (x0 + rang, y0 + epaisseur_moule, 0),
-                        (x0 + rang/2 + tenon_pilier/2, y0 + epaisseur_moule , 0),
-                        (x0 + rang/2 + tenon_pilier/2, y0 , 0),
-                        (x0 + rang/2 - tenon_pilier/2, y0 , 0),
-                        (x0 + rang/2 - tenon_pilier/2, y0 + epaisseur_moule , 0),
+                        (x0 + rang / 2 + tenon_pilier / 2, y0 + epaisseur_moule, 0),
+                        (x0 + rang / 2 + tenon_pilier / 2, y0, 0),
+                        (x0 + rang / 2 - tenon_pilier / 2, y0, 0),
+                        (x0 + rang / 2 - tenon_pilier / 2, y0 + epaisseur_moule, 0),
                         (x0, y0 + epaisseur_moule, 0),
                     ]
-                    x0 += rang + 0.01 
+                    x0 += rang + 0.01
 
                 x0 = 0
                 y0 += y + 0.01 + epaisseur_moule
-
 
     for i in range(len(vertsCadre)):
         if i % 8 == 0:

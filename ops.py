@@ -1,19 +1,6 @@
 import bpy
 import bmesh
-import mathutils
-from .shapes import (
-    add_cadre_mortaise,
-    add_cadre_tenon,
-    add_carreau,
-    add_peigne_court,
-    add_peigne_long,
-    add_accroche,
-    add_cadre_central,
-    add_cadre_avant,
-    add_accroche_inverse,
-    add_fond_moule,
-    add_pilier_moule
-)
+from .shapes import *
 from .difarray import difArray
 from bpy_extras.object_utils import AddObjectHelper
 from bpy.props import FloatVectorProperty, StringProperty
@@ -589,6 +576,62 @@ class AddFondMoule(bpy.types.Operator, AddObjectHelper):
 
         return {"FINISHED"}
     
+class AddCadreMoule(bpy.types.Operator, AddObjectHelper):
+    bl_idname = "mesh.cadre_moule"
+    bl_label = "Ajouter Cadre Moule"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        scene = context.scene
+        difprops = scene.dif_props
+        vertex, edges, name = add_cadre_moule(difprops, scene.product_props)
+
+        arrayprops = scene.array_props
+
+        # create a bmesh
+        bm = bmesh.new()
+
+        # Create new mesh data.
+        mesh = bpy.data.meshes.new(name)
+        mesh.from_pydata(vertex, edges, [])
+
+        # Positionning according to position props
+        posprops = scene.pos_props
+
+        mesh.update(calc_edges=True)
+
+        # Load BMesh with mesh data
+        bm.from_mesh(mesh)
+
+        # Convert BMesh to mesh data, then release BMesh.
+        bm.to_mesh(mesh)
+        bm.free()
+
+        # Add Object to the default collection from mesh
+        mesh_obj = bpy.data.objects.new(mesh.name, mesh)
+        bpy.context.collection.objects.link(mesh_obj)
+        bpy.types.Scene.dif_parts.append(mesh_obj.name)
+
+        mesh_obj.location = (
+            posprops.cadre_moule_position[0],
+            posprops.cadre_moule_position[1],
+            posprops.cadre_moule_position[2],
+        )
+
+        difArray(
+            mesh_obj,
+            arrayprops.array_offset,
+            arrayprops.cadre_moule_x,
+            arrayprops.cadre_moule_y,
+            difprops.largeur_diffuseur,
+            difprops.profondeur,
+        )
+
+        if posprops.cadre_moule_rotation:
+            mesh_obj.rotation_euler = [0, 0, math.radians(90)]
+
+        return {"FINISHED"}
+    
 class AddPilierMoule(bpy.types.Operator, AddObjectHelper):
     bl_idname = "mesh.pilier_moule"
     bl_label = "Ajouter Piliers Moule"
@@ -784,7 +827,8 @@ classes = [
     PickPosition,
     AddMoule,
     AddFondMoule,
-    AddPilierMoule
+    AddPilierMoule,
+    AddCadreMoule
 ]
 
 
