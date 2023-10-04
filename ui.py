@@ -66,7 +66,7 @@ class Diffuseur_SideBar(Panel):
         box.label(text="Usinage ", icon="X")
         for att in (x for x in usinageprops.listAttributes()):
             box.prop(usinageprops, att)
-        box.label(text=f"Rang : {usinageprops.getOffset() * 1000} mm")
+        box.label(text=f"Offset de fraise : {usinageprops.getOffset() * 1000} mm")
 
         # Dimensions
         layout.separator()

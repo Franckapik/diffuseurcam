@@ -15,7 +15,7 @@ class AddCadreMortaise(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_cadre_mortaise(difprops, scene.product_props)
+        vertex, edges, name = add_cadre_mortaise(scene.dif_props, scene.product_props, scene.usinage_props)
 
         arrayprops = scene.array_props
 
@@ -72,7 +72,7 @@ class AddCadreTenon(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_cadre_tenon(difprops, scene.product_props)
+        vertex, edges, name = add_cadre_tenon(scene.dif_props, scene.product_props, scene.usinage_props)
 
         arrayprops = scene.array_props
 
@@ -130,7 +130,7 @@ class AddCarreau(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_carreau(difprops)
+        vertex, edges, name = add_carreau(scene.dif_props, scene.product_props, scene.usinage_props)
         arrayprops = scene.array_props
 
         # create a bmesh
@@ -187,7 +187,7 @@ class AddAccroche(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_accroche(difprops, scene.product_props)
+        vertex, edges, name = add_accroche(scene.dif_props, scene.product_props, scene.usinage_props)
         arrayprops = scene.array_props
 
         # create a bmesh
@@ -244,7 +244,7 @@ class AddAccrocheInverse(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_accroche_inverse(difprops, scene.product_props)
+        vertex, edges, name = add_accroche_inverse(scene.dif_props, scene.product_props, scene.usinage_props)
         arrayprops = scene.array_props
 
         # create a bmesh
@@ -301,7 +301,7 @@ class AddCadreAvant(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_cadre_avant(difprops, scene.product_props)
+        vertex, edges, name = add_cadre_avant(scene.dif_props, scene.product_props, scene.usinage_props)
         arrayprops = scene.array_props
 
         # create a bmesh
@@ -357,7 +357,7 @@ class AddPeigneCourt(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_peigne_court(difprops)
+        vertex, edges, name = add_peigne_court(scene.dif_props, scene.product_props, scene.usinage_props)
 
         arrayprops = scene.array_props
 
@@ -414,7 +414,7 @@ class AddCadreCentral(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_cadre_central(difprops)
+        vertex, edges, name = add_cadre_central(scene.dif_props, scene.product_props, scene.usinage_props)
 
         arrayprops = scene.array_props
 
@@ -472,7 +472,7 @@ class AddPeigneLong(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_peigne_long(difprops)
+        vertex, edges, name = add_peigne_long(scene.dif_props, scene.product_props, scene.usinage_props)
 
         arrayprops = scene.array_props
 
@@ -529,7 +529,7 @@ class AddFondMoule(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_fond_moule(difprops, scene.product_props)
+        vertex, edges, name = add_fond_moule(scene.dif_props, scene.product_props, scene.usinage_props)
 
         arrayprops = scene.array_props
 
@@ -586,7 +586,7 @@ class AddCadreMoule(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_cadre_moule(difprops, scene.product_props)
+        vertex, edges, name = add_cadre_moule(scene.dif_props, scene.product_props, scene.usinage_props)
 
         arrayprops = scene.array_props
 
@@ -644,9 +644,7 @@ class AddPilierMoule(bpy.types.Operator, AddObjectHelper):
         scene = context.scene
         difprops = scene.dif_props
         arrayprops = scene.array_props
-        vertex, edges, name = add_pilier_moule(
-            difprops, scene.product_props, arrayprops
-        )
+        vertex, edges, name = add_pilier_moule(scene.dif_props, scene.product_props, scene.usinage_props, scene.array_props)
 
         arrayprops = scene.array_props
 

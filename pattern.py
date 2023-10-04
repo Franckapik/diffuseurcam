@@ -1,5 +1,5 @@
-def mortaiseHaut(x, y, difprops):
-    offset = difprops.offset
+def mortaiseHaut(x, y, difprops, usinageprops):
+    offset = usinageprops.getOffset()
     epaisseur = difprops.epaisseur
     tenon_cadre = difprops.tenon_cadre
 
@@ -23,8 +23,8 @@ def mortaiseHaut(x, y, difprops):
     ]
 
 
-def mortaiseBas(x, y, difprops):
-    offset = difprops.offset
+def mortaiseBas(x, y, difprops, usinageprops):
+    offset = usinageprops.getOffset()
     epaisseur = difprops.epaisseur
     tenon_cadre = difprops.tenon_cadre
 
@@ -48,8 +48,8 @@ def mortaiseBas(x, y, difprops):
     ]
 
 
-def mortaiseGauche(x, y, difprops):
-    offset = difprops.offset
+def mortaiseGauche(x, y, difprops, usinageprops):
+    offset = usinageprops.getOffset()
     epaisseur = difprops.epaisseur
     tenon_cadre = difprops.tenon_cadre
 
@@ -73,8 +73,8 @@ def mortaiseGauche(x, y, difprops):
     ]
 
 
-def mortaiseDroite(x, y, difprops):
-    offset = difprops.offset
+def mortaiseDroite(x, y, difprops, usinageprops):
+    offset = usinageprops.getOffset()
     epaisseur = difprops.epaisseur
     tenon_cadre = difprops.tenon_cadre
 
@@ -98,9 +98,9 @@ def mortaiseDroite(x, y, difprops):
     ]
 
 
-def mortaiseInt(x, y, difprops):
+def mortaiseInt(x, y, difprops, usinageprops):
     tenon_peigne = difprops.tenon_peigne
-    offset = difprops.offset
+    offset = usinageprops.getOffset()
     epaisseur = difprops.epaisseur
 
     return [
@@ -127,8 +127,8 @@ def mortaiseInt(x, y, difprops):
     ]
 
 
-def tenonHaut(x, y, difprops):
-    offset = difprops.offset
+def tenonHaut(x, y, difprops, usinageprops):
+    offset = usinageprops.getOffset()
     epaisseur = difprops.epaisseur
     tenon_cadre = difprops.tenon_cadre
 
@@ -152,8 +152,8 @@ def tenonHaut(x, y, difprops):
     ]
 
 
-def tenonGauche(x, y, difprops):
-    offset = difprops.offset
+def tenonGauche(x, y, difprops, usinageprops):
+    offset = usinageprops.getOffset()
     epaisseur = difprops.epaisseur
     tenon_cadre = difprops.tenon_cadre
 
@@ -177,8 +177,8 @@ def tenonGauche(x, y, difprops):
     ]
 
 
-def tenonDroit(x, y, difprops):
-    offset = difprops.offset
+def tenonDroit(x, y, difprops, usinageprops):
+    offset = usinageprops.getOffset()
     epaisseur = difprops.epaisseur
     tenon_cadre = difprops.tenon_cadre
 
@@ -202,8 +202,8 @@ def tenonDroit(x, y, difprops):
     ]
 
 
-def tenonBas(x, y, difprops):
-    offset = difprops.offset
+def tenonBas(x, y, difprops, usinageprops):
+    offset = usinageprops.getOffset()
     epaisseur = difprops.epaisseur
     tenon_cadre = difprops.tenon_cadre
 
@@ -227,8 +227,8 @@ def tenonBas(x, y, difprops):
     ]
 
 
-def tenonPeigneHaut(x, y, difprops):
-    offset = difprops.offset
+def tenonPeigneHaut(x, y, difprops, usinageprops):
+    offset = usinageprops.getOffset()
     epaisseur = difprops.epaisseur
     tenon_peigne = difprops.tenon_peigne
 
@@ -252,8 +252,8 @@ def tenonPeigneHaut(x, y, difprops):
     ]
 
 
-def tenonPeigneBas(x, y, difprops):
-    offset = difprops.offset
+def tenonPeigneBas(x, y, difprops, usinageprops):
+    offset = usinageprops.getOffset()
     epaisseur = difprops.epaisseur
     tenon_peigne = difprops.tenon_peigne
 
@@ -303,7 +303,7 @@ def trou_accroche_inverse(x, y, division):
     ]
 
 
-def mortaise_bas_fond_moule(x, y, difprops):
+def mortaise_bas_fond_moule(x, y, difprops, usinageprops):
     epaisseur_moule = difprops.epaisseur_moule
     largeur_diffuseur = difprops.largeur_diffuseur
     tenon_cadre = largeur_diffuseur / 8
@@ -324,7 +324,7 @@ def mortaise_bas_fond_moule(x, y, difprops):
     ]
 
 
-def mortaise_droite_fond_moule(x, y, difprops):
+def mortaise_droite_fond_moule(x, y, difprops, usinageprops):
     epaisseur_moule = difprops.epaisseur_moule
     largeur_diffuseur = difprops.largeur_diffuseur
     tenon_cadre = largeur_diffuseur / 8
@@ -348,7 +348,7 @@ def mortaise_droite_fond_moule(x, y, difprops):
     ]
 
 
-def mortaise_haut_fond_moule(x, y, difprops):
+def mortaise_haut_fond_moule(x, y, difprops, usinageprops):
     epaisseur_moule = difprops.epaisseur_moule
     largeur_diffuseur = difprops.largeur_diffuseur
     tenon_cadre = largeur_diffuseur / 8
@@ -372,7 +372,7 @@ def mortaise_haut_fond_moule(x, y, difprops):
     ]
 
 
-def mortaise_gauche_fond_moule(x, y, difprops):
+def mortaise_gauche_fond_moule(x, y, difprops, usinageprops):
     epaisseur_moule = difprops.epaisseur_moule
     largeur_diffuseur = difprops.largeur_diffuseur
     tenon_cadre = largeur_diffuseur / 8
@@ -394,11 +394,11 @@ def mortaise_gauche_fond_moule(x, y, difprops):
     ]
 
 
-def mortaise_pilier_fond_moule(x, y, difprops):
+def mortaise_pilier_fond_moule(x, y, difprops, usinageprops):
     epaisseur_moule = difprops.epaisseur_moule
     largeur_diffuseur = difprops.largeur_diffuseur
     tenon_pilier = difprops.tenon_pilier
-    offset = difprops.offset
+    offset = usinageprops.getOffset()
 
     return [
         (x - tenon_pilier / 2 - offset, y - epaisseur_moule / 2 - offset, 0),

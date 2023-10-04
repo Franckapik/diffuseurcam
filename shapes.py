@@ -3,7 +3,7 @@ import math
 from fractions import Fraction
 
 
-def add_cadre_mortaise(difprops, productprops):
+def add_cadre_mortaise(difprops, productprops, usinageprops):
     epaisseur = difprops.epaisseur
     profondeur = difprops.profondeur
     tenon_cadre = difprops.tenon_cadre
@@ -27,34 +27,50 @@ def add_cadre_mortaise(difprops, productprops):
         vertsCadre = [
             (0, 0, 0),
             (0, longueurTotale, 0),
-            *mortaiseHaut((profondeur / 2 - tenon_cadre / 2), longueurTotale, difprops),
+            *mortaiseHaut(
+                (profondeur / 2 - tenon_cadre / 2),
+                longueurTotale,
+                difprops,
+                usinageprops,
+            ),
             ((profondeur), longueurTotale, 0),
             ((profondeur), 0, 0),
-            *mortaiseBas((profondeur / 2 + tenon_cadre / 2), 0, difprops),
+            *mortaiseBas((profondeur / 2 + tenon_cadre / 2), 0, difprops, usinageprops),
         ]
 
         for k in range(1, round(N * longueur_diffuseur)):
             if product_type == "0":
                 vertsMortaisesInt += [
-                    *mortaiseInt(bord_cadre, (startup + rang * k), difprops),
+                    *mortaiseInt(
+                        bord_cadre, (startup + rang * k), difprops, usinageprops
+                    ),
                     *mortaiseInt(
                         profondeur - bord_cadre - tenon_peigne,
                         (startup + rang * k),
                         difprops,
+                        usinageprops,
                     ),
                 ]
 
     if product_type == "2":
         vertsCadre = [
             (0, 0, 0),
-            *mortaiseGauche(0, (largeur_accroche / 2 - tenon_cadre / 2), difprops),
+            *mortaiseGauche(
+                0, (largeur_accroche / 2 - tenon_cadre / 2), difprops, usinageprops
+            ),
             *mortaiseGauche(
                 0,
                 (longueurTotale - largeur_accroche / 2 - tenon_cadre / 2),
                 difprops,
+                usinageprops,
             ),
             (0, longueurTotale, 0),
-            *mortaiseHaut((profondeur / 2 - tenon_cadre / 2), longueurTotale, difprops),
+            *mortaiseHaut(
+                (profondeur / 2 - tenon_cadre / 2),
+                longueurTotale,
+                difprops,
+                usinageprops,
+            ),
             ((profondeur), longueurTotale, 0),
             *(
                 a
@@ -62,25 +78,26 @@ def add_cadre_mortaise(difprops, productprops):
                     profondeur,
                     longueurTotale - largeur_accroche / 2 + tenon_cadre / 2,
                     difprops,
+                    usinageprops,
                 )
                 if cadre_avant == True
             ),
             *(
                 a
                 for a in mortaiseDroite(
-                    profondeur, longueurTotale / 2 + tenon_cadre / 2, difprops
+                    profondeur, longueurTotale / 2 + tenon_cadre / 2, difprops,usinageprops
                 )
                 if cadre_central == True
             ),
             *(
                 a
                 for a in mortaiseDroite(
-                    profondeur, largeur_accroche / 2 + tenon_cadre / 2, difprops
+                    profondeur, largeur_accroche / 2 + tenon_cadre / 2, difprops,usinageprops
                 )
                 if cadre_avant == True
             ),
             ((profondeur), 0, 0),
-            *mortaiseBas((profondeur / 2 + tenon_cadre / 2), 0, difprops),
+            *mortaiseBas((profondeur / 2 + tenon_cadre / 2), 0, difprops, usinageprops),
         ]
 
     i = 0
@@ -111,7 +128,7 @@ def add_cadre_mortaise(difprops, productprops):
     return verts, edges, "Cadre mortaise"
 
 
-def add_cadre_tenon(difprops, productprops):
+def add_cadre_tenon(difprops, productprops, usinageprops):
     epaisseur = difprops.epaisseur
     profondeur = difprops.profondeur
     tenon_cadre = difprops.tenon_cadre
@@ -139,34 +156,41 @@ def add_cadre_tenon(difprops, productprops):
                 (profondeur / 2 - tenon_cadre / 2),
                 largeur_diffuseur - epaisseur,
                 difprops,
+                usinageprops,
             ),
             ((profondeur), largeur_diffuseur - epaisseur, 0),
             ((profondeur), epaisseur, 0),
-            *tenonBas((profondeur / 2 + tenon_cadre / 2), epaisseur, difprops),
+            *tenonBas(
+                (profondeur / 2 + tenon_cadre / 2), epaisseur, difprops, usinageprops
+            ),
         ]
 
         for k in range(1, round(N)):
             vertsMortaisesInt += [
-                *mortaiseInt(bord_cadre, (startup + rang * k), difprops),
+                *mortaiseInt(bord_cadre, (startup + rang * k), difprops, usinageprops),
                 *mortaiseInt(
                     profondeur - bord_cadre - tenon_peigne,
                     (startup + rang * k),
                     difprops,
+                    usinageprops,
                 ),
             ]
 
     if product_type == "2":
         vertsCadre = [
             (0, epaisseur, 0),
-            *mortaiseGauche(0, largeur_accroche / 2 - tenon_cadre / 2, difprops),
             *mortaiseGauche(
-                0, largeur_diffuseur - largeur_accroche / 2 - tenon_cadre / 2, difprops
+                0, largeur_accroche / 2 - tenon_cadre / 2, difprops, usinageprops
+            ),
+            *mortaiseGauche(
+                0, largeur_diffuseur - largeur_accroche / 2 - tenon_cadre / 2, difprops,usinageprops
             ),
             (0, largeur_diffuseur - epaisseur, 0),
             *tenonHaut(
                 (profondeur / 2 - tenon_cadre / 2),
                 largeur_diffuseur - epaisseur,
                 difprops,
+                usinageprops,
             ),
             ((profondeur), largeur_diffuseur - epaisseur, 0),
             *(
@@ -175,18 +199,21 @@ def add_cadre_tenon(difprops, productprops):
                     profondeur,
                     largeur_diffuseur - largeur_accroche / 2 + tenon_cadre / 2,
                     difprops,
+                    usinageprops,
                 )
                 if cadre_avant == True
             ),
             *(
                 a
                 for a in mortaiseDroite(
-                    profondeur, largeur_accroche / 2 + tenon_cadre / 2, difprops
+                    profondeur, largeur_accroche / 2 + tenon_cadre / 2, difprops ,usinageprops
                 )
                 if cadre_avant == True
             ),
             ((profondeur), epaisseur, 0),
-            *tenonBas((profondeur / 2 + tenon_cadre / 2), epaisseur, difprops),
+            *tenonBas(
+                (profondeur / 2 + tenon_cadre / 2), epaisseur, difprops, usinageprops
+            ),
         ]
 
     i = 0
@@ -217,13 +244,13 @@ def add_cadre_tenon(difprops, productprops):
     return verts, edges, "Cadre tenon"
 
 
-def add_peigne_court(difprops):
+def add_peigne_court(difprops, productprops, usinageprops):
     epaisseur = difprops.epaisseur
     profondeur = difprops.profondeur
     bord_cadre = difprops.bord_cadre
     largeur_diffuseur = difprops.largeur_diffuseur
     tenon_peigne = difprops.tenon_peigne
-    offset = difprops.offset
+    offset = usinageprops.getOffset()
 
     N = difprops.type
 
@@ -245,18 +272,21 @@ def add_peigne_court(difprops):
     vertsCadre = [
         (0, epaisseur, 0),
         (0, largeur_diffuseur - epaisseur, 0),
-        *tenonPeigneHaut(bord_cadre, largeur_diffuseur - epaisseur, difprops),
+        *tenonPeigneHaut(
+            bord_cadre, largeur_diffuseur - epaisseur, difprops, usinageprops
+        ),
         *tenonPeigneHaut(
             profondeur - bord_cadre - tenon_peigne,
             largeur_diffuseur - epaisseur,
             difprops,
+            usinageprops,
         ),
         (profondeur, largeur_diffuseur - epaisseur, 0),
         # peignes
         *list(peignes),
         (profondeur, epaisseur, 0),
-        *tenonPeigneBas(profondeur - bord_cadre, epaisseur, difprops),
-        *tenonPeigneBas(bord_cadre + tenon_peigne, epaisseur, difprops),
+        *tenonPeigneBas(profondeur - bord_cadre, epaisseur, difprops, usinageprops),
+        *tenonPeigneBas(bord_cadre + tenon_peigne, epaisseur, difprops, usinageprops),
         (0, epaisseur, 0),
     ]
 
@@ -270,14 +300,14 @@ def add_peigne_court(difprops):
     return vertsCadre, edgesCadre, "Peigne court"
 
 
-def add_peigne_long(difprops):
+def add_peigne_long(difprops, productprops, usinageprops):
     epaisseur = difprops.epaisseur
     profondeur = difprops.profondeur
     bord_cadre = difprops.bord_cadre
     tenon_peigne = difprops.tenon_peigne
     longueur_diffuseur = difprops.longueur_diffuseur
     product_type = difprops.product_type
-    offset = difprops.offset
+    offset = usinageprops.getOffset()
 
     N = difprops.type
 
@@ -302,18 +332,21 @@ def add_peigne_long(difprops):
     vertsCadre = [
         (0, epaisseur, 0),
         (0, longueurTotale - epaisseur, 0),
-        *tenonPeigneHaut(bord_cadre, longueurTotale - epaisseur, difprops),
+        *tenonPeigneHaut(
+            bord_cadre, longueurTotale - epaisseur, difprops, usinageprops
+        ),
         *tenonPeigneHaut(
             profondeur - bord_cadre - tenon_peigne,
             longueurTotale - epaisseur,
             difprops,
+            usinageprops,
         ),
         (profondeur, longueurTotale - epaisseur, 0),
         # peignes
         *[x for x in peignes if product_type == "0"],
         (profondeur, epaisseur, 0),
-        *tenonPeigneBas(profondeur - bord_cadre, epaisseur, difprops),
-        *tenonPeigneBas(bord_cadre + tenon_peigne, epaisseur, difprops),
+        *tenonPeigneBas(profondeur - bord_cadre, epaisseur, difprops, usinageprops),
+        *tenonPeigneBas(bord_cadre + tenon_peigne, epaisseur, difprops, usinageprops),
         (0, epaisseur, 0),
     ]
 
@@ -325,7 +358,7 @@ def add_peigne_long(difprops):
     return vertsCadre, edgesCadre, "Peigne long"
 
 
-def add_carreau(difprops):
+def add_carreau(difprops, productprops, usinageprops):
     product_type = difprops.product_type
     epaisseur = difprops.epaisseur
 
@@ -361,7 +394,7 @@ def add_carreau(difprops):
     return vertsCadre, edgesCadre, "Carreau"
 
 
-def add_cadre_central(difprops):
+def add_cadre_central(difprops, productprops, usinageprops):
     largeur_cadre_central = difprops.largeur_cadre_central
     largeur_diffuseur = difprops.largeur_diffuseur
     tenon_cadre = difprops.tenon_cadre
@@ -369,7 +402,12 @@ def add_cadre_central(difprops):
 
     vertsCadre = [
         (epaisseur, 0, 0),
-        *tenonGauche(epaisseur, largeur_cadre_central / 2 - tenon_cadre / 2, difprops),
+        *tenonGauche(
+            epaisseur,
+            largeur_cadre_central / 2 - tenon_cadre / 2,
+            difprops,
+            usinageprops,
+        ),
         (epaisseur, largeur_cadre_central, 0),
         (
             (largeur_diffuseur - epaisseur) / 6,
@@ -386,6 +424,7 @@ def add_cadre_central(difprops):
             largeur_diffuseur - epaisseur,
             largeur_cadre_central / 2 + tenon_cadre / 2,
             difprops,
+            usinageprops,
         ),
         (largeur_diffuseur - epaisseur, 0, 0),
         (
@@ -410,7 +449,7 @@ def add_cadre_central(difprops):
     return vertsCadre, edgesCadre, "Cadre central"
 
 
-def add_accroche(difprops, productprops):
+def add_accroche(difprops, productprops, usinageprops):
     product_type = productprops.product_type
     rang = difprops.getRang()
     epaisseur = difprops.epaisseur
@@ -454,21 +493,24 @@ def add_accroche(difprops, productprops):
                 epaisseur,
                 epaisseur + (largeur_accroche / 2 - tenon_cadre / 2),
                 difprops,
+                usinageprops,
             ),
             (epaisseur, largeur_accroche, 0),
             *tenonHaut(
-                (largeur_accroche / 2 - tenon_cadre / 2), largeur_accroche, difprops
+                (largeur_accroche / 2 - tenon_cadre / 2), largeur_accroche, difprops,usinageprops
             ),
             *tenonHaut(
                 (largeur_diffuseur - largeur_accroche / 2 - tenon_cadre / 2),
                 largeur_accroche,
                 difprops,
+                usinageprops,
             ),
             (largeur_diffuseur - epaisseur, largeur_accroche, 0),
             *tenonDroit(
                 largeur_diffuseur - epaisseur,
                 epaisseur + (largeur_accroche / 2 + tenon_cadre / 2),
                 difprops,
+                usinageprops,
             ),
             (largeur_diffuseur - epaisseur, 0, 0),
             (largeur_diffuseur - epaisseur - largeur_diffuseur / 8, 0, 0),
@@ -545,7 +587,7 @@ def add_accroche(difprops, productprops):
     return verts, edges, "Accroche"
 
 
-def add_accroche_inverse(difprops, productprops):
+def add_accroche_inverse(difprops, productprops, usinageprops):
     product_type = productprops.product_type
     rang = difprops.getRang()
     epaisseur = difprops.epaisseur
@@ -565,21 +607,24 @@ def add_accroche_inverse(difprops, productprops):
             epaisseur,
             epaisseur + (largeur_accroche / 2 - tenon_cadre / 2),
             difprops,
+            usinageprops,
         ),
         (epaisseur, largeur_accroche, 0),
         *tenonHaut(
-            (largeur_accroche / 2 - tenon_cadre / 2), largeur_accroche, difprops
+            (largeur_accroche / 2 - tenon_cadre / 2), largeur_accroche, difprops,usinageprops
         ),
         *tenonHaut(
             (largeur_diffuseur - largeur_accroche / 2 - tenon_cadre / 2),
             largeur_accroche,
             difprops,
+            usinageprops,
         ),
         (largeur_diffuseur - epaisseur, largeur_accroche, 0),
         *tenonDroit(
             largeur_diffuseur - epaisseur,
             epaisseur + (largeur_accroche / 2 + tenon_cadre / 2),
             difprops,
+            usinageprops,
         ),
         (largeur_diffuseur - epaisseur, 0, 0),
         (largeur_diffuseur - epaisseur - largeur_diffuseur / 8, 0, 0),
@@ -611,8 +656,6 @@ def add_accroche_inverse(difprops, productprops):
         epaisseur + largeur_accroche / 4,
         division,
     )
-
-    # bpy.ops.mesh.bevel(offset=0.003, offset_pct=0, segments=3, profile=0.987013, affect='VERTICES', release_confirm=True)
 
     edgesCadre = []
     edgesAccroche = []
@@ -657,7 +700,7 @@ def add_accroche_inverse(difprops, productprops):
     return verts, edges, "Accroche"
 
 
-def add_cadre_avant(difprops, productprops):
+def add_cadre_avant(difprops, productprops, usinageprops):
     product_type = productprops.product_type
     rang = difprops.getRang()
     epaisseur = difprops.epaisseur
@@ -675,21 +718,24 @@ def add_cadre_avant(difprops, productprops):
                 epaisseur,
                 epaisseur + (largeur_accroche / 2 - tenon_cadre / 2),
                 difprops,
+                usinageprops,
             ),
             (epaisseur, largeur_accroche, 0),
             *tenonHaut(
-                (largeur_accroche / 2 - tenon_cadre / 2), largeur_accroche, difprops
+                (largeur_accroche / 2 - tenon_cadre / 2), largeur_accroche, difprops,usinageprops
             ),
             *tenonHaut(
                 (largeur_diffuseur - largeur_accroche / 2 - tenon_cadre / 2),
                 largeur_accroche,
                 difprops,
+                usinageprops,
             ),
             (largeur_diffuseur - epaisseur, largeur_accroche, 0),
             *tenonDroit(
                 largeur_diffuseur - epaisseur,
                 epaisseur + (largeur_accroche / 2 + tenon_cadre / 2),
                 difprops,
+                usinageprops,
             ),
             (largeur_diffuseur - epaisseur, 0, 0),
             (largeur_diffuseur - epaisseur - largeur_diffuseur / 8, 0, 0),
@@ -714,8 +760,6 @@ def add_cadre_avant(difprops, productprops):
             (largeur_diffuseur / 8, 0, 0),
         ]
 
-    # bpy.ops.mesh.bevel(offset=0.003, offset_pct=0, segments=3, profile=0.987013, affect='VERTICES', release_confirm=True)
-
     edgesCadre = []
 
     for k in range(0, len(vertsCadre) - 1):
@@ -733,7 +777,7 @@ def add_cadre_avant(difprops, productprops):
     return verts, edges, "Cadre Avant"
 
 
-def add_fond_moule(difprops, productprops):
+def add_fond_moule(difprops, productprops, usinageprops):
     product_type = productprops.product_type
     epaisseur = difprops.epaisseur
     rang = difprops.getRang()
@@ -761,28 +805,29 @@ def add_fond_moule(difprops, productprops):
                 y0 += rang2
                 x0 = rang2 / 2 + epaisseur + epaisseur_moule
 
-            vertsMortaisesInt += [*mortaise_pilier_fond_moule(x0, y0, difprops)]
+            vertsMortaisesInt += [
+                *mortaise_pilier_fond_moule(x0, y0, difprops, usinageprops)
+            ]
 
             x0 += rang2
 
         vertsCadre = [
             (0, 0, 0),
             (epaisseur_moule, 0, 0),
-            *mortaise_bas_fond_moule(0, 0, difprops),
+            *mortaise_bas_fond_moule(0, 0, difprops, usinageprops),
             (epaisseur_moule + tenon_cadre * 8, 0, 0),
             (epaisseur_moule + epaisseur_moule + tenon_cadre * 8, 0, 0),
             *mortaise_droite_fond_moule(
-                largeur_diffuseur + 2 * epaisseur_moule, epaisseur_moule, difprops
+                largeur_diffuseur + 2 * epaisseur_moule, epaisseur_moule, difprops,usinageprops
             ),
             *mortaise_haut_fond_moule(
                 largeur_diffuseur + epaisseur_moule,
                 largeur_diffuseur + 2 * epaisseur_moule,
                 difprops,
+                usinageprops,
             ),
             *mortaise_gauche_fond_moule(
-                0,
-                largeur_diffuseur + epaisseur_moule,
-                difprops,
+                0, largeur_diffuseur + epaisseur_moule, difprops, usinageprops
             ),
         ]
 
@@ -814,7 +859,7 @@ def add_fond_moule(difprops, productprops):
     return verts, edges, "Fond moule"
 
 
-def add_cadre_moule(difprops, productprops):
+def add_cadre_moule(difprops, productprops, usinageprops):
     product_type = productprops.product_type
     epaisseur = difprops.epaisseur
     profondeur = difprops.profondeur
@@ -836,7 +881,7 @@ def add_cadre_moule(difprops, productprops):
     if product_type == "3":
         vertsCadre = [
             (epaisseur_moule * 2, 0, 0),
-            *mortaise_bas_fond_moule(0, 0, difprops),
+            *mortaise_bas_fond_moule(0, 0, difprops, usinageprops),
             (largeur_diffuseur, 0, 0),
             (largeur_diffuseur, -profondeur, 0),
             (epaisseur_moule * 2, -profondeur, 0),
@@ -857,7 +902,7 @@ def add_cadre_moule(difprops, productprops):
     return verts, edges, "Cadre moule"
 
 
-def add_pilier_moule(difprops, productprops, arrayprops):
+def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
     product_type = productprops.product_type
     epaisseur = difprops.epaisseur
     largeur_accroche = difprops.largeur_accroche
