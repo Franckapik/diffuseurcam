@@ -176,6 +176,20 @@ class Diffuseur_SideBar(Panel):
 
         box.operator("mesh.prepare_cam")
 
+        # Motif
+        layout.separator()
+        box = layout.box()
+        box.label(text="Motif", icon="X")
+        ratio = difprops.getRatio()
+
+        for i in range(difprops.type):
+            row = box.row()
+            split = box.split()
+            for k in range(difprops.type):
+                
+                col = split.column()
+                col.label(text=str(ratio[i*difprops.type + k]))
+
 
 ui_classes = [DIF_MT_Presets, OT_AddMyPreset]
 

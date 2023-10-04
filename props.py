@@ -1,4 +1,5 @@
 import bpy
+import math
 
 from bpy.props import (
     FloatProperty,
@@ -213,6 +214,15 @@ class DiffuseurProps(bpy.types.PropertyGroup):
             self.getRang() - self.epaisseur - self.getRang() * float(self.pilier_reduction)
         )
         return round(largeur_pilier, 4)
+
+    def getRatio(self):
+        ratio = []
+        for k in range(0, self.type * self.type):
+            n = k % self.type
+            m = math.floor(k / self.type)
+            an = int((math.pow(n, 2) + math.pow(m, 2)) % self.type)
+            ratio.append(an)
+        return ratio
 
     def listAttributes(self, product):
         match product:
