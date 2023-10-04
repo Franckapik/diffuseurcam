@@ -1,5 +1,4 @@
 from bpy.types import Panel, Menu, Operator
-from bl_ui.utils import PresetPanel
 import bpy
 from .ops import classes
 from bl_operators.presets import AddPresetBase

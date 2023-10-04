@@ -1,6 +1,5 @@
 import bpy
 
-
 def difArray(mesh_obj, array_offset, count_x, count_y, x_offset, y_offset):
     arrx = bpy.data.objects[mesh_obj.name].modifiers.new(
         name=mesh_obj.name + " X", type="ARRAY"
