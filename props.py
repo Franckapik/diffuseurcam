@@ -210,7 +210,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
     
     def getLargeurPilier(self):
         largeur_pilier = (
-            self.getRang() - self.getRang() * float(self.pilier_reduction)
+            self.getRang() - self.epaisseur - self.getRang() * float(self.pilier_reduction)
         )
         return round(largeur_pilier, 4)
 

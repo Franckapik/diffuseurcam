@@ -921,10 +921,7 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
     array_offset = arrayprops.array_offset
 
     N = difprops.type
-    pilier_reduction = float(difprops.pilier_reduction)
-    rang = (difprops.getRang() - epaisseur / N) - (
-        difprops.getRang() - epaisseur / N
-    ) * pilier_reduction
+    largeur_pilier = difprops.getLargeurPilier()
 
     edgesCadre = []
 
@@ -958,31 +955,31 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
                 for k in range(ratio[i][1]):
                     vertsCadre += [
                         (x0, y0 + y + epaisseur_moule, 0),
-                        (x0 + rang, y0 + y + epaisseur_moule, 0),
-                        (x0 + rang, y0 + epaisseur_moule, 0),
+                        (x0 + largeur_pilier, y0 + y + epaisseur_moule, 0),
+                        (x0 + largeur_pilier, y0 + epaisseur_moule, 0),
                         (
-                            x0 + rang / 2 + tenon_pilier / 2,
+                            x0 + largeur_pilier / 2 + tenon_pilier / 2,
                             y0 + epaisseur_moule,
                             0,
                         ),
                         (
-                            x0 + rang / 2 + tenon_pilier / 2,
+                            x0 + largeur_pilier / 2 + tenon_pilier / 2,
                             y0,
                             0,
                         ),
                         (
-                            x0 + rang / 2 - tenon_pilier / 2,
+                            x0 + largeur_pilier / 2 - tenon_pilier / 2,
                             y0,
                             0,
                         ),
                         (
-                            x0 + rang / 2 - tenon_pilier / 2,
+                            x0 + largeur_pilier / 2 - tenon_pilier / 2,
                             y0 + epaisseur_moule,
                             0,
                         ),
                         (x0, y0 + epaisseur_moule, 0),
                     ]
-                    x0 += rang + array_offset
+                    x0 += largeur_pilier + array_offset
 
                 x0 = 0
                 y0 += y + array_offset + epaisseur_moule
