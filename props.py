@@ -30,6 +30,7 @@ class Usinageprops(bpy.types.PropertyGroup):
         precision=4,
     )
     offset: EnumProperty(
+        name="Offset %",
         items=(
             ("0", "Aucune", ""),
             ("0.05", "5%", ""),
@@ -37,7 +38,7 @@ class Usinageprops(bpy.types.PropertyGroup):
             ("0.20", "20%", ""),
             ("0.30", "30%", ""),
             ("0.50", "50%", ""),
-        )
+        ),
     )
 
     def getOffset(self):
@@ -170,23 +171,21 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         precision=4,
     )
 
-    product_type: EnumProperty(items=productType)
     pilier_reduction: EnumProperty(
         name="Reduction des piliers",
         items=(
             ("0", "Aucune", ""),
-            ("0.125", "1/8", ""),
-            ("0.16", "1/6", ""),
-            ("0.25", "1/4", ""),
-            ("0.33", "1/3", ""),
-        )
+            ("0.05", "5%", ""),
+            ("0.10", "10%", ""),
+            ("0.20", "20%", ""),
+            ("0.30", "30%", ""),
+            ("0.50", "50%", ""),
+        ),
     )
 
     def getDifName(self):
         dif_name = (
-            "D"
-            + ("2" if self.product_type == "0" else "1")
-            + "N"
+             "N"
             + str(self.type)
             + "W"
             + str(round(self.largeur_diffuseur * 100))
@@ -208,6 +207,12 @@ class DiffuseurProps(bpy.types.PropertyGroup):
             round(self.type * self.longueur_diffuseur) * self.getRang() + self.epaisseur
         )
         return longueurTotale
+    
+    def getLargeurPilier(self):
+        largeur_pilier = (
+            self.getRang() - self.getRang() * float(self.pilier_reduction)
+        )
+        return round(largeur_pilier, 4)
 
     def listAttributes(self, product):
         match product:

@@ -70,12 +70,26 @@ class Diffuseur_SideBar(Panel):
         # Dimensions
         layout.separator()
         box = layout.box()
-        box.label(text="Dimensions : " + difprops.getDifName(), icon="X")
+        box.label(
+            text="Dimensions : "
+            + (
+                "D2"
+                if productprops.product_type == "0"
+                else "D1"
+                if productprops.product_type == "1"
+                else "A"
+                if productprops.product_type == "2"
+                else "M"
+            )
+            + difprops.getDifName(),
+            icon="X",
+        )
         row = box.row()
         row.prop(productprops, "product_type", expand=True)
         for att in (x for x in difprops.listAttributes(productprops.product_type)):
             box.prop(difprops, att)
         box.label(text=f"Rang : {difprops.getRang() * 1000} mm")
+        box.label(text=f"Pilier : {difprops.getLargeurPilier() * 1000} mm")
 
         # Array
         layout.separator()
