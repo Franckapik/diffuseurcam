@@ -23,7 +23,7 @@ class OT_AddMyPreset(AddPresetBase, Operator):
     # Common variable used for all preset values
     preset_defines = ["obj = bpy.context.object", "scene = bpy.context.scene"]
     # Properties to store in the preset
-    preset_values = ["scene.dif_props", "scene.array_props", "scene.pos_props"]
+    preset_values = ["scene.dif_props", "scene.array_props", "scene.pos_props", "scene.prep_props", "scene.product_props"]
     # Directory to store the presets
     preset_subdir = "object/display"
 
@@ -100,11 +100,14 @@ class Diffuseur_SideBar(Panel):
 
         for piece in posprops.listAttributes(productprops.product_type):
             row = box.row()
-            row.prop(posprops, piece)
-            op =  row.operator("mesh.pick_position", text="", icon="EYEDROPPER")
-            op.cursor = cursor
-            op.target = piece
-            row.operator(f"mesh.{piece.replace('_position', '')}", text="", icon="ADD")
+            if "_position" in piece:
+                
+                row.prop(posprops, piece)
+                op =  row.operator("mesh.pick_position", text="", icon="EYEDROPPER")
+                op.cursor = cursor
+                op.target = piece
+                row.prop(posprops, piece.replace('_position', '_rotation'), icon='EVENT_R', text="")
+                row.operator(f"mesh.{piece.replace('_position', '')}", text="", icon="ADD")
         
         match productprops.product_type :
             case "0":
@@ -113,6 +116,8 @@ class Diffuseur_SideBar(Panel):
                 box.operator("mesh.add_diffuseur")
             case "2":
                 box.operator("mesh.add_absorbeur")
+            case "3":
+                box.operator("mesh.add_moule")
 
 
 
