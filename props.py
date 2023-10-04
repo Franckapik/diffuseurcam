@@ -19,6 +19,7 @@ productType = (
 class UIProductProps(bpy.types.PropertyGroup):
     product_type: EnumProperty(items=productType)
 
+
 class Usinageprops(bpy.types.PropertyGroup):
     fraise: FloatProperty(
         name="Fraise diametre",
@@ -28,28 +29,26 @@ class Usinageprops(bpy.types.PropertyGroup):
         unit="LENGTH",
         precision=4,
     )
-    offset: EnumProperty(items=(
-        ("0", "Aucune", ""),
-        ("0.05", "5%", ""),
-        ("0.10", "10%", ""),
-        ("0.20", "20%", ""),
-        ("0.30", "30%", ""),
-        ("0.50", "50%", ""),
-     
-    
-    
-    
-    ))
-    
+    offset: EnumProperty(
+        items=(
+            ("0", "Aucune", ""),
+            ("0.05", "5%", ""),
+            ("0.10", "10%", ""),
+            ("0.20", "20%", ""),
+            ("0.30", "30%", ""),
+            ("0.50", "50%", ""),
+        )
+    )
+
     def getOffset(self):
         offset = float(self.offset) * float(self.fraise)
         return round(offset, 4)
-    
+
     def listAttributes(self):
         return [
-                    "fraise",
-                    "offset",
-                ]
+            "fraise",
+            "offset",
+        ]
 
 
 class DiffuseurProps(bpy.types.PropertyGroup):
@@ -106,15 +105,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         unit="LENGTH",
         precision=4,
     )
-    offset: FloatProperty(
-        name="offset",
-        description="Box offset",
-        min=0.000,
-        max=0.005,
-        default=0.001,
-        unit="LENGTH",
-        precision=4,
-    )
+
     tenon_peigne: FloatProperty(
         name="tenon_peigne",
         description="Box tenon_peigne",
@@ -180,16 +171,15 @@ class DiffuseurProps(bpy.types.PropertyGroup):
     )
 
     product_type: EnumProperty(items=productType)
-    pilier_reduction: EnumProperty(items=(
-    ("0", "Aucune", ""),
-     ("0.125", "1/8", ""),
-     ("0.16", "1/6", ""),
-     ("0.25", "1/4", ""),
-    ("0.33", "1/3", ""),
-    
-    
-   
-))
+    pilier_reduction: EnumProperty(
+        items=(
+            ("0", "Aucune", ""),
+            ("0.125", "1/8", ""),
+            ("0.16", "1/6", ""),
+            ("0.25", "1/4", ""),
+            ("0.33", "1/3", ""),
+        )
+    )
 
     def getDifName(self):
         dif_name = (
@@ -228,7 +218,6 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "bord_cadre",
                     "largeur_diffuseur",
                     "tenon_cadre",
-                    "offset",
                     "tenon_peigne",
                     "longueur_diffuseur",
                 ]
@@ -240,7 +229,6 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "bord_cadre",
                     "largeur_diffuseur",
                     "tenon_cadre",
-                    "offset",
                     "tenon_peigne",
                     "longueur_diffuseur",
                 ]
@@ -251,7 +239,6 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "bord_cadre",
                     "largeur_diffuseur",
                     "tenon_cadre",
-                    "offset",
                     "longueur_diffuseur",
                     "largeur_accroche",
                     "largeur_cadre_central",
@@ -265,10 +252,9 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "profondeur",
                     "largeur_diffuseur",
                     "tenon_pilier",
-                    "offset",
                     "longueur_diffuseur",
                     "epaisseur_moule",
-                    "pilier_reduction"
+                    "pilier_reduction",
                 ]
             case _:
                 return
@@ -671,7 +657,14 @@ class PrepareProps(bpy.types.PropertyGroup):
         return attributes
 
 
-classes = [DiffuseurProps, ArrayProps, PositionProps, PrepareProps, UIProductProps, Usinageprops]
+classes = [
+    DiffuseurProps,
+    ArrayProps,
+    PositionProps,
+    PrepareProps,
+    UIProductProps,
+    Usinageprops,
+]
 
 
 def register():

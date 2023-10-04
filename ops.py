@@ -519,7 +519,8 @@ class AddPeigneLong(bpy.types.Operator, AddObjectHelper):
             mesh_obj.rotation_euler = [0, 0, math.radians(90)]
 
         return {"FINISHED"}
-    
+
+
 class AddFondMoule(bpy.types.Operator, AddObjectHelper):
     bl_idname = "mesh.fond_moule"
     bl_label = "Ajouter Fond Moule"
@@ -575,7 +576,8 @@ class AddFondMoule(bpy.types.Operator, AddObjectHelper):
             mesh_obj.rotation_euler = [0, 0, math.radians(90)]
 
         return {"FINISHED"}
-    
+
+
 class AddCadreMoule(bpy.types.Operator, AddObjectHelper):
     bl_idname = "mesh.cadre_moule"
     bl_label = "Ajouter Cadre Moule"
@@ -631,7 +633,8 @@ class AddCadreMoule(bpy.types.Operator, AddObjectHelper):
             mesh_obj.rotation_euler = [0, 0, math.radians(90)]
 
         return {"FINISHED"}
-    
+
+
 class AddPilierMoule(bpy.types.Operator, AddObjectHelper):
     bl_idname = "mesh.pilier_moule"
     bl_label = "Ajouter Piliers Moule"
@@ -641,7 +644,9 @@ class AddPilierMoule(bpy.types.Operator, AddObjectHelper):
         scene = context.scene
         difprops = scene.dif_props
         arrayprops = scene.array_props
-        vertex, edges, name = add_pilier_moule(difprops, scene.product_props, arrayprops)
+        vertex, edges, name = add_pilier_moule(
+            difprops, scene.product_props, arrayprops
+        )
 
         arrayprops = scene.array_props
 
@@ -720,7 +725,8 @@ class AddAbsorbeur(bpy.types.Operator, AddObjectHelper):
         AddCadreAvant.execute(self, context)
 
         return {"FINISHED"}
-    
+
+
 class AddMoule(bpy.types.Operator, AddObjectHelper):
     bl_idname = "mesh.add_moule"
     bl_label = "Generer Moule"
@@ -831,7 +837,7 @@ classes = [
     AddMoule,
     AddFondMoule,
     AddPilierMoule,
-    AddCadreMoule
+    AddCadreMoule,
 ]
 
 

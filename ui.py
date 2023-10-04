@@ -23,7 +23,13 @@ class OT_AddMyPreset(AddPresetBase, Operator):
     # Common variable used for all preset values
     preset_defines = ["obj = bpy.context.object", "scene = bpy.context.scene"]
     # Properties to store in the preset
-    preset_values = ["scene.dif_props", "scene.array_props", "scene.pos_props", "scene.prep_props", "scene.product_props"]
+    preset_values = [
+        "scene.dif_props",
+        "scene.array_props",
+        "scene.pos_props",
+        "scene.prep_props",
+        "scene.product_props",
+    ]
     # Directory to store the presets
     preset_subdir = "object/display"
 
@@ -36,7 +42,6 @@ class Diffuseur_SideBar(Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "DIFFUSEURS"
-
 
     def draw(self, context):
         layout = self.layout
@@ -85,7 +90,11 @@ class Diffuseur_SideBar(Panel):
             text="X count",
         )
         col2.label(text="Y count")
-        for arr in (x for x in arrayprops.listAttributes(productprops.product_type) if x != "array_offset"):
+        for arr in (
+            x
+            for x in arrayprops.listAttributes(productprops.product_type)
+            if x != "array_offset"
+        ):
             if arr[-1] == "x":
                 col1.prop(arrayprops, arr)
             if arr[-1] == "y":
@@ -104,15 +113,21 @@ class Diffuseur_SideBar(Panel):
         for piece in posprops.listAttributes(productprops.product_type):
             row = box.row()
             if "_position" in piece:
-                
                 row.prop(posprops, piece)
-                op =  row.operator("mesh.pick_position", text="", icon="EYEDROPPER")
+                op = row.operator("mesh.pick_position", text="", icon="EYEDROPPER")
                 op.cursor = cursor
                 op.target = piece
-                row.prop(posprops, piece.replace('_position', '_rotation'), icon='EVENT_R', text="")
-                row.operator(f"mesh.{piece.replace('_position', '')}", text="", icon="ADD")
-        
-        match productprops.product_type :
+                row.prop(
+                    posprops,
+                    piece.replace("_position", "_rotation"),
+                    icon="EVENT_R",
+                    text="",
+                )
+                row.operator(
+                    f"mesh.{piece.replace('_position', '')}", text="", icon="ADD"
+                )
+
+        match productprops.product_type:
             case "0":
                 box.operator("mesh.add_diffuseur")
             case "1":
@@ -121,9 +136,6 @@ class Diffuseur_SideBar(Panel):
                 box.operator("mesh.add_absorbeur")
             case "3":
                 box.operator("mesh.add_moule")
-
-
-
 
         # Prepare to Cam
         layout.separator()

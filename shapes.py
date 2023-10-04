@@ -871,7 +871,9 @@ def add_pilier_moule(difprops, productprops, arrayprops):
     longueurTotale = difprops.getLongueur()
     N = difprops.type
     pilier_reduction = float(difprops.pilier_reduction)
-    rang = (difprops.getRang() - epaisseur / N) - (difprops.getRang() - epaisseur / N)* pilier_reduction
+    rang = (difprops.getRang() - epaisseur / N) - (
+        difprops.getRang() - epaisseur / N
+    ) * pilier_reduction
 
     edgesCadre = []
     vertsMortaisesInt = []
