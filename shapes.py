@@ -317,7 +317,7 @@ def add_peigne_long(difprops, productprops, usinageprops):
     bord_cadre = difprops.bord_cadre
     tenon_peigne = difprops.tenon_peigne
     longueur_diffuseur = difprops.longueur_diffuseur
-    product_type = difprops.product_type
+    product_type = productprops.product_type
     offset = usinageprops.getOffset()
 
     N = difprops.type
@@ -370,7 +370,7 @@ def add_peigne_long(difprops, productprops, usinageprops):
 
 
 def add_carreau(difprops, productprops, usinageprops):
-    product_type = difprops.product_type
+    product_type = productprops.product_type
     epaisseur = difprops.epaisseur
 
     N = difprops.type
