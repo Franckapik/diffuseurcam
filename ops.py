@@ -763,6 +763,7 @@ class PrepareToCam(bpy.types.Operator, AddObjectHelper):
         scene = context.scene
         prepprops = scene.prep_props
         difprops = scene.dif_props
+        usinageprops = scene.usinage_props
 
         # mesh selection
 
@@ -813,7 +814,7 @@ class PrepareToCam(bpy.types.Operator, AddObjectHelper):
             bpy.ops.object.join()
             bpy.context.object.name = difprops.getDifName()
             if prepprops.isOvercuts:
-                bpy.ops.object.curve_overcuts()
+                bpy.ops.object.curve_overcuts(diameter=usinageprops.fraise)
 
         return {"FINISHED"}
 
