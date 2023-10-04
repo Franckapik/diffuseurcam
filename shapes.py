@@ -925,20 +925,15 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
 
     edgesCadre = []
 
-    prof = []
     vertsCadre = []
 
-    for k in range(0, N * N):
-        n = k % N
-        m = math.floor(k / N)
-        an = int((math.pow(n, 2) + math.pow(m, 2)) % N)
-        prof.append(an)
+    ratios = difprops.getRatio()
 
-    amax = max(prof)
+    amax = max(ratios)
     a = []
 
-    for k in prof:
-        a.append((k, prof.count(k)))
+    for k in ratios:
+        a.append((k, ratios.count(k)))
 
     ratio = list(dict.fromkeys(a))  # remove duplicates items
 
