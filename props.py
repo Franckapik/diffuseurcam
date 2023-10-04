@@ -19,6 +19,38 @@ productType = (
 class UIProductProps(bpy.types.PropertyGroup):
     product_type: EnumProperty(items=productType)
 
+class Usinageprops(bpy.types.PropertyGroup):
+    fraise: FloatProperty(
+        name="Fraise diametre",
+        description="Diametre de la fraise",
+        default=0.005,
+        step=0.001,
+        unit="LENGTH",
+        precision=4,
+    )
+    offset: EnumProperty(items=(
+        ("0", "Aucune", ""),
+        ("0.05", "5%", ""),
+        ("0.10", "10%", ""),
+        ("0.20", "20%", ""),
+        ("0.30", "30%", ""),
+        ("0.50", "50%", ""),
+     
+    
+    
+    
+    ))
+    
+    def getOffset(self):
+        offset = float(self.offset) * float(self.fraise)
+        return round(offset, 4)
+    
+    def listAttributes(self):
+        return [
+                    "fraise",
+                    "offset",
+                ]
+
 
 class DiffuseurProps(bpy.types.PropertyGroup):
     epaisseur: FloatProperty(
@@ -639,12 +671,13 @@ class PrepareProps(bpy.types.PropertyGroup):
         return attributes
 
 
-classes = [DiffuseurProps, ArrayProps, PositionProps, PrepareProps, UIProductProps]
+classes = [DiffuseurProps, ArrayProps, PositionProps, PrepareProps, UIProductProps, Usinageprops]
 
 
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
+    bpy.types.Scene.usinage_props = bpy.props.PointerProperty(type=Usinageprops)
     bpy.types.Scene.dif_props = bpy.props.PointerProperty(type=DiffuseurProps)
     bpy.types.Scene.array_props = bpy.props.PointerProperty(type=ArrayProps)
     bpy.types.Scene.pos_props = bpy.props.PointerProperty(type=PositionProps)
@@ -656,6 +689,7 @@ def register():
 def unregister():
     for cls in classes:
         bpy.utils.unregister_class(cls)
+    del bpy.types.Scene.usinage_props
     del bpy.types.Scene.dif_props
     del bpy.types.Scene.array_props
     del bpy.types.Scene.pos_props

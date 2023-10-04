@@ -46,6 +46,7 @@ class Diffuseur_SideBar(Panel):
         posprops = scene.pos_props
         prepprops = scene.prep_props
         productprops = scene.product_props
+        usinageprops = scene.usinage_props
 
         # presets
         row1 = layout.row(align=True)
@@ -57,13 +58,15 @@ class Diffuseur_SideBar(Panel):
 
         # Diffuseur name
         box = layout.box()
-        box.label(text="Diffuseur ", icon="X")
-        box.label(text=difprops.getDifName())
+        box.label(text="Usinage ", icon="X")
+        for att in (x for x in usinageprops.listAttributes()):
+            box.prop(usinageprops, att)
+        box.label(text=f"Rang : {usinageprops.getOffset() * 1000} mm")
 
         # Dimensions
         layout.separator()
         box = layout.box()
-        box.label(text="Dimensions", icon="X")
+        box.label(text="Dimensions : " + difprops.getDifName(), icon="X")
         row = box.row()
         row.prop(productprops, "product_type", expand=True)
         for att in (x for x in difprops.listAttributes(productprops.product_type)):
