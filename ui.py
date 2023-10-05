@@ -180,6 +180,11 @@ class Diffuseur_SideBar(Panel):
         layout.separator()
         box = layout.box()
         box.label(text="Motif", icon="X")
+
+
+        box.prop(difprops, "decalage_h")
+        box.prop(difprops, "decalage_v")
+
         ratio = difprops.getRatio()
 
         for i in range(difprops.type):
@@ -188,7 +193,10 @@ class Diffuseur_SideBar(Panel):
             for k in range(difprops.type):
                 
                 col = split.column()
-                col.label(text=str(ratio[i*difprops.type + k]))
+                col.label(text=str(
+                    int(ratio[i*difprops.type + k] * 1000)
+                    
+                    ))
 
 
 ui_classes = [DIF_MT_Presets, OT_AddMyPreset]

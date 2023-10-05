@@ -184,6 +184,24 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         ),
     )
 
+    decalage_h: IntProperty(
+        name="Horizontal",
+        description="Décalage",
+        min=0,
+        max=13,
+        default=0,
+    )
+
+    decalage_v: IntProperty(
+        name="Vertical",
+        description="Décalage",
+        min=0,
+        max=13,
+        default=0,
+    )
+
+    
+
     def getDifName(self):
         dif_name = (
              "N"
@@ -220,9 +238,17 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         for k in range(0, self.type * self.type):
             n = k % self.type
             m = math.floor(k / self.type)
-            an = int((math.pow(n, 2) + math.pow(m, 2)) % self.type)
+            an = int((math.pow(n + self.decalage_h, 2) + math.pow(m + self.decalage_v, 2)) % self.type)
             ratio.append(an)
-        return ratio
+
+        amax = max(ratio)
+
+        depth = []
+        for k in range(0, self.type * self.type):
+            y = (ratio[k] * self.profondeur) / amax
+            depth.append(y)
+       
+        return depth
 
     def listAttributes(self, product):
         match product:
