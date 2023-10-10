@@ -55,7 +55,7 @@ class AddCadreMortaise(bpy.types.Operator, AddObjectHelper):
             arrayprops.cadre_mortaise_x,
             arrayprops.cadre_mortaise_y,
             difprops.profondeur,
-            difprops.largeur_diffuseur,
+            difprops.largeur_diffuseur * difprops.longueur_diffuseur,
         )
 
         if posprops.cadre_mortaise_rotation:
@@ -164,13 +164,16 @@ class AddCarreau(bpy.types.Operator, AddObjectHelper):
             posprops.carreau_position[2],
         )
 
+        print(scene.product_props.product_type)
+
         difArray(
             mesh_obj,
             arrayprops.array_offset,
             arrayprops.carreau_x,
             arrayprops.carreau_y,
             difprops.getRang(),
-            difprops.getRang(),
+            difprops.getRang() if scene.product_props.product_type == "0" else difprops.largeur_diffuseur * difprops.longueur_diffuseur ,
+            
         )
 
         if posprops.carreau_rotation:
