@@ -164,8 +164,6 @@ class AddCarreau(bpy.types.Operator, AddObjectHelper):
             posprops.carreau_position[2],
         )
 
-        print(scene.product_props.product_type)
-
         difArray(
             mesh_obj,
             arrayprops.array_offset,
@@ -817,7 +815,8 @@ class PrepareToCam(bpy.types.Operator, AddObjectHelper):
             bpy.ops.object.join()
             bpy.context.object.name = difprops.getDifName()
             if prepprops.isOvercuts:
-                bpy.ops.object.curve_overcuts(diameter=usinageprops.fraise)
+                bpy.ops.object.curve_overcuts(diameter=usinageprops.fraise,threshold=1.5708)
+
 
         return {"FINISHED"}
 
