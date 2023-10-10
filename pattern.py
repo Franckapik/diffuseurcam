@@ -229,52 +229,62 @@ def tenonBas(x, y, difprops, usinageprops):
 
 def tenonPeigneHaut(x, y, difprops, usinageprops):
     offset = usinageprops.getOffset()
-    epaisseur = difprops.epaisseur
+    hauteurTenonPeigne = difprops.getHauteurTenon()
     tenon_peigne = difprops.tenon_peigne
 
-    return [
-        (x + offset, y, 0),
-        (
-            x,
-            y + epaisseur,
-            0,
-        ),
-        (
-            x + tenon_peigne,
-            y + epaisseur,
-            0,
-        ),
-        (
-            x + tenon_peigne - offset,
-            y,
-            0,
-        ),
-    ]
+    if hauteurTenonPeigne != 0: 
+        return [
+            (x + offset, y, 0),
+            (
+                x,
+                y + hauteurTenonPeigne,
+                0,
+            ),
+            (
+                x + tenon_peigne,
+                y + hauteurTenonPeigne,
+                0,
+            ),
+            (
+                x + tenon_peigne - offset,
+                y,
+                0,
+            ),
+        ]
+    else : #pas de tenons
+        return [
+            
+        ]
 
 
 def tenonPeigneBas(x, y, difprops, usinageprops):
     offset = usinageprops.getOffset()
-    epaisseur = difprops.epaisseur
+    hauteurTenonPeigne = difprops.getHauteurTenon()
     tenon_peigne = difprops.tenon_peigne
 
-    return [
-        (x - offset, y, 0),
-        (
-            x,
-            y - epaisseur,
-            0,
-        ),
-        (
-            x - tenon_peigne,
-            y - epaisseur,
-            0,
-        ),
-        (
-            x - tenon_peigne + offset,
-            y,
-            0,
-        ),
-    ]
+    if hauteurTenonPeigne != 0:
+        return [
+            (x - offset, y, 0),
+            (
+                x,
+                y - hauteurTenonPeigne,
+                0,
+            ),
+            (
+                x - tenon_peigne,
+                y - hauteurTenonPeigne,
+                0,
+            ),
+            (
+                x - tenon_peigne + offset,
+                y,
+                0,
+            ),
+        ]
+    else : #pas de tenons
+        return [
+            
+        ]
 
 
 def trou_accroche(x, y, division):

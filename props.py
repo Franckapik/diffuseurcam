@@ -153,6 +153,16 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         name="Cadre central",
         description="Cadre central absorbeur",
     )
+
+    type_tenon_peigne:  EnumProperty(
+        name="Interface Peigne/Cadre",
+        items=(
+            ("0", "Pas de tenon", ""),
+            ("1", "Tenon mi-traversant", ""),
+            ("2", "Tenon entier", ""),
+        ),
+    )
+
     tenon_pilier: FloatProperty(
         name="Tenon pilier",
         description="Tenon pilier",
@@ -220,6 +230,17 @@ class DiffuseurProps(bpy.types.PropertyGroup):
     def getRang(self):
         rang = (self.largeur_diffuseur - self.epaisseur) / self.type
         return round(rang, 4)
+    
+    def getHauteurTenon(self):
+        match self.type_tenon_peigne:
+            case "0" : 
+                return 0
+            case "1" : 
+                return self.epaisseur/2
+            case "2" : 
+                return self.epaisseur
+            case _:
+                return
 
     def getLongueur(self):
         longueurTotale = (
@@ -262,6 +283,8 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "tenon_cadre",
                     "tenon_peigne",
                     "longueur_diffuseur",
+                    "type_tenon_peigne"
+                    
                 ]
             case "1":
                 return [
@@ -273,6 +296,8 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "tenon_cadre",
                     "tenon_peigne",
                     "longueur_diffuseur",
+                    "type_tenon_peigne"
+                    
                 ]
             case "2":
                 return [
