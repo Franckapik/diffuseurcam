@@ -398,7 +398,7 @@ class AddPeigneCourt(bpy.types.Operator, AddObjectHelper):
             arrayprops.peigne_court_x,
             arrayprops.peigne_court_y,
             difprops.profondeur,
-            difprops.longueur_diffuseur,
+            difprops.largeur_diffuseur,
         )
         if posprops.peigne_court_rotation:
             mesh_obj.rotation_euler = [0, 0, math.radians(90)]
@@ -512,7 +512,7 @@ class AddPeigneLong(bpy.types.Operator, AddObjectHelper):
             arrayprops.peigne_long_x,
             arrayprops.peigne_long_y,
             difprops.profondeur,
-            difprops.longueur_diffuseur,
+            difprops.longueur_diffuseur * difprops.largeur_diffuseur,
         )
 
         if posprops.peigne_long_rotation:
