@@ -482,7 +482,7 @@ def add_accroche(difprops, productprops, usinageprops):
             (rang - epaisseur, 0, 0),
         ]
 
-        vertsAccroche = trou_accroche(division * 6, division * 4, division)
+        vertsAccroche = trou_accroche(division * 6, division * 3, division)
 
     elif product_type == "1":
         vertsCadre = [
@@ -492,9 +492,9 @@ def add_accroche(difprops, productprops, usinageprops):
             (rang - epaisseur, 0, 0),
         ]
 
-        vertsAccroche = trou_accroche(division * 6, division * 4, division)
+        vertsAccroche = trou_accroche(division * 6, division * 3, division)
         vertsAccroche2 = trou_accroche(
-            division * 6, longueurTotale - division * 10, division
+            division * 6, longueurTotale - division * 11, division
         )
 
     elif product_type == "2":
