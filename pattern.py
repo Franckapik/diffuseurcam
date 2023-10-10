@@ -102,29 +102,33 @@ def mortaiseInt(x, y, difprops, usinageprops):
     tenon_peigne = difprops.tenon_peigne
     offset = usinageprops.getOffset()
     epaisseur = difprops.epaisseur
+    hauteurTenonPeigne = difprops.getHauteurTenon()
 
-    return [
-        (
-            x - offset,
-            y + epaisseur / 2 + offset,
-            0,
-        ),
-        (
-            x + tenon_peigne + offset,
-            y + epaisseur / 2 + offset,
-            0,
-        ),
-        (
-            x + tenon_peigne + offset,
-            y - epaisseur / 2 - offset,
-            0,
-        ),
-        (
-            x - offset,
-            y - epaisseur / 2 - offset,
-            0,
-        ),
-    ]
+    if hauteurTenonPeigne != 0 :
+        return [
+            (
+                x - offset,
+                y + epaisseur / 2 + offset,
+                0,
+            ),
+            (
+                x + tenon_peigne + offset,
+                y + epaisseur / 2 + offset,
+                0,
+            ),
+            (
+                x + tenon_peigne + offset,
+                y - epaisseur / 2 - offset,
+                0,
+            ),
+            (
+                x - offset,
+                y - epaisseur / 2 - offset,
+                0,
+            ),
+        ]
+    else:
+        return []
 
 
 def tenonHaut(x, y, difprops, usinageprops):
