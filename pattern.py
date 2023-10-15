@@ -408,7 +408,7 @@ def mortaise_gauche_fond_moule(x, y, difprops, usinageprops):
     ]
 
 
-def mortaise_pilier_fond_moule(x, y, difprops, usinageprops):
+def mortaise_pilier_fond_moule_eco(x, y, difprops, usinageprops):
     epaisseur_moule = difprops.epaisseur_moule
     tenon_pilier = difprops.tenon_pilier
     offset = usinageprops.getOffset()

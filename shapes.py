@@ -813,15 +813,18 @@ def add_fond_moule(difprops, productprops, usinageprops):
 
         for k in range(0, round(N * N)):
             if k % N == 0 and k != 0:
-                print(k)
                 y0 += rang2
                 x0 = rang2 / 2 + epaisseur + epaisseur_moule
+            if difprops.type_moule == "eco" :
+                vertsMortaisesInt += [
+                    *mortaise_pilier_fond_moule_eco(x0, y0, difprops, usinageprops)
+                ]
 
-            vertsMortaisesInt += [
-                *mortaise_pilier_fond_moule(x0, y0, difprops, usinageprops)
-            ]
+                x0 += rang2
 
-            x0 += rang2
+            if difprops.type_moule == "stable" :
+                pass
+
 
         vertsCadre = [
             (0, 0, 0),
