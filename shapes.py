@@ -270,14 +270,14 @@ def add_peigne_court(difprops, productprops, usinageprops):
     peignes = []
     for k in range(1, N):
         peignes += [
-            (profondeur, largeur_diffuseur - rang * k + offset, 0),
-            (profondeur / 2 - 0.005, largeur_diffuseur - rang * k + offset, 0),
+            (profondeur, largeur_diffuseur - rang * k , 0),
+            (profondeur / 2 - epaisseur, largeur_diffuseur - rang * k , 0),
             (
-                profondeur / 2 - 0.005,
-                largeur_diffuseur - rang * k - epaisseur - offset,
+                profondeur / 2 - epaisseur,
+                largeur_diffuseur - rang * k - epaisseur ,
                 0,
             ),
-            (profondeur, largeur_diffuseur - rang * k - epaisseur - offset, 0),
+            (profondeur, largeur_diffuseur - rang * k - epaisseur , 0),
         ]
 
     vertsCadre = [
