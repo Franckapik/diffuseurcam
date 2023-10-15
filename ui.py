@@ -28,9 +28,11 @@ class OT_AddMyPreset(AddPresetBase, Operator):
         "scene.pos_props",
         "scene.prep_props",
         "scene.product_props",
+        "scene.usinage_props",
     ]
     # Directory to store the presets
     preset_subdir = "object/display"
+    
 
 
 class Diffuseur_SideBar(Panel):
