@@ -322,17 +322,22 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "cadre_central",
                 ]
             case "3":
-                return [
+                attributes = [
                     "type_moule",
                     "epaisseur",
                     "epaisseur_moule",
-                    "epaisseur_pilier",
                     "pilier_reduction",
                     "type",
                     "profondeur",
                     "largeur_diffuseur",
                     "longueur_diffuseur",
                 ]
+                
+                if self.type_moule == "stable":
+                    attributes.append("epaisseur_pilier")
+                    
+                return attributes
+
             case _:
                 return
 
