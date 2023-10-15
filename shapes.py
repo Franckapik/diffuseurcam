@@ -802,7 +802,6 @@ def add_fond_moule(difprops, productprops, usinageprops):
 
     N = difprops.type
     rang2 = rang - epaisseur / N
-    print(rang, epaisseur, rang - epaisseur / N)
 
     edgesCadre = []
     vertsMortaisesInt = []

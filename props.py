@@ -55,7 +55,7 @@ class Usinageprops(bpy.types.PropertyGroup):
 
 class DiffuseurProps(bpy.types.PropertyGroup):
     epaisseur: FloatProperty(
-        name="Epaisseur",
+        name="Epaisseur modèle",
         description="Box epaisseur",
         default=0.003,
         step=0.001,
@@ -154,7 +154,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         description="Cadre central absorbeur",
     )
 
-    type_tenon_peigne:  EnumProperty(
+    type_tenon_peigne: EnumProperty(
         name="Interface Peigne/Cadre",
         items=(
             ("0", "Pas de tenon", ""),
@@ -178,6 +178,15 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         min=0.005,
         max=1,
         default=0.01,
+        unit="LENGTH",
+        precision=4,
+    )
+    epaisseur_pilier: FloatProperty(
+        name="Epaisseur_pilier",
+        description="Epaisseur des piliers",
+        min=0.003,
+        max=1,
+        default=0.003,
         unit="LENGTH",
         precision=4,
     )
@@ -210,11 +219,17 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         default=0,
     )
 
-    
+    type_moule: EnumProperty(
+        name="Type de moule",
+        items=(
+            ("stable", "Stable", ""),
+            ("eco", "Eco", ""),
+        ),
+    )
 
     def getDifName(self):
         dif_name = (
-             "N"
+            "N"
             + str(self.type)
             + "W"
             + str(round(self.largeur_diffuseur * 100))
@@ -230,14 +245,14 @@ class DiffuseurProps(bpy.types.PropertyGroup):
     def getRang(self):
         rang = (self.largeur_diffuseur - self.epaisseur) / self.type
         return round(rang, 4)
-    
+
     def getHauteurTenon(self):
         match self.type_tenon_peigne:
-            case "0" : 
+            case "0":
                 return 0
-            case "1" : 
-                return self.epaisseur/2
-            case "2" : 
+            case "1":
+                return self.epaisseur / 2
+            case "2":
                 return self.epaisseur
             case _:
                 return
@@ -247,10 +262,12 @@ class DiffuseurProps(bpy.types.PropertyGroup):
             round(self.type * self.longueur_diffuseur) * self.getRang() + self.epaisseur
         )
         return longueurTotale
-    
+
     def getLargeurPilier(self):
         largeur_pilier = (
-            self.getRang() - self.epaisseur - self.getRang() * float(self.pilier_reduction)
+            self.getRang()
+            - self.epaisseur
+            - self.getRang() * float(self.pilier_reduction)
         )
         return round(largeur_pilier, 4)
 
@@ -259,7 +276,10 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         for k in range(0, self.type * self.type):
             n = k % self.type
             m = math.floor(k / self.type)
-            an = int((math.pow(n + self.decalage_h, 2) + math.pow(m + self.decalage_v, 2)) % self.type)
+            an = int(
+                (math.pow(n + self.decalage_h, 2) + math.pow(m + self.decalage_v, 2))
+                % self.type
+            )
             ratio.append(an)
 
         amax = max(ratio)
@@ -268,7 +288,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         for k in range(0, self.type * self.type):
             y = (ratio[k] * self.profondeur) / amax
             depth.append(y)
-       
+
         return depth
 
     def listAttributes(self, product):
@@ -283,8 +303,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "tenon_cadre",
                     "tenon_peigne",
                     "longueur_diffuseur",
-                    "type_tenon_peigne"
-                    
+                    "type_tenon_peigne",
                 ]
             case "1":
                 return [
@@ -296,8 +315,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "tenon_cadre",
                     "tenon_peigne",
                     "longueur_diffuseur",
-                    "type_tenon_peigne"
-                    
+                    "type_tenon_peigne",
                 ]
             case "2":
                 return [
@@ -314,14 +332,16 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                 ]
             case "3":
                 return [
+                    "type_moule",
                     "epaisseur",
+                    "epaisseur_moule",
+                    "epaisseur_pilier",
+                    "pilier_reduction",
                     "type",
                     "profondeur",
                     "largeur_diffuseur",
                     "tenon_pilier",
                     "longueur_diffuseur",
-                    "epaisseur_moule",
-                    "pilier_reduction",
                 ]
             case _:
                 return
