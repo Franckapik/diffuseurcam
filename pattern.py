@@ -410,12 +410,24 @@ def mortaise_gauche_fond_moule(x, y, difprops, usinageprops):
 
 def mortaise_pilier_fond_moule_eco(x, y, difprops, usinageprops):
     epaisseur_moule = difprops.epaisseur_moule
-    tenon_pilier = difprops.tenon_pilier
+    epaisseur_pilier = difprops.epaisseur_pilier
     offset = usinageprops.getOffset()
 
     return [
-        (x - tenon_pilier / 2 - offset, y - epaisseur_moule / 2 - offset, 0),
-        (x + tenon_pilier / 2 + offset, y - epaisseur_moule / 2 - offset, 0),
-        (x + tenon_pilier / 2 + offset, y + epaisseur_moule / 2 + offset, 0),
-        (x - tenon_pilier / 2 - offset, y + epaisseur_moule / 2 + offset, 0),
+        (x - epaisseur_pilier / 2 - offset, y - epaisseur_moule / 2 - offset, 0),
+        (x + epaisseur_pilier / 2 + offset, y - epaisseur_moule / 2 - offset, 0),
+        (x + epaisseur_pilier / 2 + offset, y + epaisseur_moule / 2 + offset, 0),
+        (x - epaisseur_pilier / 2 - offset, y + epaisseur_moule / 2 + offset, 0),
+    ]
+
+def mortaise_pilier_fond_moule_stable(x, y, difprops, usinageprops):
+    epaisseur_moule = difprops.epaisseur_moule
+    epaisseur_pilier = difprops.epaisseur_pilier
+    offset = usinageprops.getOffset()
+
+    return [
+        (x - epaisseur_pilier / 2 - offset, y - epaisseur_moule / 2 - offset, 0),
+        (x + epaisseur_pilier / 2 + offset, y - epaisseur_moule / 2 - offset, 0),
+        (x + epaisseur_pilier / 2 + offset, y + epaisseur_moule / 2 + offset, 0),
+        (x - epaisseur_pilier / 2 - offset, y + epaisseur_moule / 2 + offset, 0),
     ]

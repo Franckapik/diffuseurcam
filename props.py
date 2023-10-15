@@ -163,15 +163,6 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         ),
     )
 
-    tenon_pilier: FloatProperty(
-        name="Tenon pilier",
-        description="Tenon pilier",
-        min=0.005,
-        max=1,
-        default=0.01,
-        unit="LENGTH",
-        precision=4,
-    )
     epaisseur_moule: FloatProperty(
         name="Epaisseur_moule",
         description="Epaisseur du moule",
@@ -340,7 +331,6 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "type",
                     "profondeur",
                     "largeur_diffuseur",
-                    "tenon_pilier",
                     "longueur_diffuseur",
                 ]
             case _:

@@ -823,7 +823,11 @@ def add_fond_moule(difprops, productprops, usinageprops):
                 x0 += rang2
 
             if difprops.type_moule == "stable" :
-                pass
+                vertsMortaisesInt += [
+                    *mortaise_pilier_fond_moule_stable(x0, y0, difprops, usinageprops)
+                ]
+
+                x0 += rang2
 
 
         vertsCadre = [
@@ -918,7 +922,7 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
     product_type = productprops.product_type
     epaisseur = difprops.epaisseur
     profondeur = difprops.profondeur
-    tenon_pilier = difprops.tenon_pilier
+    epaisseur_pilier = difprops.epaisseur_pilier
     epaisseur_moule = difprops.epaisseur_moule
     array_offset = arrayprops.array_offset
 
@@ -955,22 +959,22 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
                         (x0 + largeur_pilier, y0 + y + epaisseur_moule, 0),
                         (x0 + largeur_pilier, y0 + epaisseur_moule, 0),
                         (
-                            x0 + largeur_pilier / 2 + tenon_pilier / 2,
+                            x0 + largeur_pilier / 2 + epaisseur_pilier / 2,
                             y0 + epaisseur_moule,
                             0,
                         ),
                         (
-                            x0 + largeur_pilier / 2 + tenon_pilier / 2,
+                            x0 + largeur_pilier / 2 + epaisseur_pilier / 2,
                             y0,
                             0,
                         ),
                         (
-                            x0 + largeur_pilier / 2 - tenon_pilier / 2,
+                            x0 + largeur_pilier / 2 - epaisseur_pilier / 2,
                             y0,
                             0,
                         ),
                         (
-                            x0 + largeur_pilier / 2 - tenon_pilier / 2,
+                            x0 + largeur_pilier / 2 - epaisseur_pilier / 2,
                             y0 + epaisseur_moule,
                             0,
                         ),
