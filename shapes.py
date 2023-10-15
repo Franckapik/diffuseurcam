@@ -865,15 +865,34 @@ def add_fond_moule(difprops, productprops, usinageprops):
     i = 0
 
     for k in range(len(vertsCadre), len(vertsCadre) + len(vertsMortaisesInt)):
-        i += 1
-        if i == 4 or k == len(vertsCadre):
-            i = 0
-            edgesMortaisesInt += [
-                (k, k + 1),
-                (k + 1, k + 2),
-                (k + 2, k + 3),
-                (k + 3, k),
-            ]
+        if difprops.type_moule == "eco" :
+            i += 1
+            if i == 4 or k == len(vertsCadre):
+                i = 0
+                edgesMortaisesInt += [
+                    (k, k + 1),
+                    (k + 1, k + 2),
+                    (k + 2, k + 3),
+                    (k + 3, k),
+                ]
+        if difprops.type_moule == "stable" :
+            i += 1
+            if i == 12 or k == len(vertsCadre):
+                i = 0
+                edgesMortaisesInt += [
+                    (k, k + 1),
+                    (k + 1, k + 2),
+                    (k + 2, k + 3),
+                    (k + 3, k + 4),
+                    (k + 4, k + 5),
+                    (k + 5, k + 6),
+                    (k + 6, k + 7),
+                    (k + 7, k + 8),
+                    (k + 8, k + 9),
+                    (k + 9, k + 10),
+                    (k + 10, k + 11),
+                    (k + 11, k),
+                ]
 
     verts = [*list(vertsCadre), *list(vertsMortaisesInt)]
     edges = [*list(edgesCadre), *list(edgesMortaisesInt)]

@@ -414,20 +414,27 @@ def mortaise_pilier_fond_moule_eco(x, y, difprops, usinageprops):
     offset = usinageprops.getOffset()
 
     return [
-        (x - epaisseur_pilier / 2 - offset, y - epaisseur_moule / 2 - offset, 0),
-        (x + epaisseur_pilier / 2 + offset, y - epaisseur_moule / 2 - offset, 0),
-        (x + epaisseur_pilier / 2 + offset, y + epaisseur_moule / 2 + offset, 0),
-        (x - epaisseur_pilier / 2 - offset, y + epaisseur_moule / 2 + offset, 0),
+        (x - epaisseur_pilier / 2 , y - epaisseur_moule / 2 , 0),
+        (x + epaisseur_pilier / 2 , y - epaisseur_moule / 2 , 0),
+        (x + epaisseur_pilier / 2 , y + epaisseur_moule / 2 , 0),
+        (x - epaisseur_pilier / 2 , y + epaisseur_moule / 2 , 0),
     ]
 
 def mortaise_pilier_fond_moule_stable(x, y, difprops, usinageprops):
-    epaisseur_moule = difprops.epaisseur_moule
     epaisseur_pilier = difprops.epaisseur_pilier
-    offset = usinageprops.getOffset()
+    largeur_pilier = difprops.getLargeurPilier()
 
     return [
-        (x - epaisseur_pilier / 2 - offset, y - epaisseur_moule / 2 - offset, 0),
-        (x + epaisseur_pilier / 2 + offset, y - epaisseur_moule / 2 - offset, 0),
-        (x + epaisseur_pilier / 2 + offset, y + epaisseur_moule / 2 + offset, 0),
-        (x - epaisseur_pilier / 2 - offset, y + epaisseur_moule / 2 + offset, 0),
+        (x - epaisseur_pilier / 2, y - largeur_pilier / 2, 0),
+        (x - epaisseur_pilier / 2, y - epaisseur_pilier / 2, 0),
+        (x - largeur_pilier / 2, y - epaisseur_pilier / 2, 0),
+        (x - largeur_pilier / 2, y + epaisseur_pilier / 2, 0),
+        (x - epaisseur_pilier / 2, y + epaisseur_pilier / 2, 0),
+        (x - epaisseur_pilier / 2, y + largeur_pilier / 2, 0),
+        (x + epaisseur_pilier / 2, y + largeur_pilier / 2, 0),
+        (x + epaisseur_pilier / 2, y + epaisseur_pilier / 2, 0),
+        (x + largeur_pilier / 2, y + epaisseur_pilier / 2, 0),
+        (x + largeur_pilier / 2, y - epaisseur_pilier / 2, 0),
+        (x + epaisseur_pilier / 2, y -   epaisseur_pilier / 2, 0),
+        (x + epaisseur_pilier / 2, y -largeur_pilier / 2, 0),
     ]

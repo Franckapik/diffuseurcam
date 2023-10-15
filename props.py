@@ -213,8 +213,8 @@ class DiffuseurProps(bpy.types.PropertyGroup):
     type_moule: EnumProperty(
         name="Type de moule",
         items=(
-            ("stable", "Stable", ""),
-            ("eco", "Eco", ""),
+            ("stable", "Stable - 2 epaisseurs", ""),
+            ("eco", "Eco - 1 epaisseur", ""),
         ),
     )
 
