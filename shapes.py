@@ -978,22 +978,22 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
                             (x0 + largeur_pilier, y0 + y + epaisseur_moule, 0),
                             (x0 + largeur_pilier, y0 + epaisseur_moule, 0),
                             (
-                                x0 + largeur_pilier / 2 + epaisseur_pilier / 2,
+                                x0 + largeur_pilier / 2 + epaisseur_moule / 2,
                                 y0 + epaisseur_moule,
                                 0,
                             ),
                             (
-                                x0 + largeur_pilier / 2 + epaisseur_pilier / 2,
+                                x0 + largeur_pilier / 2 + epaisseur_moule / 2,
                                 y0,
                                 0,
                             ),
                             (
-                                x0 + largeur_pilier / 2 - epaisseur_pilier / 2,
+                                x0 + largeur_pilier / 2 - epaisseur_moule / 2,
                                 y0,
                                 0,
                             ),
                             (
-                                x0 + largeur_pilier / 2 - epaisseur_pilier / 2,
+                                x0 + largeur_pilier / 2 - epaisseur_moule / 2,
                                 y0 + epaisseur_moule,
                                 0,
                             ),
