@@ -480,6 +480,16 @@ class ArrayProps(bpy.types.PropertyGroup):
         default=1,
         min=0,
     )
+    pilier_moule_x: IntProperty(
+        name="Piliers Moule",
+        default=1,
+        min=0,
+    )
+    pilier_moule_y: IntProperty(
+        name="Piliers Moule",
+        default=1,
+        min=0,
+    )
 
     def listAttributes(self, product):
         match product:
@@ -534,6 +544,8 @@ class ArrayProps(bpy.types.PropertyGroup):
                     "fond_moule_y",
                     "cadre_moule_x",
                     "cadre_moule_y",
+                    "pilier_moule_x",
+                    "pilier_moule_y"
                 ]
             case _:
                 return

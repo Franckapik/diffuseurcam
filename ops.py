@@ -682,10 +682,10 @@ class AddPilierMoule(bpy.types.Operator, AddObjectHelper):
         difArray(
             mesh_obj,
             arrayprops.array_offset,
-            arrayprops.fond_moule_x,
-            arrayprops.fond_moule_y,
-            difprops.profondeur,
-            difprops.longueur_diffuseur,
+            arrayprops.pilier_moule_x,
+            arrayprops.pilier_moule_y,
+            (difprops.getLargeurPilier() + arrayprops.array_offset) * (difprops.type + 1),
+            difprops.longueur_diffuseur, #calcul à faire sur l'addition des ratios
         )
 
         if posprops.pilier_moule_rotation:

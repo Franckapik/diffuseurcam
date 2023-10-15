@@ -909,7 +909,6 @@ def add_cadre_moule(difprops, productprops, usinageprops):
     largeur_diffuseur = difprops.largeur_diffuseur
 
     N = difprops.type
-    print(rang, epaisseur, rang - epaisseur / N)
 
     edgesCadre = []
 
@@ -965,57 +964,95 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
     if product_type == "3":
         y0 = 0
         x0 = 0
-        for i in range(len(ratio)):
-            if ratio[i][0] != 0:  # delete hauteur = 0
-                if ratio[i][0] == amax:
-                    y = ((ratio[i][0] * profondeur) / amax) - epaisseur
-                else:
-                    y = (ratio[i][0] * profondeur) / amax
+        if difprops.type_moule == "eco" :
+            for i in range(len(ratio)):
+                if ratio[i][0] != 0:  # delete hauteur = 0
+                    if ratio[i][0] == amax:
+                        y = ((ratio[i][0] * profondeur) / amax) - epaisseur
+                    else:
+                        y = (ratio[i][0] * profondeur) / amax
 
-                for k in range(ratio[i][1]):
-                    vertsCadre += [
-                        (x0, y0 + y + epaisseur_moule, 0),
-                        (x0 + largeur_pilier, y0 + y + epaisseur_moule, 0),
-                        (x0 + largeur_pilier, y0 + epaisseur_moule, 0),
-                        (
-                            x0 + largeur_pilier / 2 + epaisseur_pilier / 2,
-                            y0 + epaisseur_moule,
-                            0,
-                        ),
-                        (
-                            x0 + largeur_pilier / 2 + epaisseur_pilier / 2,
-                            y0,
-                            0,
-                        ),
-                        (
-                            x0 + largeur_pilier / 2 - epaisseur_pilier / 2,
-                            y0,
-                            0,
-                        ),
-                        (
-                            x0 + largeur_pilier / 2 - epaisseur_pilier / 2,
-                            y0 + epaisseur_moule,
-                            0,
-                        ),
-                        (x0, y0 + epaisseur_moule, 0),
+                    for k in range(ratio[i][1]):
+                        vertsCadre += [
+                            (x0, y0 + y + epaisseur_moule, 0),
+                            (x0 + largeur_pilier, y0 + y + epaisseur_moule, 0),
+                            (x0 + largeur_pilier, y0 + epaisseur_moule, 0),
+                            (
+                                x0 + largeur_pilier / 2 + epaisseur_pilier / 2,
+                                y0 + epaisseur_moule,
+                                0,
+                            ),
+                            (
+                                x0 + largeur_pilier / 2 + epaisseur_pilier / 2,
+                                y0,
+                                0,
+                            ),
+                            (
+                                x0 + largeur_pilier / 2 - epaisseur_pilier / 2,
+                                y0,
+                                0,
+                            ),
+                            (
+                                x0 + largeur_pilier / 2 - epaisseur_pilier / 2,
+                                y0 + epaisseur_moule,
+                                0,
+                            ),
+                            (x0, y0 + epaisseur_moule, 0),
+                        ]
+                        x0 += largeur_pilier + array_offset
+
+                    x0 = 0
+                    y0 += y + array_offset + epaisseur_moule
+
+            for i in range(len(vertsCadre)):
+                if i % 8 == 0:
+                    edgesCadre += [
+                        (i, i + 1),
+                        (i + 1, i + 2),
+                        (i + 2, i + 3),
+                        (i + 3, i + 4),
+                        (i + 4, i + 5),
+                        (i + 5, i + 6),
+                        (i + 6, i + 7),
+                        (i + 7, i),
                     ]
-                    x0 += largeur_pilier + array_offset
 
-                x0 = 0
-                y0 += y + array_offset + epaisseur_moule
+        if difprops.type_moule == "stable" :
+            for i in range(len(ratio)):
+                if ratio[i][0] != 0:  # delete hauteur = 0
+                    if ratio[i][0] == amax:
+                        y = ((ratio[i][0] * profondeur) / amax) - epaisseur
+                    else:
+                        y = (ratio[i][0] * profondeur) / amax
 
-    for i in range(len(vertsCadre)):
-        if i % 8 == 0:
-            edgesCadre += [
-                (i, i + 1),
-                (i + 1, i + 2),
-                (i + 2, i + 3),
-                (i + 3, i + 4),
-                (i + 4, i + 5),
-                (i + 5, i + 6),
-                (i + 6, i + 7),
-                (i + 7, i),
-            ]
+                    for k in range(ratio[i][1]):
+                        vertsCadre += [
+                            (x0, y0 + y, 0),
+                            (x0 + largeur_pilier, y0 + y , 0),
+                            (x0 + largeur_pilier, y0 , 0),
+                            (x0 + largeur_pilier/2 + epaisseur_pilier/2, y0 , 0),
+                            (x0 + largeur_pilier/2 + epaisseur_pilier/2, y0 + y/2 + epaisseur_pilier/2 , 0),
+                            (x0 + largeur_pilier/2 - epaisseur_pilier/2, y0 + y/2 + epaisseur_pilier/2 , 0),
+                            (x0 + largeur_pilier/2 - epaisseur_pilier/2, y0, 0),
+                            (x0, y0, 0),
+                        ]
+                        x0 += largeur_pilier + array_offset
+
+                    x0 = 0
+                    y0 += y + array_offset 
+
+            for i in range(len(vertsCadre)):
+                 if i % 8 == 0:
+                    edgesCadre += [
+                        (i, i + 1),
+                        (i + 1, i + 2),
+                        (i + 2, i + 3),
+                        (i + 3, i + 4),
+                        (i + 4, i + 5),
+                        (i + 5, i + 6),
+                        (i + 6, i + 7),
+                        (i + 7, i),
+                    ]
 
     verts = [*list(vertsCadre)]
     edges = [*list(edgesCadre)]
