@@ -262,6 +262,7 @@ def add_peigne_court(difprops, productprops, usinageprops):
     largeur_diffuseur = difprops.largeur_diffuseur
     tenon_peigne = difprops.tenon_peigne
     offset = usinageprops.getOffset()
+    offset_peigne = difprops.getOffsetPeigne()
 
     N = difprops.type
 
@@ -270,14 +271,14 @@ def add_peigne_court(difprops, productprops, usinageprops):
     peignes = []
     for k in range(1, N):
         peignes += [
-            (profondeur, largeur_diffuseur - rang * k , 0),
-            (profondeur / 2 - epaisseur, largeur_diffuseur - rang * k , 0),
+            (profondeur, largeur_diffuseur - rang * k + offset_peigne , 0),
+            (profondeur / 2 - epaisseur, largeur_diffuseur - rang * k + offset_peigne , 0),
             (
                 profondeur / 2 - epaisseur,
-                largeur_diffuseur - rang * k - epaisseur ,
+                largeur_diffuseur - rang * k - epaisseur  - offset_peigne,
                 0,
             ),
-            (profondeur, largeur_diffuseur - rang * k - epaisseur , 0),
+            (profondeur, largeur_diffuseur - rang * k - epaisseur - offset_peigne , 0),
         ]
 
     vertsCadre = [
@@ -319,6 +320,8 @@ def add_peigne_long(difprops, productprops, usinageprops):
     longueur_diffuseur = difprops.longueur_diffuseur
     product_type = productprops.product_type
     offset = usinageprops.getOffset()
+    offset_peigne = difprops.getOffsetPeigne()
+
 
     N = difprops.type
 
@@ -330,14 +333,14 @@ def add_peigne_long(difprops, productprops, usinageprops):
 
     for k in range(1, round(N * longueur_diffuseur)):
         peignes += [
-            (profondeur, longueurTotale - rang * k + offset, 0),
-            (profondeur / 2 - 0.005, longueurTotale - rang * k + offset, 0),
+            (profondeur, longueurTotale - rang * k + offset_peigne, 0),
+            (profondeur / 2 -epaisseur, longueurTotale - rang * k + offset_peigne, 0),
             (
-                profondeur / 2 - 0.005,
-                longueurTotale - rang * k - epaisseur - offset,
+                profondeur / 2 -epaisseur,
+                longueurTotale - rang * k - epaisseur - offset_peigne,
                 0,
             ),
-            (profondeur, longueurTotale - rang * k - epaisseur - offset, 0),
+            (profondeur, longueurTotale - rang * k - epaisseur - offset_peigne, 0),
         ]
 
     vertsCadre = [

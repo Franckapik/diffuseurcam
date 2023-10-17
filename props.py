@@ -41,15 +41,19 @@ class Usinageprops(bpy.types.PropertyGroup):
             ("0.50", "50%", ""),
         ),
     )
+    
 
     def getOffset(self):
         offset = float(self.offset) * float(self.fraise)
         return round(offset, 4)
+        
+
 
     def listAttributes(self):
         return [
             "fraise",
             "offset",
+            "offset_peigne",
         ]
 
 
@@ -217,6 +221,18 @@ class DiffuseurProps(bpy.types.PropertyGroup):
             ("eco", "Eco - 1 epaisseur", ""),
         ),
     )
+
+    offset_peigne: IntProperty(
+        name="Offset peigne %",
+        description="Offset sur les peignes en %",
+        min=0,
+        max=10,
+        default=0,
+    )
+
+    def getOffsetPeigne(self):
+        offset = float(self.offset_peigne/100) * float(self.epaisseur)
+        return round(offset, 4)
 
     def getDifName(self):
         dif_name = (
