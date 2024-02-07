@@ -657,6 +657,64 @@ class AddCadreMoule(bpy.types.Operator, AddObjectHelper):
             mesh_obj.rotation_euler = [0, 0, math.radians(90)]
 
         return {"FINISHED"}
+    
+class AddCadreMouleLong(bpy.types.Operator, AddObjectHelper):
+    bl_idname = "mesh.cadre_moule_long"
+    bl_label = "Ajouter Cadre Moule Long"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        scene = context.scene
+        difprops = scene.dif_props
+        vertex, edges, name = add_cadre_moule_long(
+            scene.dif_props, scene.product_props, scene.usinage_props
+        )
+
+        arrayprops = scene.array_props
+
+        # create a bmesh
+        bm = bmesh.new()
+
+        # Create new mesh data.
+        mesh = bpy.data.meshes.new(name)
+        mesh.from_pydata(vertex, edges, [])
+
+        # Positionning according to position props
+        posprops = scene.pos_props
+
+        mesh.update(calc_edges=True)
+
+        # Load BMesh with mesh data
+        bm.from_mesh(mesh)
+
+        # Convert BMesh to mesh data, then release BMesh.
+        bm.to_mesh(mesh)
+        bm.free()
+
+        # Add Object to the default collection from mesh
+        mesh_obj = bpy.data.objects.new(mesh.name, mesh)
+        bpy.context.collection.objects.link(mesh_obj)
+        bpy.types.Scene.dif_parts.append(mesh_obj.name)
+
+        mesh_obj.location = (
+            posprops.cadre_moule_long_position[0],
+            posprops.cadre_moule_long_position[1],
+            posprops.cadre_moule_long_position[2],
+        )
+
+        difArray(
+            mesh_obj,
+            arrayprops.array_offset,
+            arrayprops.cadre_moule_long_x,
+            arrayprops.cadre_moule_long_y,
+            difprops.largeur_diffuseur,
+            difprops.profondeur + difprops.epaisseur_moule,
+        )
+
+        if posprops.cadre_moule_long_rotation:
+            mesh_obj.rotation_euler = [0, 0, math.radians(90)]
+
+        return {"FINISHED"}
 
 
 class AddColle(bpy.types.Operator, AddObjectHelper):
@@ -847,6 +905,7 @@ class AddMoule(bpy.types.Operator, AddObjectHelper):
         AddCadreMoule.execute(self, context)
         AddFondMoule.execute(self, context)
         AddPilierMoule.execute(self, context)
+        AddCadreMouleLong.execute(self, context)
 
         return {"FINISHED"}
 
@@ -952,6 +1011,7 @@ classes = [
     AddFondMoule,
     AddPilierMoule,
     AddCadreMoule,
+    AddCadreMouleLong,
     AddColle,
     AddSimulation,
 ]

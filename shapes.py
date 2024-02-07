@@ -942,6 +942,43 @@ def add_cadre_moule(difprops, productprops, usinageprops):
 
     return verts, edges, "Cadre moule"
 
+def add_cadre_moule_long(difprops, productprops, usinageprops):
+    product_type = productprops.product_type
+    epaisseur = difprops.epaisseur
+    profondeur = difprops.profondeur
+    rang = difprops.getRang()
+    epaisseur_moule = difprops.epaisseur_moule
+    largeur_diffuseur = difprops.largeur_diffuseur
+    longueurTotale = difprops.getLongueur()
+
+
+    N = difprops.type
+
+    edgesCadre = []
+
+    if product_type == "3":
+        vertsCadre = [
+            (epaisseur_moule * 2, 0, 0),
+            *mortaise_bas_fond_moule_long(0, 0, difprops, usinageprops),
+            (longueurTotale, 0, 0),
+            (longueurTotale, -profondeur, 0),
+            (epaisseur_moule * 2, -profondeur, 0),
+        ]
+
+    for k in range(0, len(vertsCadre) - 1):
+        edgesCadre += [
+            (k, k + 1),
+        ]
+
+    edgesCadre += [
+        (len(vertsCadre) - 1, 0),
+    ]
+
+    verts = [*list(vertsCadre)]
+    edges = [*list(edgesCadre)]
+
+    return verts, edges, "Cadre moule Long"
+
 
 def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
     product_type = productprops.product_type

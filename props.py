@@ -501,6 +501,16 @@ class ArrayProps(bpy.types.PropertyGroup):
         default=1,
         min=0,
     )
+    cadre_moule_long_x: IntProperty(
+        name="Cadre Moule Long",
+        default=1,
+        min=0,
+    )
+    cadre_moule_long_y: IntProperty(
+        name="Cadre Moule Long",
+        default=1,
+        min=0,
+    )
     pilier_moule_x: IntProperty(
         name="Piliers Moule",
         default=1,
@@ -565,6 +575,8 @@ class ArrayProps(bpy.types.PropertyGroup):
                     "fond_moule_y",
                     "cadre_moule_x",
                     "cadre_moule_y",
+                    "cadre_moule_long_x",
+                    "cadre_moule_long_y",
                     "pilier_moule_x",
                     "pilier_moule_y"
                 ]
@@ -637,6 +649,11 @@ class PositionProps(bpy.types.PropertyGroup):
         unit="LENGTH",
         precision=4,
     )
+    cadre_moule_long_position: FloatVectorProperty(
+        name="Cadre Moule Long",
+        unit="LENGTH",
+        precision=4,
+    )
     peigne_court_rotation: BoolProperty(name="Peigne court", description="Rotation")
 
     peigne_long_rotation: BoolProperty(name="Peigne long", description="Rotation")
@@ -655,6 +672,7 @@ class PositionProps(bpy.types.PropertyGroup):
     fond_moule_rotation: BoolProperty(name="Fond Moule", description="Rotation")
     pilier_moule_rotation: BoolProperty(name="Pilier Moule", description="Rotation")
     cadre_moule_rotation: BoolProperty(name="Cadre Moule", description="Rotation")
+    cadre_moule_long_rotation: BoolProperty(name="Cadre Moule", description="Rotation")
 
     def update(self, target, cursor):
         self[target] = cursor
@@ -714,6 +732,8 @@ class PositionProps(bpy.types.PropertyGroup):
                     "pilier_moule_rotation",
                     "cadre_moule_position",
                     "cadre_moule_rotation",
+                    "cadre_moule_long_position",
+                    "cadre_moule_long_rotation",
                 ]
             case _:
                 return
