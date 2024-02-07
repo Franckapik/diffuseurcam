@@ -801,6 +801,7 @@ def add_fond_moule(difprops, productprops, usinageprops):
     rang = difprops.getRang()
     epaisseur_moule = difprops.epaisseur_moule
     largeur_diffuseur = difprops.largeur_diffuseur
+    longueur_diffuseur = difprops.longueur_diffuseur
     tenon_cadre = largeur_diffuseur / 8
     longueurTotale = difprops.getLongueur()
 
@@ -816,7 +817,8 @@ def add_fond_moule(difprops, productprops, usinageprops):
         y0 = rang2 / 2 + epaisseur + epaisseur_moule
         x0 = rang2 / 2 + epaisseur + epaisseur_moule
 
-        for k in range(0, round(N * N)):
+
+        for k in range(0, round(N * round(N * longueur_diffuseur))):
             if k % N == 0 and k != 0:
                 y0 += rang2
                 x0 = rang2 / 2 + epaisseur + epaisseur_moule
