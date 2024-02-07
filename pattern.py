@@ -341,7 +341,10 @@ def mortaise_bas_fond_moule(x, y, difprops, usinageprops):
 def mortaise_droite_fond_moule(x, y, difprops, usinageprops):
     epaisseur_moule = difprops.epaisseur_moule
     largeur_diffuseur = difprops.largeur_diffuseur
-    tenon_cadre = largeur_diffuseur / 8
+    longueurTotale = difprops.getLongueur()
+
+    tenon_cadre = longueurTotale / 8
+
 
     return [
         (x, y, 0),
@@ -389,7 +392,8 @@ def mortaise_haut_fond_moule(x, y, difprops, usinageprops):
 def mortaise_gauche_fond_moule(x, y, difprops, usinageprops):
     epaisseur_moule = difprops.epaisseur_moule
     largeur_diffuseur = difprops.largeur_diffuseur
-    tenon_cadre = largeur_diffuseur / 8
+    longueurTotale = difprops.getLongueur()
+    tenon_cadre = longueurTotale / 8
 
     return [
         (x, y, 0),

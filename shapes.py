@@ -802,6 +802,8 @@ def add_fond_moule(difprops, productprops, usinageprops):
     epaisseur_moule = difprops.epaisseur_moule
     largeur_diffuseur = difprops.largeur_diffuseur
     tenon_cadre = largeur_diffuseur / 8
+    longueurTotale = difprops.getLongueur()
+
 
     N = difprops.type
     rang2 = rang - epaisseur / N
@@ -847,12 +849,12 @@ def add_fond_moule(difprops, productprops, usinageprops):
             ),
             *mortaise_haut_fond_moule(
                 largeur_diffuseur + epaisseur_moule,
-                largeur_diffuseur + 2 * epaisseur_moule,
+                longueurTotale + 2 * epaisseur_moule,
                 difprops,
                 usinageprops,
             ),
             *mortaise_gauche_fond_moule(
-                0, largeur_diffuseur + epaisseur_moule, difprops, usinageprops
+                0, longueurTotale + epaisseur_moule, difprops, usinageprops
             ),
         ]
 
