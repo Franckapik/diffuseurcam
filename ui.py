@@ -192,16 +192,26 @@ class Diffuseur_SideBar(Panel):
 
         ratio = difprops.getRatio()
 
-        for i in range(round(difprops.type * difprops.longueur_diffuseur)):
+        if difprops.pillier_1d_only:
             row = box.row()
             split = box.split()
-            for k in range(difprops.type):
-                
-                col = split.column()
-                col.label(text=str(
-                    int(ratio[i*difprops.type + k] * 1000)
+            for k in range(difprops.type):             
+                    col = split.column()
+                    col.label(text=str(
+                        int(ratio[k] * 1000)
+                        
+                        ))
+        else:
+            for i in range(round(difprops.type * difprops.longueur_diffuseur)):
+                row = box.row()
+                split = box.split()
+                for k in range(difprops.type):
                     
-                    ))
+                    col = split.column()
+                    col.label(text=str(
+                        int(ratio[i*difprops.type + k] * 1000)
+                        
+                        ))
         
         box.operator("mesh.colle")
         box.operator("mesh.simulation")
