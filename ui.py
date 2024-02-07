@@ -202,7 +202,9 @@ class Diffuseur_SideBar(Panel):
                     int(ratio[i*difprops.type + k] * 1000)
                     
                     ))
-
+        
+        box.operator("mesh.colle")
+        box.operator("mesh.simulation")
 
 ui_classes = [DIF_MT_Presets, OT_AddMyPreset]
 
