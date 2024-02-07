@@ -176,6 +176,10 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         unit="LENGTH",
         precision=4,
     )
+    pillier_1d_only: BoolProperty(
+        name="Pillier 1D seulement",
+        description="Generer les pilliers utiles au 1D seulement",
+    )
     epaisseur_pilier: FloatProperty(
         name="Epaisseur_pilier",
         description="Epaisseur des piliers",
@@ -295,8 +299,12 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         for k in range(0, self.type * round(self.type * self.longueur_diffuseur) ):
             y = (ratio[k] * self.profondeur) / amax
             depth.append(y)
+
         
-        return depth
+        if(self.pillier_1d_only):
+            return depth[0:self.type]
+        else:
+             return depth
 
     def listAttributes(self, product):
         match product:
@@ -347,6 +355,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "profondeur",
                     "largeur_diffuseur",
                     "longueur_diffuseur",
+                    "pillier_1d_only"
                 ]
                 
                 if self.type_moule == "stable":
