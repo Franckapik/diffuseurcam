@@ -192,7 +192,7 @@ class Diffuseur_SideBar(Panel):
 
         ratio = difprops.getRatio()
 
-        for i in range(difprops.type):
+        for i in range(round(difprops.type * difprops.longueur_diffuseur)):
             row = box.row()
             split = box.split()
             for k in range(difprops.type):

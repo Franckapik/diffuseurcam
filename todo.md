@@ -1,0 +1,1 @@
+Faire un offset pour les cadres moules pour eviter de devoir limer les cadre sur le fond.

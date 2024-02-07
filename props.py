@@ -280,7 +280,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
 
     def getRatio(self):
         ratio = []
-        for k in range(0, self.type * self.type):
+        for k in range(0, self.type * round(self.type * self.longueur_diffuseur) ):
             n = k % self.type
             m = math.floor(k / self.type)
             an = int(
@@ -292,10 +292,10 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         amax = max(ratio)
 
         depth = []
-        for k in range(0, self.type * self.type):
+        for k in range(0, self.type * round(self.type * self.longueur_diffuseur) ):
             y = (ratio[k] * self.profondeur) / amax
             depth.append(y)
-
+        
         return depth
 
     def listAttributes(self, product):
