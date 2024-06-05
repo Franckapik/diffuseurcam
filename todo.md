@@ -1,3 +1,5 @@
+retravailler sur l'erreur du bouton colle suite probablement à un merge de deux branches peu coherent.
+
 apply modifier
 separate by lloose part
 pack curve on sheet
