@@ -3,7 +3,7 @@ import bmesh
 from .shapes import *
 from .difarray import difArray
 from bpy_extras.object_utils import AddObjectHelper
-from bpy.props import FloatVectorProperty, StringProperty
+from bpy.props import FloatVectorProperty, StringProperty, IntProperty
 import math
 
 
@@ -32,6 +32,10 @@ class AddCadreMortaise(bpy.types.Operator, AddObjectHelper):
 
         # Load BMesh with mesh data
         bm.from_mesh(mesh)
+        
+        total_area = sum(f.calc_area() for f in bm.faces)
+
+        print("Total Surface Area:", total_area)
 
         # Convert BMesh to mesh data, then release BMesh.
         bm.to_mesh(mesh)
@@ -737,6 +741,40 @@ class AddMoule(bpy.types.Operator, AddObjectHelper):
         AddPilierMoule.execute(self, context)
 
         return {"FINISHED"}
+    
+class AddList(bpy.types.Operator, AddObjectHelper):
+    bl_idname = "mesh.add_list"
+    bl_label = "Ajouter au devis"
+    bl_options = {"REGISTER", "UNDO"}
+
+
+    def execute(self, context):
+        scene = context.scene
+        difprops = scene.dif_props
+        arrayprops = scene.array_props
+        devisprops = scene.devis_props
+        areaMaterial =  ((difprops.getLongueur()+ arrayprops.array_offset) * (difprops.profondeur+ arrayprops.array_offset) * (difprops.type + 1) + (difprops.largeur_diffuseur+ arrayprops.array_offset) * (difprops.profondeur+ arrayprops.array_offset) * (difprops.type + 1) + len(difprops.getRatio()) * (difprops.getRang()+ arrayprops.array_offset) * (difprops.getRang()+ arrayprops.array_offset)) 
+        areaPanel = devisprops.panelx * devisprops.panely
+        qtyPanel = math.ceil(devisprops.qtyDif * areaMaterial / areaPanel)
+
+
+        newItem = bpy.context.scene.devis_list.add()
+        newItem.listDif = f"{difprops.getDifName()} : {qtyPanel} panneaux"
+
+        return {"FINISHED"}
+    
+class RemoveList(bpy.types.Operator, AddObjectHelper):
+    bl_idname = "mesh.remove_list"
+    bl_label = ""
+    bl_options = {"REGISTER", "UNDO"}
+    item: IntProperty(name="item to remove")
+
+
+    def execute(self, context):
+        scene = context.scene
+        scene.devis_list.remove(self.item)
+
+        return {"FINISHED"}
 
 
 class PickPosition(bpy.types.Operator, AddObjectHelper):
@@ -839,6 +877,8 @@ classes = [
     AddFondMoule,
     AddPilierMoule,
     AddCadreMoule,
+    AddList,
+    RemoveList
 ]
 
 

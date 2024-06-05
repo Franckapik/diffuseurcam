@@ -2,6 +2,7 @@ from bpy.types import Panel, Menu, Operator
 import bpy
 from .ops import classes
 from bl_operators.presets import AddPresetBase
+from math import ceil
 
 
 class DIF_MT_Presets(Menu):
@@ -53,6 +54,14 @@ class Diffuseur_SideBar(Panel):
         prepprops = scene.prep_props
         productprops = scene.product_props
         usinageprops = scene.usinage_props
+        devisprops = scene.devis_props
+        devislist = scene.devis_list
+        areaCutted =  (difprops.getLongueur() * difprops.profondeur * (difprops.type + 1) + difprops.largeur_diffuseur * difprops.profondeur * (difprops.type + 1) + len(difprops.getRatio()) * difprops.getRang() * difprops.getRang()) 
+        areaMaterial =  ((difprops.getLongueur()+ arrayprops.array_offset) * (difprops.profondeur+ arrayprops.array_offset) * (difprops.type + 1) + (difprops.largeur_diffuseur+ arrayprops.array_offset) * (difprops.profondeur+ arrayprops.array_offset) * (difprops.type + 1) + len(difprops.getRatio()) * (difprops.getRang()+ arrayprops.array_offset) * (difprops.getRang()+ arrayprops.array_offset)) 
+        areaPanel = devisprops.panelx * devisprops.panely
+        percentPanel = areaMaterial * 100 / areaPanel
+        qtyPanel = devisprops.qtyDif * areaMaterial / areaPanel
+        
 
         # presets
         row1 = layout.row(align=True)
@@ -64,10 +73,10 @@ class Diffuseur_SideBar(Panel):
 
         # Diffuseur name
         box = layout.box()
-        box.label(text="Usinage ", icon="X")
+        """ box.label(text="Usinage ", icon="X")
         for att in (x for x in usinageprops.listAttributes()):
             box.prop(usinageprops, att)
-        box.prop(difprops, "offset_peigne")
+        box.prop(difprops, "offset_peigne") """
         
         box.label(text=f"Offset de fraise : {usinageprops.getOffset() * 1000} mm")
         box.label(text=f"Offset des peignes : {difprops.getOffsetPeigne() * 1000} mm")
@@ -95,6 +104,8 @@ class Diffuseur_SideBar(Panel):
             box.prop(difprops, att)
         box.label(text=f"Rang : {difprops.getRang() * 1000} mm")
         box.label(text=f"Pilier : {difprops.getLargeurPilier() * 1000} mm")
+
+
 
         # Array
         layout.separator()
@@ -180,6 +191,36 @@ class Diffuseur_SideBar(Panel):
         box.prop(prepprops, "isJoin_prepare")
 
         box.operator("mesh.prepare_cam")
+
+        # Devis
+        layout.separator()
+        box = layout.box()
+        box.label(text="Devis", icon="X")
+
+        row = box.row()
+        box.prop(devisprops, "qtyDif")
+        split = box.split()
+        col1 = split.column()
+        col2 = split.column()
+        col1.label(
+            text="Longueur",
+        )
+        col2.label(text="Largeur")
+        col1.prop(devisprops, "panelx")
+        col2.prop(devisprops, "panely")
+        box.label(text=f"Aire D2 cutted: {round(areaCutted, 3)} m2")
+        box.label(text=f"Aire D2 material : {round(areaMaterial, 3)} m2")
+        box.label(text=f"Aire panneau : {round(areaPanel, 3)} m2")
+        box.label(text=f"% Panel coupé : {round(percentPanel)} %")
+        box.label(text=f"Nb Panel : {ceil(qtyPanel)} panneau(x)")
+
+        box.operator("mesh.add_list")
+        box2 = box.box()
+        for i,listDif in enumerate(devislist):
+            row = box2.row()
+            row.label(text=listDif.listDif, icon="FILE_VOLUME")
+            oprm = row.operator("mesh.remove_list", icon="X")
+            oprm.item = i
 
         # Motif
         layout.separator()

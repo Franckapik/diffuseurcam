@@ -7,6 +7,7 @@ from bpy.props import (
     IntProperty,
     FloatVectorProperty,
     EnumProperty,
+    StringProperty
 )
 
 productType = (
@@ -55,6 +56,35 @@ class Usinageprops(bpy.types.PropertyGroup):
             "offset",
             "offset_peigne",
         ]
+    
+
+class DevisProps(bpy.types.PropertyGroup):
+    qtyDif: IntProperty(
+        name="Quantité",
+        description="Quantité de diffuseurs",
+        min=1,
+        default=1,
+    )
+    panelx: FloatProperty(
+        name="x",
+        description="Longueur du panneau",
+        default=1.250,
+        step=0.001,
+        unit="LENGTH",
+        precision=3,
+    )
+    panely: FloatProperty(
+        name="y",
+        description="Largeur du panneau",
+        default=1.220,
+        step=0.001,
+        unit="LENGTH",
+        precision=3,
+    )
+
+class DevisList(bpy.types.PropertyGroup):
+    listDif : StringProperty()
+    
 
 
 class DiffuseurProps(bpy.types.PropertyGroup):
@@ -297,6 +327,11 @@ class DiffuseurProps(bpy.types.PropertyGroup):
             depth.append(y)
 
         return depth
+    
+    def getArea(self):
+        area = (self.getLongueur() * self.profondeur * (self.type + 1) + self.largeur_diffuseur * self.profondeur * (self.type + 1) + len(self.getRatio()) * self.getRang() * self.getRang()) 
+        print(self.largeur_diffuseur)
+        return area
 
     def listAttributes(self, product):
         match product:
@@ -774,6 +809,9 @@ classes = [
     PrepareProps,
     UIProductProps,
     Usinageprops,
+    DevisProps,
+    DevisList
+
 ]
 
 
@@ -786,6 +824,8 @@ def register():
     bpy.types.Scene.pos_props = bpy.props.PointerProperty(type=PositionProps)
     bpy.types.Scene.prep_props = bpy.props.PointerProperty(type=PrepareProps)
     bpy.types.Scene.product_props = bpy.props.PointerProperty(type=UIProductProps)
+    bpy.types.Scene.devis_props = bpy.props.PointerProperty(type=DevisProps)
+    bpy.types.Scene.devis_list = bpy.props.CollectionProperty(type=DevisList)
     bpy.types.Scene.dif_parts = []
 
 
@@ -799,3 +839,5 @@ def unregister():
     del bpy.types.Scene.prep_props
     del bpy.types.Scene.dif_parts
     del bpy.types.Scene.product_props
+    del bpy.types.Scene.devis_props
+    del bpy.types.Scene.devis_list
