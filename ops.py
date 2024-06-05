@@ -15,7 +15,9 @@ class AddCadreMortaise(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_cadre_mortaise(scene.dif_props, scene.product_props, scene.usinage_props)
+        vertex, edges, name = add_cadre_mortaise(
+            scene.dif_props, scene.product_props, scene.usinage_props
+        )
 
         arrayprops = scene.array_props
 
@@ -76,7 +78,9 @@ class AddCadreTenon(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_cadre_tenon(scene.dif_props, scene.product_props, scene.usinage_props)
+        vertex, edges, name = add_cadre_tenon(
+            scene.dif_props, scene.product_props, scene.usinage_props
+        )
 
         arrayprops = scene.array_props
 
@@ -134,7 +138,9 @@ class AddCarreau(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_carreau(scene.dif_props, scene.product_props, scene.usinage_props)
+        vertex, edges, name = add_carreau(
+            scene.dif_props, scene.product_props, scene.usinage_props
+        )
         arrayprops = scene.array_props
 
         # create a bmesh
@@ -174,8 +180,9 @@ class AddCarreau(bpy.types.Operator, AddObjectHelper):
             arrayprops.carreau_x,
             arrayprops.carreau_y,
             difprops.getRang(),
-            difprops.getRang() if scene.product_props.product_type == "0" else difprops.largeur_diffuseur * difprops.longueur_diffuseur ,
-            
+            difprops.getRang()
+            if scene.product_props.product_type == "0"
+            else difprops.largeur_diffuseur * difprops.longueur_diffuseur,
         )
 
         if posprops.carreau_rotation:
@@ -192,7 +199,9 @@ class AddAccroche(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_accroche(scene.dif_props, scene.product_props, scene.usinage_props)
+        vertex, edges, name = add_accroche(
+            scene.dif_props, scene.product_props, scene.usinage_props
+        )
         arrayprops = scene.array_props
 
         # create a bmesh
@@ -249,7 +258,9 @@ class AddAccrocheInverse(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_accroche_inverse(scene.dif_props, scene.product_props, scene.usinage_props)
+        vertex, edges, name = add_accroche_inverse(
+            scene.dif_props, scene.product_props, scene.usinage_props
+        )
         arrayprops = scene.array_props
 
         # create a bmesh
@@ -306,7 +317,9 @@ class AddCadreAvant(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_cadre_avant(scene.dif_props, scene.product_props, scene.usinage_props)
+        vertex, edges, name = add_cadre_avant(
+            scene.dif_props, scene.product_props, scene.usinage_props
+        )
         arrayprops = scene.array_props
 
         # create a bmesh
@@ -362,7 +375,9 @@ class AddPeigneCourt(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_peigne_court(scene.dif_props, scene.product_props, scene.usinage_props)
+        vertex, edges, name = add_peigne_court(
+            scene.dif_props, scene.product_props, scene.usinage_props
+        )
 
         arrayprops = scene.array_props
 
@@ -419,7 +434,9 @@ class AddCadreCentral(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_cadre_central(scene.dif_props, scene.product_props, scene.usinage_props)
+        vertex, edges, name = add_cadre_central(
+            scene.dif_props, scene.product_props, scene.usinage_props
+        )
 
         arrayprops = scene.array_props
 
@@ -477,7 +494,9 @@ class AddPeigneLong(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_peigne_long(scene.dif_props, scene.product_props, scene.usinage_props)
+        vertex, edges, name = add_peigne_long(
+            scene.dif_props, scene.product_props, scene.usinage_props
+        )
 
         arrayprops = scene.array_props
 
@@ -534,7 +553,9 @@ class AddFondMoule(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_fond_moule(scene.dif_props, scene.product_props, scene.usinage_props)
+        vertex, edges, name = add_fond_moule(
+            scene.dif_props, scene.product_props, scene.usinage_props
+        )
 
         arrayprops = scene.array_props
 
@@ -591,7 +612,9 @@ class AddCadreMoule(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_cadre_moule(scene.dif_props, scene.product_props, scene.usinage_props)
+        vertex, edges, name = add_cadre_moule(
+            scene.dif_props, scene.product_props, scene.usinage_props
+        )
 
         arrayprops = scene.array_props
 
@@ -638,6 +661,151 @@ class AddCadreMoule(bpy.types.Operator, AddObjectHelper):
             mesh_obj.rotation_euler = [0, 0, math.radians(90)]
 
         return {"FINISHED"}
+    
+class AddCadreMouleLong(bpy.types.Operator, AddObjectHelper):
+    bl_idname = "mesh.cadre_moule_long"
+    bl_label = "Ajouter Cadre Moule Long"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        scene = context.scene
+        difprops = scene.dif_props
+        vertex, edges, name = add_cadre_moule_long(
+            scene.dif_props, scene.product_props, scene.usinage_props
+        )
+
+        arrayprops = scene.array_props
+
+        # create a bmesh
+        bm = bmesh.new()
+
+        # Create new mesh data.
+        mesh = bpy.data.meshes.new(name)
+        mesh.from_pydata(vertex, edges, [])
+
+        # Positionning according to position props
+        posprops = scene.pos_props
+
+        mesh.update(calc_edges=True)
+
+        # Load BMesh with mesh data
+        bm.from_mesh(mesh)
+
+        # Convert BMesh to mesh data, then release BMesh.
+        bm.to_mesh(mesh)
+        bm.free()
+
+        # Add Object to the default collection from mesh
+        mesh_obj = bpy.data.objects.new(mesh.name, mesh)
+        bpy.context.collection.objects.link(mesh_obj)
+        bpy.types.Scene.dif_parts.append(mesh_obj.name)
+
+        mesh_obj.location = (
+            posprops.cadre_moule_long_position[0],
+            posprops.cadre_moule_long_position[1],
+            posprops.cadre_moule_long_position[2],
+        )
+
+        difArray(
+            mesh_obj,
+            arrayprops.array_offset,
+            arrayprops.cadre_moule_long_x,
+            arrayprops.cadre_moule_long_y,
+            difprops.largeur_diffuseur,
+            difprops.profondeur + difprops.epaisseur_moule,
+        )
+
+        if posprops.cadre_moule_long_rotation:
+            mesh_obj.rotation_euler = [0, 0, math.radians(90)]
+
+        return {"FINISHED"}
+
+
+class AddColle(bpy.types.Operator, AddObjectHelper):
+    bl_idname = "mesh.colle"
+    bl_label = "Ajouter Colle"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        scene = context.scene
+        difprops = scene.dif_props
+        vertex, edges, name = add_colle(
+            scene.dif_props, scene.product_props, scene.usinage_props, scene.array_props
+        )
+
+        # create a bmesh
+        bm = bmesh.new()
+
+        # Create new mesh data.
+        mesh = bpy.data.meshes.new(name)
+        mesh.from_pydata(vertex, edges, [])
+
+        # Positionning according to position props
+        posprops = scene.pos_props
+
+        mesh.update(calc_edges=True)
+
+        # Load BMesh with mesh data
+        bm.from_mesh(mesh)
+
+        # Convert BMesh to mesh data, then release BMesh.
+        bm.to_mesh(mesh)
+        bm.free()
+
+        # Add Object to the default collection from mesh
+        mesh_obj = bpy.data.objects.new(mesh.name, mesh)
+        bpy.context.collection.objects.link(mesh_obj)
+        bpy.types.Scene.dif_parts.append(mesh_obj.name)
+
+        return {"FINISHED"}
+
+
+class AddSimulation(bpy.types.Operator, AddObjectHelper):
+    bl_idname = "mesh.simulation"
+    bl_label = "Ajouter Modele 3D"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        scene = context.scene
+        difprops = scene.dif_props
+
+        ratio = difprops.getRatio()
+
+        for i in range(difprops.type):
+            y = i * difprops.getRang() 
+            for k in range(difprops.type):
+                index = i * difprops.type + k
+                x = k * difprops.getRang()
+                z = ratio[index]
+                vertex, edges, name = add_carreau(
+                    scene.dif_props, scene.product_props, scene.usinage_props
+                )
+
+                # create a bmesh
+                bm = bmesh.new()
+
+                # Create new mesh data.
+                mesh = bpy.data.meshes.new(name)
+                mesh.from_pydata(vertex, edges, [])
+
+                mesh.update(calc_edges=True)
+
+                # Load BMesh with mesh data
+                bm.from_mesh(mesh)
+
+                # Convert BMesh to mesh data, then release BMesh.
+                bm.to_mesh(mesh)
+                bm.free()
+
+                # Add Object to the default collection from mesh
+                mesh_obj = bpy.data.objects.new(mesh.name, mesh)
+                bpy.context.collection.objects.link(mesh_obj)
+                bpy.types.Scene.dif_parts.append(mesh_obj.name)
+
+                # Positionning according to position props
+                mesh_obj.location = (x, y, z)
+
+        return {"FINISHED"}
 
 
 class AddPilierMoule(bpy.types.Operator, AddObjectHelper):
@@ -649,7 +817,9 @@ class AddPilierMoule(bpy.types.Operator, AddObjectHelper):
         scene = context.scene
         difprops = scene.dif_props
         arrayprops = scene.array_props
-        vertex, edges, name = add_pilier_moule(scene.dif_props, scene.product_props, scene.usinage_props, scene.array_props)
+        vertex, edges, name = add_pilier_moule(
+            scene.dif_props, scene.product_props, scene.usinage_props, scene.array_props
+        )
 
         arrayprops = scene.array_props
 
@@ -739,6 +909,7 @@ class AddMoule(bpy.types.Operator, AddObjectHelper):
         AddCadreMoule.execute(self, context)
         AddFondMoule.execute(self, context)
         AddPilierMoule.execute(self, context)
+        AddCadreMouleLong.execute(self, context)
 
         return {"FINISHED"}
     
@@ -853,8 +1024,9 @@ class PrepareToCam(bpy.types.Operator, AddObjectHelper):
             bpy.ops.object.join()
             bpy.context.object.name = difprops.getDifName()
             if prepprops.isOvercuts:
-                bpy.ops.object.curve_overcuts(diameter=usinageprops.fraise,threshold=1.5708)
-
+                bpy.ops.object.curve_overcuts(
+                    diameter=usinageprops.fraise, threshold=1.5708
+                )
 
         return {"FINISHED"}
 
@@ -878,7 +1050,10 @@ classes = [
     AddPilierMoule,
     AddCadreMoule,
     AddList,
-    RemoveList
+    RemoveList,
+    AddCadreMouleLong,
+    AddColle,
+    AddSimulation,
 ]
 
 

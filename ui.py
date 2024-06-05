@@ -73,10 +73,10 @@ class Diffuseur_SideBar(Panel):
 
         # Diffuseur name
         box = layout.box()
-        """ box.label(text="Usinage ", icon="X")
-        for att in (x for x in usinageprops.listAttributes()):
-            box.prop(usinageprops, att)
-        box.prop(difprops, "offset_peigne") """
+        box.label(text="Usinage ", icon="X")
+        """ for att in (x for x in usinageprops.listAttributes()):
+            box.prop(usinageprops, att) """
+        box.prop(difprops, "offset_peigne")
         
         box.label(text=f"Offset de fraise : {usinageprops.getOffset() * 1000} mm")
         box.label(text=f"Offset des peignes : {difprops.getOffsetPeigne() * 1000} mm")
@@ -233,17 +233,29 @@ class Diffuseur_SideBar(Panel):
 
         ratio = difprops.getRatio()
 
-        for i in range(difprops.type):
+        if difprops.pillier_1d_only:
             row = box.row()
             split = box.split()
-            for k in range(difprops.type):
-                
-                col = split.column()
-                col.label(text=str(
-                    int(ratio[i*difprops.type + k] * 1000)
+            for k in range(difprops.type):             
+                    col = split.column()
+                    col.label(text=str(
+                        int(ratio[k] * 1000)
+                        
+                        ))
+        else:
+            for i in range(round(difprops.type * difprops.longueur_diffuseur)):
+                row = box.row()
+                split = box.split()
+                for k in range(difprops.type):
                     
-                    ))
-
+                    col = split.column()
+                    col.label(text=str(
+                        int(ratio[i*difprops.type + k] * 1000)
+                        
+                        ))
+        
+        box.operator("mesh.colle")
+        box.operator("mesh.simulation")
 
 ui_classes = [DIF_MT_Presets, OT_AddMyPreset]
 

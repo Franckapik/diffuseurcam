@@ -206,6 +206,10 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         unit="LENGTH",
         precision=4,
     )
+    pillier_1d_only: BoolProperty(
+        name="Pillier 1D seulement",
+        description="Generer les pilliers utiles au 1D seulement",
+    )
     epaisseur_pilier: FloatProperty(
         name="Epaisseur_pilier",
         description="Epaisseur des piliers",
@@ -310,7 +314,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
 
     def getRatio(self):
         ratio = []
-        for k in range(0, self.type * self.type):
+        for k in range(0, self.type * round(self.type * self.longueur_diffuseur) ):
             n = k % self.type
             m = math.floor(k / self.type)
             an = int(
@@ -322,11 +326,15 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         amax = max(ratio)
 
         depth = []
-        for k in range(0, self.type * self.type):
+        for k in range(0, self.type * round(self.type * self.longueur_diffuseur) ):
             y = (ratio[k] * self.profondeur) / amax
             depth.append(y)
 
-        return depth
+        
+        if(self.pillier_1d_only):
+            return depth[0:self.type]
+        else:
+             return depth
     
     def getArea(self):
         area = (self.getLongueur() * self.profondeur * (self.type + 1) + self.largeur_diffuseur * self.profondeur * (self.type + 1) + len(self.getRatio()) * self.getRang() * self.getRang()) 
@@ -382,6 +390,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "profondeur",
                     "largeur_diffuseur",
                     "longueur_diffuseur",
+                    "pillier_1d_only"
                 ]
                 
                 if self.type_moule == "stable":
@@ -536,6 +545,16 @@ class ArrayProps(bpy.types.PropertyGroup):
         default=1,
         min=0,
     )
+    cadre_moule_long_x: IntProperty(
+        name="Cadre Moule Long",
+        default=1,
+        min=0,
+    )
+    cadre_moule_long_y: IntProperty(
+        name="Cadre Moule Long",
+        default=1,
+        min=0,
+    )
     pilier_moule_x: IntProperty(
         name="Piliers Moule",
         default=1,
@@ -600,6 +619,8 @@ class ArrayProps(bpy.types.PropertyGroup):
                     "fond_moule_y",
                     "cadre_moule_x",
                     "cadre_moule_y",
+                    "cadre_moule_long_x",
+                    "cadre_moule_long_y",
                     "pilier_moule_x",
                     "pilier_moule_y"
                 ]
@@ -672,6 +693,11 @@ class PositionProps(bpy.types.PropertyGroup):
         unit="LENGTH",
         precision=4,
     )
+    cadre_moule_long_position: FloatVectorProperty(
+        name="Cadre Moule Long",
+        unit="LENGTH",
+        precision=4,
+    )
     peigne_court_rotation: BoolProperty(name="Peigne court", description="Rotation")
 
     peigne_long_rotation: BoolProperty(name="Peigne long", description="Rotation")
@@ -690,6 +716,7 @@ class PositionProps(bpy.types.PropertyGroup):
     fond_moule_rotation: BoolProperty(name="Fond Moule", description="Rotation")
     pilier_moule_rotation: BoolProperty(name="Pilier Moule", description="Rotation")
     cadre_moule_rotation: BoolProperty(name="Cadre Moule", description="Rotation")
+    cadre_moule_long_rotation: BoolProperty(name="Cadre Moule", description="Rotation")
 
     def update(self, target, cursor):
         self[target] = cursor
@@ -749,6 +776,8 @@ class PositionProps(bpy.types.PropertyGroup):
                     "pilier_moule_rotation",
                     "cadre_moule_position",
                     "cadre_moule_rotation",
+                    "cadre_moule_long_position",
+                    "cadre_moule_long_rotation",
                 ]
             case _:
                 return
