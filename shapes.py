@@ -849,7 +849,7 @@ def add_fond_moule(difprops, productprops, usinageprops):
             ),
             (
                 epaisseur_moule + debord_moule * 2 + epaisseur_moule + tenon_cadre * 8,
-                largeur_diffuseur + 2 * epaisseur_moule + debord_moule * 2,
+                 longueurTotale + epaisseur_moule * 2 + debord_moule * 2,
                 0,
             ),
             (
