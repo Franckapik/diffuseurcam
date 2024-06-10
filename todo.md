@@ -1,6 +1,16 @@
+pLe threeshold ne devrait-il pas etre à 1.569 (89.9 degrés) pour etre efficient ?
+
+ajouter modele 3d dans une collection
+
+proposer position selon curseur 3d ou bien mesh selectionne 
+Ou mieux detecter les mesh par leur nom et remplir auto les positions dans le generateur
+
+Modele 3d entier à generer
+
 retravailler sur l'erreur du bouton colle suite probablement à un merge de deux branches peu coherent.
 
-apply modifier
+apply modifier lorsque l'on creer un new mesh dans Preparation CAM. 
+Creation vers nouvel endroit (curseur 3D)
 separate by lloose part
 pack curve on sheet
 

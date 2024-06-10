@@ -1025,7 +1025,7 @@ class PrepareToCam(bpy.types.Operator, AddObjectHelper):
             bpy.context.object.name = difprops.getDifName()
             if prepprops.isOvercuts:
                 bpy.ops.object.curve_overcuts(
-                    diameter=usinageprops.fraise, threshold=1.5708
+                    diameter=usinageprops.fraise, threshold=1.569
                 )
 
         return {"FINISHED"}
