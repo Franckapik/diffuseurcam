@@ -129,6 +129,39 @@ def mortaiseInt(x, y, difprops, usinageprops):
         ]
     else:
         return []
+    
+def mortaiseIntTraversante(x, y, difprops, usinageprops):
+    tenon_peigne = difprops.tenon_peigne
+    offset = usinageprops.getOffset()
+    epaisseur = difprops.epaisseur
+    hauteurTenonPeigne = difprops.getHauteurTenon()
+    profondeur = difprops.profondeur
+
+    if hauteurTenonPeigne != 0 :
+        return [
+            (
+                x - offset,
+                y + epaisseur / 2 + offset,
+                0,
+            ),
+            (
+                x + profondeur + offset,
+                y + epaisseur / 2 + offset,
+                0,
+            ),
+            (
+                x + profondeur + offset,
+                y - epaisseur / 2 - offset,
+                0,
+            ),
+            (
+                x - offset,
+                y - epaisseur / 2 - offset,
+                0,
+            ),
+        ]
+    else:
+        return []
 
 
 def tenonHaut(x, y, difprops, usinageprops):

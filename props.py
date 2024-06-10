@@ -192,8 +192,9 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         name="Interface Peigne/Cadre",
         items=(
             ("0", "Pas de tenon", ""),
-            ("1", "Tenon mi-traversant", ""),
-            ("2", "Tenon entier", ""),
+            ("1", "Double Tenon mi-traversant", ""),
+            ("2", "Double Tenon entier", ""),
+            ("3", "Mono Tenon mi-traversant", ""),
         ),
     )
 
@@ -298,13 +299,17 @@ class DiffuseurProps(bpy.types.PropertyGroup):
     def getHauteurTenon(self):
         match self.type_tenon_peigne:
             case "0":
+                """ Pas de tenons """
                 return 0
             case "1":
                 return self.epaisseur / 2
             case "2":
                 return self.epaisseur
-            case _:
-                return
+            case "3":
+                """ Mono tenon mi traversant """
+                return self.epaisseur / 2
+
+
 
     def getLongueur(self):
         longueurTotale = (
