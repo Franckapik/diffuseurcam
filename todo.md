@@ -1,4 +1,7 @@
+travail en cours : fond moule avec debord et cadre traversants quidoivent se rejoindre en peigne
+
 retravailler sur l'erreur du bouton colle suite probablement à un merge de deux branches peu coherent.
+
 
 apply modifier
 separate by lloose part

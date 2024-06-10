@@ -323,18 +323,18 @@ def mortaise_bas_fond_moule(x, y, difprops, usinageprops):
     tenon_cadre = largeur_diffuseur / 8
 
     return [
-        (x + epaisseur_moule + tenon_cadre, y, 0),
-        (x + epaisseur_moule + tenon_cadre, y + epaisseur_moule, 0),
-        (x + epaisseur_moule + tenon_cadre * 2, y + epaisseur_moule, 0),
-        (x + epaisseur_moule + tenon_cadre * 2, y, 0),
-        (x + epaisseur_moule + tenon_cadre * 3, y, 0),
-        (x + epaisseur_moule + tenon_cadre * 3, y + epaisseur_moule, 0),
-        (x + epaisseur_moule + tenon_cadre * 5, y + epaisseur_moule, 0),
-        (x + epaisseur_moule + tenon_cadre * 5, y, 0),
-        (x + epaisseur_moule + tenon_cadre * 6, y, 0),
-        (x + epaisseur_moule + tenon_cadre * 6, y + epaisseur_moule, 0),
-        (x + epaisseur_moule + tenon_cadre * 7, y + epaisseur_moule, 0),
-        (x + epaisseur_moule + tenon_cadre * 7, y, 0),
+        (x + epaisseur_moule + tenon_cadre, y , 0),
+        (x + epaisseur_moule + tenon_cadre, y + epaisseur_moule , 0),
+        (x + epaisseur_moule + tenon_cadre * 2, y + epaisseur_moule , 0),
+        (x + epaisseur_moule + tenon_cadre * 2, y , 0),
+        (x + epaisseur_moule + tenon_cadre * 3, y , 0),
+        (x + epaisseur_moule + tenon_cadre * 3, y + epaisseur_moule , 0),
+        (x + epaisseur_moule + tenon_cadre * 5, y + epaisseur_moule , 0),
+        (x + epaisseur_moule + tenon_cadre * 5, y , 0),
+        (x + epaisseur_moule + tenon_cadre * 6, y , 0),
+        (x + epaisseur_moule + tenon_cadre * 6, y + epaisseur_moule , 0),
+        (x + epaisseur_moule + tenon_cadre * 7, y + epaisseur_moule , 0),
+        (x + epaisseur_moule + tenon_cadre * 7, y , 0),
     ]
 
 def mortaise_bas_fond_moule_long(x, y, difprops, usinageprops):
@@ -367,7 +367,7 @@ def mortaise_droite_fond_moule(x, y, difprops, usinageprops):
 
 
     return [
-        (x, y, 0),
+
         (x, y + tenon_cadre, 0),
         (x - epaisseur_moule, y + tenon_cadre, 0),
         (x - epaisseur_moule, y + tenon_cadre * 2, 0),
@@ -380,8 +380,7 @@ def mortaise_droite_fond_moule(x, y, difprops, usinageprops):
         (x - epaisseur_moule, y + tenon_cadre * 6, 0),
         (x - epaisseur_moule, y + tenon_cadre * 7, 0),
         (x, y + tenon_cadre * 7, 0),
-        (x, y + tenon_cadre * 8, 0),
-        (x, y + tenon_cadre * 8 + epaisseur_moule, 0),
+
     ]
 
 
@@ -391,7 +390,6 @@ def mortaise_haut_fond_moule(x, y, difprops, usinageprops):
     tenon_cadre = largeur_diffuseur / 8
 
     return [
-        (x, y, 0),
         (x - tenon_cadre, y, 0),
         (x - tenon_cadre, y - epaisseur_moule, 0),
         (x - tenon_cadre * 2, y - epaisseur_moule, 0),
@@ -404,8 +402,7 @@ def mortaise_haut_fond_moule(x, y, difprops, usinageprops):
         (x - tenon_cadre * 6, y - epaisseur_moule, 0),
         (x - tenon_cadre * 7, y - epaisseur_moule, 0),
         (x - tenon_cadre * 7, y, 0),
-        (x - tenon_cadre * 8, y, 0),
-        (x - tenon_cadre * 8 - epaisseur_moule, y, 0),
+
     ]
 
 
@@ -416,7 +413,6 @@ def mortaise_gauche_fond_moule(x, y, difprops, usinageprops):
     tenon_cadre = longueurTotale / 8
 
     return [
-        (x, y, 0),
         (x, y - tenon_cadre, 0),
         (x + epaisseur_moule, y - tenon_cadre, 0),
         (x + epaisseur_moule, y - tenon_cadre * 2, 0),
