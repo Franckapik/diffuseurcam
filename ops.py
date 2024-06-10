@@ -1009,7 +1009,9 @@ class PrepareToCam(bpy.types.Operator, AddObjectHelper):
             for obj in [o for o in bpy.data.objects if "_cam" in o.name]:
                 bpy.context.view_layer.objects.active = obj
                 obj.select_set(True)
-                bpy.ops.object.convert(target="MESH")  # apply modifier
+                # apply modifier
+                bpy.ops.object.convert(target="CURVE") 
+                bpy.ops.object.convert(target="MESH")  
 
         # convert to curve
         if prepprops.isConvertToCurve_prepare:
@@ -1023,7 +1025,7 @@ class PrepareToCam(bpy.types.Operator, AddObjectHelper):
         if prepprops.isJoin_prepare:
             bpy.ops.object.join()
             bpy.context.object.name = difprops.getDifName()
-            if prepprops.isOvercuts:
+            if prepprops.isConvertToCurve_prepare and prepprops.isOvercuts:
                 bpy.ops.object.curve_overcuts(
                     diameter=usinageprops.fraise, threshold=1.569
                 )

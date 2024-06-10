@@ -1,5 +1,3 @@
-pLe threeshold ne devrait-il pas etre à 1.569 (89.9 degrés) pour etre efficient ?
-
 ajouter modele 3d dans une collection
 
 proposer position selon curseur 3d ou bien mesh selectionne 
