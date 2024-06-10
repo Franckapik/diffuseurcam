@@ -2,6 +2,7 @@ import bpy
 import bmesh
 from .shapes import *
 from .difarray import difArray
+from .bridges import place_empties_on_bounding_box
 from bpy_extras.object_utils import AddObjectHelper
 from bpy.props import FloatVectorProperty, StringProperty, IntProperty
 import math
@@ -35,8 +36,8 @@ class AddCadreMortaise(bpy.types.Operator, AddObjectHelper):
         # Load BMesh with mesh data
         bm.from_mesh(mesh)
         
+        """ ne fonctionne pas  """
         total_area = sum(f.calc_area() for f in bm.faces)
-
         print("Total Surface Area:", total_area)
 
         # Convert BMesh to mesh data, then release BMesh.
@@ -48,6 +49,9 @@ class AddCadreMortaise(bpy.types.Operator, AddObjectHelper):
         bpy.context.collection.objects.link(mesh_obj)
 
         bpy.types.Scene.dif_parts.append(mesh_obj.name)
+
+        """ place_empties_on_bounding_box(mesh_obj) """
+
 
         mesh_obj.location = (
             posprops.cadre_mortaise_position[0],
@@ -66,6 +70,7 @@ class AddCadreMortaise(bpy.types.Operator, AddObjectHelper):
 
         if posprops.cadre_mortaise_rotation:
             mesh_obj.rotation_euler = [0, 0, math.radians(90)]
+
 
         return {"FINISHED"}
 
