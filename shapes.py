@@ -849,7 +849,7 @@ def add_fond_moule(difprops, productprops, usinageprops):
             ),
             (
                 epaisseur_moule + debord_moule * 2 + epaisseur_moule + tenon_cadre * 8,
-                 longueurTotale + epaisseur_moule * 2 + debord_moule * 2,
+                longueurTotale + epaisseur_moule * 2 + debord_moule * 2,
                 0,
             ),
             (
@@ -872,14 +872,17 @@ def add_fond_moule(difprops, productprops, usinageprops):
                 difprops,
                 usinageprops,
             ),
-              *mortaise_haut_fond_moule(
+            *mortaise_haut_fond_moule(
                 largeur_diffuseur + epaisseur_moule + debord_moule,
-                longueurTotale + 2 * epaisseur_moule + debord_moule ,
+                longueurTotale + 2 * epaisseur_moule + debord_moule,
                 difprops,
                 usinageprops,
             ),
             *mortaise_gauche_fond_moule(
-                debord_moule, longueurTotale + epaisseur_moule+debord_moule, difprops, usinageprops
+                debord_moule,
+                longueurTotale + epaisseur_moule + debord_moule,
+                difprops,
+                usinageprops,
             ),
         ]
 
@@ -891,8 +894,6 @@ def add_fond_moule(difprops, productprops, usinageprops):
     edgesCadre += [
         (len(vertsCadre) - 1, 0),
     ]
-
-
 
     i = 0
 
@@ -927,17 +928,20 @@ def add_fond_moule(difprops, productprops, usinageprops):
                 ]
 
     i = 0
-    
-    for k in range(len(vertsCadre), len(vertsCadre) + len(vertsMortaisesInt) + len(vertsMortaiseCadre)):
-            i += 1
-            if i == 4 or k == len(vertsCadre):
-                i = 0
-                edgesMortaiseCadre += [
-                    (k, k + 1),
-                    (k + 1, k + 2),
-                    (k + 2, k + 3),
-                    (k + 3, k),
-                ]
+
+    for k in range(
+        len(vertsCadre),
+        len(vertsCadre) + len(vertsMortaisesInt) + len(vertsMortaiseCadre),
+    ):
+        i += 1
+        if i == 4 or k == len(vertsCadre):
+            i = 0
+            edgesMortaiseCadre += [
+                (k, k + 1),
+                (k + 1, k + 2),
+                (k + 2, k + 3),
+                (k + 3, k),
+            ]
 
     verts = [*list(vertsCadre), *list(vertsMortaisesInt), *list(vertsMortaiseCadre)]
     edges = [*list(edgesCadre), *list(edgesMortaisesInt), *list(edgesMortaiseCadre)]
@@ -952,6 +956,7 @@ def add_cadre_moule(difprops, productprops, usinageprops):
     rang = difprops.getRang()
     epaisseur_moule = difprops.epaisseur_moule
     largeur_diffuseur = difprops.largeur_diffuseur
+    debord_moule = 0.010
 
     N = difprops.type
 
@@ -959,11 +964,20 @@ def add_cadre_moule(difprops, productprops, usinageprops):
 
     if product_type == "3":
         vertsCadre = [
-            (epaisseur_moule * 2, 0, 0),
+            (-debord_moule, 0, 0),
+            (0, 0, 0),
+            (0, -profondeur / 2 - 0.005, 0),
+            (epaisseur_moule, -profondeur / 2 - 0.005, 0),
+            (epaisseur_moule, 0, 0),
             *mortaise_bas_fond_moule(0, 0, difprops, usinageprops),
-            (largeur_diffuseur, 0, 0),
-            (largeur_diffuseur, -profondeur, 0),
-            (epaisseur_moule * 2, -profondeur, 0),
+            (largeur_diffuseur + epaisseur_moule, 0, 0),
+            (largeur_diffuseur + epaisseur_moule, -profondeur / 2 - 0.005, 0),
+            (largeur_diffuseur + epaisseur_moule * 2, -profondeur / 2 - 0.005, 0),
+            (largeur_diffuseur + epaisseur_moule * 2, 0, 0),
+            (largeur_diffuseur + epaisseur_moule * 2 + debord_moule, 0, 0),
+            (largeur_diffuseur + epaisseur_moule * 2 + debord_moule, -profondeur, 0),
+            (largeur_diffuseur + epaisseur_moule * 2 + debord_moule, -profondeur, 0),
+            (-debord_moule, -profondeur, 0),
         ]
 
     for k in range(0, len(vertsCadre) - 1):
@@ -989,6 +1003,7 @@ def add_cadre_moule_long(difprops, productprops, usinageprops):
     epaisseur_moule = difprops.epaisseur_moule
     largeur_diffuseur = difprops.largeur_diffuseur
     longueurTotale = difprops.getLongueur()
+    debord_moule = 0.010
 
     N = difprops.type
 
@@ -996,11 +1011,19 @@ def add_cadre_moule_long(difprops, productprops, usinageprops):
 
     if product_type == "3":
         vertsCadre = [
-            (epaisseur_moule * 2, 0, 0),
-            *mortaise_bas_fond_moule_long(0, 0, difprops, usinageprops),
-            (longueurTotale, 0, 0),
-            (longueurTotale, -profondeur, 0),
-            (epaisseur_moule * 2, -profondeur, 0),
+            (-debord_moule - epaisseur_moule, 0, 0),
+            *mortaise_bas_fond_moule_long(- epaisseur_moule, 0, difprops, usinageprops),
+            (longueurTotale + epaisseur_moule + debord_moule, 0, 0),
+            (longueurTotale + epaisseur_moule + debord_moule, -profondeur, 0),
+            (longueurTotale + epaisseur_moule , -profondeur, 0),
+            (longueurTotale + epaisseur_moule , -profondeur / 2 + 0.005, 0),
+            (longueurTotale , -profondeur / 2 + 0.005, 0),
+            (longueurTotale , -profondeur, 0),
+            (0, -profondeur, 0),
+            (0, -profondeur / 2 + 0.005, 0),
+            (-epaisseur_moule, -profondeur / 2 + 0.005, 0),
+            (-epaisseur_moule, -profondeur, 0),
+            (-debord_moule - epaisseur_moule, -profondeur, 0),
         ]
 
     for k in range(0, len(vertsCadre) - 1):
