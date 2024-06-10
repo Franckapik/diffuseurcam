@@ -197,6 +197,14 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         ),
     )
 
+    type_tenon_cadre: EnumProperty(
+        name="Interface Cadre/Cadre",
+        items=(
+            ("0", "Pas de tenon", ""),
+            ("1", "Tenon mortaise", ""),
+        ),
+    )
+
     epaisseur_moule: FloatProperty(
         name="Epaisseur_moule",
         description="Epaisseur du moule",
@@ -354,6 +362,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "tenon_peigne",
                     "longueur_diffuseur",
                     "type_tenon_peigne",
+                    "type_tenon_cadre"
                 ]
             case "1":
                 return [
@@ -366,6 +375,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "tenon_peigne",
                     "longueur_diffuseur",
                     "type_tenon_peigne",
+                    "type_tenon_cadre"
                 ]
             case "2":
                 return [
@@ -379,6 +389,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "largeur_cadre_central",
                     "cadre_avant",
                     "cadre_central",
+                    "type_tenon_cadre"
                 ]
             case "3":
                 attributes = [

@@ -6,6 +6,7 @@ def add_cadre_mortaise(difprops, productprops, usinageprops):
     epaisseur = difprops.epaisseur
     profondeur = difprops.profondeur
     tenon_cadre = difprops.tenon_cadre
+    type_tenon_cadre = difprops.type_tenon_cadre
     bord_cadre = difprops.bord_cadre
     tenon_peigne = difprops.tenon_peigne
     longueur_diffuseur = difprops.longueur_diffuseur
@@ -23,19 +24,29 @@ def add_cadre_mortaise(difprops, productprops, usinageprops):
     edgesMortaisesInt = []
 
     if product_type == "0" or product_type == "1":
-        vertsCadre = [
-            (0, 0, 0),
-            (0, longueurTotale, 0),
-            *mortaiseHaut(
-                (profondeur / 2 - tenon_cadre / 2),
-                longueurTotale,
-                difprops,
-                usinageprops,
-            ),
-            ((profondeur), longueurTotale, 0),
-            ((profondeur), 0, 0),
-            *mortaiseBas((profondeur / 2 + tenon_cadre / 2), 0, difprops, usinageprops),
-        ]
+        if type_tenon_cadre == "1":
+            vertsCadre = [
+                (0, 0, 0),
+                (0, longueurTotale, 0),
+                *mortaiseHaut(
+                    (profondeur / 2 - tenon_cadre / 2),
+                    longueurTotale,
+                    difprops,
+                    usinageprops,
+                ),
+                ((profondeur), longueurTotale, 0),
+                ((profondeur), 0, 0),
+                *mortaiseBas(
+                    (profondeur / 2 + tenon_cadre / 2), 0, difprops, usinageprops
+                ),
+            ]
+        else:
+            vertsCadre = [
+                (0, 0, 0),
+                (0, longueurTotale, 0),
+                ((profondeur), longueurTotale, 0),
+                ((profondeur), 0, 0),
+            ]
 
         for k in range(1, round(N * longueur_diffuseur)):
             if product_type == "0":
@@ -52,58 +63,73 @@ def add_cadre_mortaise(difprops, productprops, usinageprops):
                 ]
 
     if product_type == "2":
-        vertsCadre = [
-            (0, 0, 0),
-            *mortaiseGauche(
-                0, (largeur_accroche / 2 - tenon_cadre / 2), difprops, usinageprops
-            ),
-            *mortaiseGauche(
-                0,
-                (longueurTotale - largeur_accroche / 2 - tenon_cadre / 2),
-                difprops,
-                usinageprops,
-            ),
-            (0, longueurTotale, 0),
-            *mortaiseHaut(
-                (profondeur / 2 - tenon_cadre / 2),
-                longueurTotale,
-                difprops,
-                usinageprops,
-            ),
-            ((profondeur), longueurTotale, 0),
-            *(
-                a
-                for a in mortaiseDroite(
-                    profondeur,
-                    longueurTotale - largeur_accroche / 2 + tenon_cadre / 2,
+        if type_tenon_cadre == "1":
+            vertsCadre = [
+                (0, 0, 0),
+                *mortaiseGauche(
+                    0, (largeur_accroche / 2 - tenon_cadre / 2), difprops, usinageprops
+                ),
+                *mortaiseGauche(
+                    0,
+                    (longueurTotale - largeur_accroche / 2 - tenon_cadre / 2),
                     difprops,
                     usinageprops,
-                )
-                if cadre_avant == True
-            ),
-            *(
-                a
-                for a in mortaiseDroite(
-                    profondeur,
-                    longueurTotale / 2 + tenon_cadre / 2,
+                ),
+                (0, longueurTotale, 0),
+                *mortaiseHaut(
+                    (profondeur / 2 - tenon_cadre / 2),
+                    longueurTotale,
                     difprops,
                     usinageprops,
-                )
-                if cadre_central == True
-            ),
-            *(
-                a
-                for a in mortaiseDroite(
-                    profondeur,
-                    largeur_accroche / 2 + tenon_cadre / 2,
-                    difprops,
-                    usinageprops,
-                )
-                if cadre_avant == True
-            ),
-            ((profondeur), 0, 0),
-            *mortaiseBas((profondeur / 2 + tenon_cadre / 2), 0, difprops, usinageprops),
-        ]
+                ),
+                ((profondeur), longueurTotale, 0),
+                *(
+                    a
+                    for a in mortaiseDroite(
+                        profondeur,
+                        longueurTotale - largeur_accroche / 2 + tenon_cadre / 2,
+                        difprops,
+                        usinageprops,
+                    )
+                    if cadre_avant == True
+                ),
+                *(
+                    a
+                    for a in mortaiseDroite(
+                        profondeur,
+                        longueurTotale / 2 + tenon_cadre / 2,
+                        difprops,
+                        usinageprops,
+                    )
+                    if cadre_central == True
+                ),
+                *(
+                    a
+                    for a in mortaiseDroite(
+                        profondeur,
+                        largeur_accroche / 2 + tenon_cadre / 2,
+                        difprops,
+                        usinageprops,
+                    )
+                    if cadre_avant == True
+                ),
+                ((profondeur), 0, 0),
+                *mortaiseBas(
+                    (profondeur / 2 + tenon_cadre / 2), 0, difprops, usinageprops
+                ),
+            ]
+        else : 
+            vertsCadre = [
+                (0, 0, 0),
+                
+                (0, longueurTotale, 0),
+               
+                ((profondeur), longueurTotale, 0),
+               
+                ((profondeur), 0, 0),
+                
+            ]
+
 
     i = 0
 
@@ -144,6 +170,8 @@ def add_cadre_tenon(difprops, productprops, usinageprops):
     product_type = productprops.product_type
     largeur_accroche = difprops.largeur_accroche
     cadre_avant = difprops.cadre_avant
+    type_tenon_cadre = difprops.type_tenon_cadre
+
 
     N = difprops.type
 
@@ -154,21 +182,29 @@ def add_cadre_tenon(difprops, productprops, usinageprops):
     edgesMortaisesInt = []
 
     if product_type == "0" or product_type == "1":
-        vertsCadre = [
-            (0, epaisseur, 0),
-            (0, largeur_diffuseur - epaisseur, 0),
-            *tenonHaut(
-                (profondeur / 2 - tenon_cadre / 2),
-                largeur_diffuseur - epaisseur,
-                difprops,
-                usinageprops,
-            ),
-            ((profondeur), largeur_diffuseur - epaisseur, 0),
-            ((profondeur), epaisseur, 0),
-            *tenonBas(
-                (profondeur / 2 + tenon_cadre / 2), epaisseur, difprops, usinageprops
-            ),
-        ]
+        if type_tenon_cadre == "1" : 
+            vertsCadre = [
+                (0, epaisseur, 0),
+                (0, largeur_diffuseur - epaisseur, 0),
+                *tenonHaut(
+                    (profondeur / 2 - tenon_cadre / 2),
+                    largeur_diffuseur - epaisseur,
+                    difprops,
+                    usinageprops,
+                ),
+                ((profondeur), largeur_diffuseur - epaisseur, 0),
+                ((profondeur), epaisseur, 0),
+                *tenonBas(
+                    (profondeur / 2 + tenon_cadre / 2), epaisseur, difprops, usinageprops
+                ),
+            ]
+        else : 
+            vertsCadre = [
+                (0, epaisseur, 0),
+                (0, largeur_diffuseur - epaisseur, 0),
+                ((profondeur), largeur_diffuseur - epaisseur, 0),
+                ((profondeur), epaisseur, 0),
+            ]
 
         for k in range(1, round(N)):
             vertsMortaisesInt += [
@@ -182,50 +218,58 @@ def add_cadre_tenon(difprops, productprops, usinageprops):
             ]
 
     if product_type == "2":
-        vertsCadre = [
-            (0, epaisseur, 0),
-            *mortaiseGauche(
-                0, largeur_accroche / 2 - tenon_cadre / 2, difprops, usinageprops
-            ),
-            *mortaiseGauche(
-                0,
-                largeur_diffuseur - largeur_accroche / 2 - tenon_cadre / 2,
-                difprops,
-                usinageprops,
-            ),
-            (0, largeur_diffuseur - epaisseur, 0),
-            *tenonHaut(
-                (profondeur / 2 - tenon_cadre / 2),
-                largeur_diffuseur - epaisseur,
-                difprops,
-                usinageprops,
-            ),
-            ((profondeur), largeur_diffuseur - epaisseur, 0),
-            *(
-                a
-                for a in mortaiseDroite(
-                    profondeur,
-                    largeur_diffuseur - largeur_accroche / 2 + tenon_cadre / 2,
+        if type_tenon_cadre == "1" : 
+            vertsCadre = [
+                (0, epaisseur, 0),
+                *mortaiseGauche(
+                    0, largeur_accroche / 2 - tenon_cadre / 2, difprops, usinageprops
+                ),
+                *mortaiseGauche(
+                    0,
+                    largeur_diffuseur - largeur_accroche / 2 - tenon_cadre / 2,
                     difprops,
                     usinageprops,
-                )
-                if cadre_avant == True
-            ),
-            *(
-                a
-                for a in mortaiseDroite(
-                    profondeur,
-                    largeur_accroche / 2 + tenon_cadre / 2,
+                ),
+                (0, largeur_diffuseur - epaisseur, 0),
+                *tenonHaut(
+                    (profondeur / 2 - tenon_cadre / 2),
+                    largeur_diffuseur - epaisseur,
                     difprops,
                     usinageprops,
-                )
-                if cadre_avant == True
-            ),
-            ((profondeur), epaisseur, 0),
-            *tenonBas(
-                (profondeur / 2 + tenon_cadre / 2), epaisseur, difprops, usinageprops
-            ),
-        ]
+                ),
+                ((profondeur), largeur_diffuseur - epaisseur, 0),
+                *(
+                    a
+                    for a in mortaiseDroite(
+                        profondeur,
+                        largeur_diffuseur - largeur_accroche / 2 + tenon_cadre / 2,
+                        difprops,
+                        usinageprops,
+                    )
+                    if cadre_avant == True
+                ),
+                *(
+                    a
+                    for a in mortaiseDroite(
+                        profondeur,
+                        largeur_accroche / 2 + tenon_cadre / 2,
+                        difprops,
+                        usinageprops,
+                    )
+                    if cadre_avant == True
+                ),
+                ((profondeur), epaisseur, 0),
+                *tenonBas(
+                    (profondeur / 2 + tenon_cadre / 2), epaisseur, difprops, usinageprops
+                ),
+            ] 
+        else :
+            vertsCadre = [
+                (0, epaisseur, 0),
+                (0, largeur_diffuseur - epaisseur, 0),
+                ((profondeur), largeur_diffuseur - epaisseur, 0),
+                ((profondeur), epaisseur, 0),
+            ] 
 
     i = 0
 
@@ -1012,13 +1056,13 @@ def add_cadre_moule_long(difprops, productprops, usinageprops):
     if product_type == "3":
         vertsCadre = [
             (-debord_moule - epaisseur_moule, 0, 0),
-            *mortaise_bas_fond_moule_long(- epaisseur_moule, 0, difprops, usinageprops),
+            *mortaise_bas_fond_moule_long(-epaisseur_moule, 0, difprops, usinageprops),
             (longueurTotale + epaisseur_moule + debord_moule, 0, 0),
             (longueurTotale + epaisseur_moule + debord_moule, -profondeur, 0),
-            (longueurTotale + epaisseur_moule , -profondeur, 0),
-            (longueurTotale + epaisseur_moule , -profondeur / 2 + 0.005, 0),
-            (longueurTotale , -profondeur / 2 + 0.005, 0),
-            (longueurTotale , -profondeur, 0),
+            (longueurTotale + epaisseur_moule, -profondeur, 0),
+            (longueurTotale + epaisseur_moule, -profondeur / 2 + 0.005, 0),
+            (longueurTotale, -profondeur / 2 + 0.005, 0),
+            (longueurTotale, -profondeur, 0),
             (0, -profondeur, 0),
             (0, -profondeur / 2 + 0.005, 0),
             (-epaisseur_moule, -profondeur / 2 + 0.005, 0),
