@@ -76,6 +76,7 @@ class Diffuseur_SideBar(Panel):
         box.label(text="Usinage ", icon="X")
         """ for att in (x for x in usinageprops.listAttributes()):
             box.prop(usinageprops, att) """
+        box.prop(usinageprops, "fraise")
         box.prop(difprops, "offset_peigne")
         
         box.label(text=f"Offset de fraise : {usinageprops.getOffset() * 1000} mm")
@@ -111,6 +112,16 @@ class Diffuseur_SideBar(Panel):
         layout.separator()
         box = layout.box()
         box.label(text="Array", icon="X")
+        """ continuer le travail d'application d'argument sur cette ligne """ 
+        row = box.row()
+        row.label(text="Option")
+        split = row.split()
+        col1 = split.column()
+        col2 = split.column()
+        
+        
+        col1.operator("mesh.set_array_offset", text="Standard (3x)").arrayOffsetFactor = 2 
+        col2.operator("mesh.set_array_offset", text="Minimal (2x)").arrayOffsetFactor = 3 
         box.prop(arrayprops, "array_offset")
         split = box.split()
         col1 = split.column()

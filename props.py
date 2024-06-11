@@ -30,6 +30,8 @@ class Usinageprops(bpy.types.PropertyGroup):
         step=0.001,
         unit="LENGTH",
         precision=4,
+        min=0.001,
+        max=0.030
     )
     offset: EnumProperty(
         name="Offset %",

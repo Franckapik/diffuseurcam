@@ -34,7 +34,7 @@ class AddCadreMortaise(bpy.types.Operator, AddObjectHelper):
 
         # Load BMesh with mesh data
         bm.from_mesh(mesh)
-        
+
         total_area = sum(f.calc_area() for f in bm.faces)
 
         print("Total Surface Area:", total_area)
@@ -180,9 +180,11 @@ class AddCarreau(bpy.types.Operator, AddObjectHelper):
             arrayprops.carreau_x,
             arrayprops.carreau_y,
             difprops.getRang(),
-            difprops.getRang()
-            if scene.product_props.product_type == "0"
-            else difprops.largeur_diffuseur * difprops.longueur_diffuseur,
+            (
+                difprops.getRang()
+                if scene.product_props.product_type == "0"
+                else difprops.largeur_diffuseur * difprops.longueur_diffuseur
+            ),
         )
 
         if posprops.carreau_rotation:
@@ -661,7 +663,8 @@ class AddCadreMoule(bpy.types.Operator, AddObjectHelper):
             mesh_obj.rotation_euler = [0, 0, math.radians(90)]
 
         return {"FINISHED"}
-    
+
+
 class AddCadreMouleLong(bpy.types.Operator, AddObjectHelper):
     bl_idname = "mesh.cadre_moule_long"
     bl_label = "Ajouter Cadre Moule Long"
@@ -772,7 +775,7 @@ class AddSimulation(bpy.types.Operator, AddObjectHelper):
         ratio = difprops.getRatio()
 
         for i in range(difprops.type):
-            y = i * difprops.getRang() 
+            y = i * difprops.getRang()
             for k in range(difprops.type):
                 index = i * difprops.type + k
                 x = k * difprops.getRang()
@@ -858,8 +861,9 @@ class AddPilierMoule(bpy.types.Operator, AddObjectHelper):
             arrayprops.array_offset,
             arrayprops.pilier_moule_x,
             arrayprops.pilier_moule_y,
-            (difprops.getLargeurPilier() + arrayprops.array_offset) * (difprops.type + 1),
-            difprops.longueur_diffuseur, #calcul à faire sur l'addition des ratios
+            (difprops.getLargeurPilier() + arrayprops.array_offset)
+            * (difprops.type + 1),
+            difprops.longueur_diffuseur,  # calcul à faire sur l'addition des ratios
         )
 
         if posprops.pilier_moule_rotation:
@@ -912,34 +916,43 @@ class AddMoule(bpy.types.Operator, AddObjectHelper):
         AddCadreMouleLong.execute(self, context)
 
         return {"FINISHED"}
-    
+
+
 class AddList(bpy.types.Operator, AddObjectHelper):
     bl_idname = "mesh.add_list"
     bl_label = "Ajouter au devis"
     bl_options = {"REGISTER", "UNDO"}
-
 
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
         arrayprops = scene.array_props
         devisprops = scene.devis_props
-        areaMaterial =  ((difprops.getLongueur()+ arrayprops.array_offset) * (difprops.profondeur+ arrayprops.array_offset) * (difprops.type + 1) + (difprops.largeur_diffuseur+ arrayprops.array_offset) * (difprops.profondeur+ arrayprops.array_offset) * (difprops.type + 1) + len(difprops.getRatio()) * (difprops.getRang()+ arrayprops.array_offset) * (difprops.getRang()+ arrayprops.array_offset)) 
+        areaMaterial = (
+            (difprops.getLongueur() + arrayprops.array_offset)
+            * (difprops.profondeur + arrayprops.array_offset)
+            * (difprops.type + 1)
+            + (difprops.largeur_diffuseur + arrayprops.array_offset)
+            * (difprops.profondeur + arrayprops.array_offset)
+            * (difprops.type + 1)
+            + len(difprops.getRatio())
+            * (difprops.getRang() + arrayprops.array_offset)
+            * (difprops.getRang() + arrayprops.array_offset)
+        )
         areaPanel = devisprops.panelx * devisprops.panely
         qtyPanel = math.ceil(devisprops.qtyDif * areaMaterial / areaPanel)
-
 
         newItem = bpy.context.scene.devis_list.add()
         newItem.listDif = f"{difprops.getDifName()} : {qtyPanel} panneaux"
 
         return {"FINISHED"}
-    
+
+
 class RemoveList(bpy.types.Operator, AddObjectHelper):
     bl_idname = "mesh.remove_list"
     bl_label = ""
     bl_options = {"REGISTER", "UNDO"}
     item: IntProperty(name="item to remove")
-
 
     def execute(self, context):
         scene = context.scene
@@ -960,6 +973,21 @@ class PickPosition(bpy.types.Operator, AddObjectHelper):
         scene = context.scene
         posprops = scene.pos_props
         posprops.update(self.target, self.cursor)
+
+        return {"FINISHED"}
+
+
+class SetArrayOffset(bpy.types.Operator, AddObjectHelper):
+    bl_idname = "mesh.set_array_offset"
+    bl_label = "Offset standard (3x)"
+    bl_options = {"REGISTER", "UNDO"}
+    arrayOffsetFactor: IntProperty(name="array offset factor")
+
+    def execute(self, context):
+        scene = context.scene
+        arrayprops = scene.array_props
+        usinageprops = scene.usinage_props
+        arrayprops.array_offset = self.arrayOffsetFactor * usinageprops.fraise
 
         return {"FINISHED"}
 
@@ -1010,8 +1038,8 @@ class PrepareToCam(bpy.types.Operator, AddObjectHelper):
                 bpy.context.view_layer.objects.active = obj
                 obj.select_set(True)
                 # apply modifier
-                bpy.ops.object.convert(target="CURVE") 
-                bpy.ops.object.convert(target="MESH")  
+                bpy.ops.object.convert(target="CURVE")
+                bpy.ops.object.convert(target="MESH")
 
         # convert to curve
         if prepprops.isConvertToCurve_prepare:
@@ -1056,6 +1084,7 @@ classes = [
     AddCadreMouleLong,
     AddColle,
     AddSimulation,
+    SetArrayOffset,
 ]
 
 
