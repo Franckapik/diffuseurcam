@@ -1,19 +1,20 @@
+Erreur avec mono tenon mi traversant et overcuts : 
+
+TypeError: 'MultiPolygon' object is not subscriptable
+Location: /home/fanch/.apps/blender402/4.0/scripts/modules/bpy/ops.py:109
+
 ajouter modele 3d dans une collection
-
-proposer position selon curseur 3d ou bien mesh selectionne 
-Ou mieux detecter les mesh par leur nom et remplir auto les positions dans le generateur
-
-Modele 3d entier à generer
 
 retravailler sur l'erreur du bouton colle suite probablement à un merge de deux branches peu coherent.
 
-
-separate by lloose part
-pack curve on sheet
-
-----
 
 ajouter le moyen de supprimer ou de faire un reset des items de la liste
 ici : https://blender.stackexchange.com/questions/16511/how-can-i-store-and-retrieve-a-custom-list-in-a-blend-file
 
 affiner l'affichage de l'ui et verifier dans l'ops si tout est bien ecris pour le add_list
+
+- script qui permet d'assembler les carreaux selon 40cm si necessaité de poncer à la calibreuse.
+- génération de bridges via un autre script que blendercam pour pouvoir parenter, faire un bridge sur mesure selon la pièce. 
+
+- overcuts non necessaires sur les stries du peigne
+- overcuts non necessaires sur les trous du fond du moule 
