@@ -145,9 +145,18 @@ class Diffuseur_SideBar(Panel):
         box = layout.box()
         box.label(text="Générateur", icon="X")
 
-        cursor = bpy.context.scene.cursor.location
+        if bpy.context.selected_objects:
+            # Obtient le premier objet sélectionné
+            selected_object = bpy.context.selected_objects[0]
+            cursor = selected_object.location
+
+        else:
+            cursor = bpy.context.scene.cursor.location
+
+
+
         box.label(
-            text=f"Cursor 3D : X{round(cursor[0], 2)}  Y{round(cursor[1], 2)}  Z{round(cursor[2], 2)}"
+            text=f"{'Mesh selectionné' if bpy.context.selected_objects else 'Cursor 3D'} : X{round(cursor[0], 2)}  Y{round(cursor[1], 2)}  Z{round(cursor[2], 2)}"
         )
 
         for piece in posprops.listAttributes(productprops.product_type):
