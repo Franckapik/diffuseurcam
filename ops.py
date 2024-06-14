@@ -1047,6 +1047,22 @@ class PrepareToCam(bpy.types.Operator, AddObjectHelper):
 
             bpy.ops.object.select_all(action="DESELECT")
 
+            if prepprops.isHidingOldMesh_prepare:
+                    new_collection = bpy.data.collections.new("origine")
+                    bpy.context.scene.collection.children.link(new_collection)
+
+
+                    for obj in old_select_objects:
+                        # Délier l'objet de toutes les collections actuelles
+                        for collection in obj.users_collection:
+                            collection.objects.unlink(obj)
+                        # Ajouter l'objet à la nouvelle collection
+                        new_collection.objects.link(obj)
+
+                    # Rendre la nouvelle collection non visible dans le viewport
+                    new_collection.hide_viewport = True
+
+
             if prepprops.isDeleteOldMesh_prepare:
                 for obj in old_select_objects:
                     obj.select_set(True)

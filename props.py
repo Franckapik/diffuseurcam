@@ -830,6 +830,10 @@ class PrepareProps(bpy.types.PropertyGroup):
         name="Delete old mesh",
         description="Delete old mesh",
     )
+    isHidingOldMesh_prepare: BoolProperty(
+        name="Hide old mesh",
+        description="Hide old mesh",
+    )
 
     def listAttributes(self):
         attributes = [

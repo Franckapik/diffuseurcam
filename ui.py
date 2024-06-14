@@ -199,6 +199,7 @@ class Diffuseur_SideBar(Panel):
         box.prop(prepprops, "isNewMesh_prepare")
 
         if prepprops.isNewMesh_prepare:
+            box.prop(prepprops, "isHidingOldMesh_prepare")
             box.prop(prepprops, "isDeleteOldMesh_prepare")
         """ else:
             prepprops.isDeleteOldMesh_prepare = False """
