@@ -3,6 +3,7 @@ import bmesh
 from .shapes import *
 from .difarray import difArray
 from .bridges import place_empties_on_bounding_box
+from .pack import place_selected_objects_no_overlap
 from bpy_extras.object_utils import AddObjectHelper
 from bpy.props import FloatVectorProperty, StringProperty, IntProperty
 import math
@@ -995,6 +996,18 @@ class SetArrayOffset(bpy.types.Operator, AddObjectHelper):
         arrayprops.array_offset = self.arrayOffsetFactor * usinageprops.fraise
 
         return {"FINISHED"}
+    
+class NoOverlap(bpy.types.Operator, AddObjectHelper):
+    bl_idname = "mesh.no_overlap"
+    bl_label = "Disperser la selection"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        # Call the function to pack all objects
+        bin_width = 1.0
+        place_selected_objects_no_overlap(bin_width)
+
+        return {"FINISHED"}
 
 
 class PrepareToCam(bpy.types.Operator, AddObjectHelper):
@@ -1090,6 +1103,7 @@ classes = [
     AddColle,
     AddSimulation,
     SetArrayOffset,
+    NoOverlap
 ]
 
 

@@ -186,6 +186,8 @@ class Diffuseur_SideBar(Panel):
             case "3":
                 box.operator("mesh.add_moule")
 
+        box.operator("mesh.no_overlap")
+
         # Prepare to Cam
         layout.separator()
         box = layout.box()
