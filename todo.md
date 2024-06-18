@@ -19,6 +19,5 @@ affiner l'affichage de l'ui et verifier dans l'ops si tout est bien ecris pour l
 - overcuts non necessaires sur les stries du peigne
 - overcuts non necessaires sur les trous du fond du moule 
 
-delete or HIDE old mesh
 proposer un array recommandé.
 proposer une option : generer pour la premiere fois. positions sans superpositions

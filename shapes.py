@@ -1017,11 +1017,11 @@ def add_fond_moule(difprops, productprops, usinageprops):
     i = 0
 
     for k in range(
-        len(vertsCadre),
+        len(vertsCadre)+len(vertsMortaisesInt),
         len(vertsCadre) + len(vertsMortaisesInt) + len(vertsMortaiseCadre),
     ):
         i += 1
-        if i == 4 or k == len(vertsCadre):
+        if i == 4 or k == len(vertsCadre)+len(vertsMortaisesInt):
             i = 0
             edgesMortaiseCadre += [
                 (k, k + 1),
