@@ -897,7 +897,7 @@ def add_fond_moule(difprops, productprops, usinageprops):
     debord_moule = 0.010
 
     N = difprops.type
-    rang2 = rang - epaisseur / N
+    rang2 = rang - epaisseur 
 
     edgesCadre = []
     vertsMortaisesInt = []
@@ -905,27 +905,31 @@ def add_fond_moule(difprops, productprops, usinageprops):
     vertsMortaiseCadre = []
     edgesMortaiseCadre = []
 
+
     if product_type == "3":
+        """ depart bas/haut """
         y0 = rang2 / 2 + epaisseur + epaisseur_moule + debord_moule
-        x0 = rang2 / 2 + epaisseur + epaisseur_moule + debord_moule
+        """ depart gauche/droite """
+        x0 = rang2 / 2 + epaisseur + epaisseur_moule + debord_moule 
 
         for k in range(0, round(N * round(N * longueur_diffuseur))):
             if k % N == 0 and k != 0:
-                y0 += rang2
+                y0 += rang2 + epaisseur
                 x0 = rang2 / 2 + epaisseur + epaisseur_moule + debord_moule
+                
             if difprops.type_moule == "eco":
                 vertsMortaisesInt += [
                     *mortaise_pilier_fond_moule_eco(x0, y0, difprops, usinageprops)
                 ]
 
-                x0 += rang2
+                x0 += rang2 + epaisseur
 
             if difprops.type_moule == "stable":
                 vertsMortaisesInt += [
                     *mortaise_pilier_fond_moule_stable(x0, y0, difprops, usinageprops)
                 ]
 
-                x0 += rang2
+                x0 += rang2 + epaisseur
 
         vertsCadre = [
             (0, 0, 0),

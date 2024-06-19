@@ -1,3 +1,5 @@
+Verifier si les 5mm traversants pour le fond du moule ne devrait pas etre compensés par la hauteur des piliers: si besoin faire une option.
+
 Erreur avec mono tenon mi traversant et overcuts : 
 
 TypeError: 'MultiPolygon' object is not subscriptable
