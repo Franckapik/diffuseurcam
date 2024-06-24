@@ -1265,15 +1265,9 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
 
 
 def add_colle(difprops, productprops, usinageprops, arrayprops):
-    product_type = productprops.product_type
-    epaisseur = difprops.epaisseur
-    profondeur = difprops.profondeur
-    tenon_pilier = difprops.tenon_pilier
-    epaisseur_moule = difprops.epaisseur_moule
-    array_offset = arrayprops.array_offset
+
 
     N = difprops.type
-    largeur_pilier = difprops.getLargeurPilier()
 
     edgesCadre = []
 
@@ -1287,11 +1281,13 @@ def add_colle(difprops, productprops, usinageprops, arrayprops):
             index = i * difprops.type + k
             x = k * difprops.getRang() + difprops.getRang() / 2
             z = ratio[index]
-            vertsCadre += [(x, y, difprops.profondeur), (x, y, z)]
+            vertsCadre += [(x, y, z), (x, y, difprops.profondeur)]
 
     for i in range(len(vertsCadre)):
-        if i % 2 == 0:
-            edgesCadre += [(i, i + 1)]
+        if i % 2 == 0 and i != 0 and i!= len(vertsCadre) - 2:
+            print(i)
+            """ 1-3 3-2 2-3 3-4 """
+            edgesCadre += [(i-1, i + 1),(i+1, i)] 
 
     verts = [*list(vertsCadre)]
     edges = [*list(edgesCadre)]
