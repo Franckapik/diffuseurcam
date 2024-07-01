@@ -1280,14 +1280,9 @@ def add_colle(difprops, productprops, usinageprops, arrayprops):
             index = i * difprops.type + k
             x = k * difprops.getRang() + difprops.getRang() / 2
             z = ratio[index]
-            vertsCadre += [(x, y, z), (x, y, difprops.profondeur)]
-
-    for i in range(len(vertsCadre)):
-        if i % 2 == 0 and i != 0 and i!= len(vertsCadre) - 2:
-            """ 1-3 3-2 2-3 3-4 """
-            edgesCadre += [(i-1, i + 1),(i+1, i)] 
+            vertsCadre += [(x, y, z)]
 
     verts = [*list(vertsCadre)]
-    edges = [*list(edgesCadre)]
+    edges = []
 
     return verts, edges, "Colle"

@@ -741,6 +741,30 @@ class AddColle(bpy.types.Operator, AddObjectHelper):
             scene.dif_props, scene.product_props, scene.usinage_props, scene.array_props
         )
 
+
+        gcode_lines = []
+        gcode_lines.append("G21 ; Set units to millimeters")
+        gcode_lines.append("G1790 ; Absolute positioning")
+        gcode_lines.append("G00 Z20.0F500")
+        for points in vertex : 
+            x,y,z = points
+            x,y,z = x * 100,y*100,z*100
+            print(x)
+            gcode_lines.append(f"G1 X{x:.2f} Y{y:.2f} Z{difprops.profondeur * 100:.2f}")
+            gcode_lines.append(f"G1 X{x:.2f} Y{y:.2f} Z{z:.2f}")
+            gcode_lines.append(f"G1 X{x:.2f} Y{y:.2f} Z{difprops.profondeur * 100:.2f}")
+
+        gcode_lines.append("G00 Z20.0")
+        gcode_lines.append("M30 ; End of program")
+
+        # Sauvegarder le G-code dans un fichier
+        with open("/home/fanch/output.gcode", 'w') as f:
+            for line in gcode_lines:
+                f.write(line + "\n")
+
+        print("G-code exporté avec succès.")
+            
+
         # create a bmesh
         bm = bmesh.new()
 
@@ -764,52 +788,6 @@ class AddColle(bpy.types.Operator, AddObjectHelper):
         mesh_obj = bpy.data.objects.new(mesh.name, mesh)
         bpy.context.collection.objects.link(mesh_obj)
         bpy.types.Scene.dif_parts.append(mesh_obj.name)
-
-
-        bpy.context.view_layer.objects.active = mesh_obj
-        mesh_obj.select_set(True)
-        bpy.ops.object.convert(target='CURVE')
-
-        curve = bpy.context.active_object
-
-
-
-        if curve and curve.type == 'CURVE':
-            gcode_lines = []
-            gcode_lines.append("G21 ; Set units to millimeters")
-            gcode_lines.append("G90 ; Absolute positioning")
-
-            for spline in curve.data.splines:
-                if spline.type == 'BEZIER':
-                    for point in spline.bezier_points:
-                        x = point.co.x *100
-                        y = point.co.y * 100
-                        z = point.co.z *100
-                        gcode_lines.append(f"G1 X{x:.2f} Y{y:.2f} Z{z:.2f}")
-
-                # la curve "Colle" est de type POLY
-                elif spline.type == 'NURBS' or spline.type == 'POLY': 
-
-                    for point in spline.points:
-                        x, y, z, w = point.co
-
-                        x1 = x*100
-                        y1 = y*100
-                        z1=z*100
-                        gcode_lines.append(f"G1 X{x1:.2f} Y{y1:.2f} Z{z1:.2f}")
-                        if z != difprops.profondeur:
-                            print(z)
-                            gcode_lines.append(f"G1 X{x1:.2f} Y{y1:.2f} Z{difprops.profondeur*100:.2f}")
-
-
-            gcode_lines.append("M30 ; End of program")
-
-            # Sauvegarder le G-code dans un fichier
-            with open("/home/fanch/output.gcode", 'w') as f:
-                for line in gcode_lines:
-                    f.write(line + "\n")
-
-            print("G-code exporté avec succès.")
 
         return {"FINISHED"}
 
