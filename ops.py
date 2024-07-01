@@ -728,8 +728,7 @@ class AddCadreMouleLong(bpy.types.Operator, AddObjectHelper):
             mesh_obj.rotation_euler = [0, 0, math.radians(90)]
 
         return {"FINISHED"}
-
-
+    
 class AddColle(bpy.types.Operator, AddObjectHelper):
     bl_idname = "mesh.colle"
     bl_label = "Ajouter Colle"
@@ -766,10 +765,56 @@ class AddColle(bpy.types.Operator, AddObjectHelper):
         bpy.context.collection.objects.link(mesh_obj)
         bpy.types.Scene.dif_parts.append(mesh_obj.name)
 
+
+        bpy.context.view_layer.objects.active = mesh_obj
+        mesh_obj.select_set(True)
+        bpy.ops.object.convert(target='CURVE')
+
+        curve = bpy.context.active_object
+
+
+
+        if curve and curve.type == 'CURVE':
+            gcode_lines = []
+            gcode_lines.append("G21 ; Set units to millimeters")
+            gcode_lines.append("G90 ; Absolute positioning")
+
+            for spline in curve.data.splines:
+                if spline.type == 'BEZIER':
+                    for point in spline.bezier_points:
+                        x = point.co.x *100
+                        y = point.co.y * 100
+                        z = point.co.z *100
+                        gcode_lines.append(f"G1 X{x:.2f} Y{y:.2f} Z{z:.2f}")
+
+                # la curve "Colle" est de type POLY
+                elif spline.type == 'NURBS' or spline.type == 'POLY': 
+
+                    for point in spline.points:
+                        x, y, z, w = point.co
+
+                        x1 = x*100
+                        y1 = y*100
+                        z1=z*100
+                        gcode_lines.append(f"G1 X{x1:.2f} Y{y1:.2f} Z{z1:.2f}")
+                        if z != difprops.profondeur:
+                            print(z)
+                            gcode_lines.append(f"G1 X{x1:.2f} Y{y1:.2f} Z{difprops.profondeur*100:.2f}")
+
+
+            gcode_lines.append("M30 ; End of program")
+
+            # Sauvegarder le G-code dans un fichier
+            with open("/home/fanch/output.gcode", 'w') as f:
+                for line in gcode_lines:
+                    f.write(line + "\n")
+
+            print("G-code exporté avec succès.")
+
         return {"FINISHED"}
 
 
-class AddSimulation(bpy.types.Operator, AddObjectHelper):
+class Add3DModel(bpy.types.Operator, AddObjectHelper):
     bl_idname = "mesh.simulation"
     bl_label = "Ajouter Modele 3D"
     bl_options = {"REGISTER", "UNDO"}
@@ -1117,7 +1162,7 @@ classes = [
     RemoveList,
     AddCadreMouleLong,
     AddColle,
-    AddSimulation,
+    Add3DModel,
     SetArrayOffset,
     NoOverlap
 ]

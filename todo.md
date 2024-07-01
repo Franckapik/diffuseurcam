@@ -1,3 +1,5 @@
+Trouve rle moyen d'avoir un gcode clair sur ncviewer avec cette histoire de difprops.profondeur.
+
 La génération d'une curve est possible mais le chemin ne semble pas clair alors qu'un fichier gcode est finalement facile a generer depuis python. IL faut travailler en ce sens pour avoir un fichier générer a la base du fichier blend avec les instructions gocde inspirées des fichiers blendercam.
 
 Verifier si les 5mm traversants pour le fond du moule ne devrait pas etre compensés par la hauteur des piliers: si besoin faire une option.

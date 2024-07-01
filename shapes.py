@@ -1266,7 +1266,6 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
 
 def add_colle(difprops, productprops, usinageprops, arrayprops):
 
-
     N = difprops.type
 
     edgesCadre = []
@@ -1285,7 +1284,6 @@ def add_colle(difprops, productprops, usinageprops, arrayprops):
 
     for i in range(len(vertsCadre)):
         if i % 2 == 0 and i != 0 and i!= len(vertsCadre) - 2:
-            print(i)
             """ 1-3 3-2 2-3 3-4 """
             edgesCadre += [(i-1, i + 1),(i+1, i)] 
 
