@@ -1266,19 +1266,17 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
 
 def add_colle(difprops, productprops, usinageprops, arrayprops):
 
-    N = difprops.type
-
-    edgesCadre = []
-
     vertsCadre = []
+
+    epaisseur = difprops.epaisseur
 
     ratio = difprops.getRatio()
 
     for i in range(difprops.type):
-        y = i * difprops.getRang() + difprops.getRang() / 2
+        y = i * difprops.getRang() + (difprops.getRang() - epaisseur)  / 2
         for k in range(difprops.type):
             index = i * difprops.type + k
-            x = k * difprops.getRang() + difprops.getRang() / 2
+            x = k * difprops.getRang() + (difprops.getRang() - epaisseur)  / 2
             z = ratio[index]
             vertsCadre += [(x, y, z)]
 
