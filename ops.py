@@ -36,7 +36,7 @@ class AddCadreMortaise(bpy.types.Operator, AddObjectHelper):
 
         # Load BMesh with mesh data
         bm.from_mesh(mesh)
-        
+
         """ ne fonctionne pas  """
         total_area = sum(f.calc_area() for f in bm.faces)
         print("Total Surface Area:", total_area)
@@ -52,7 +52,6 @@ class AddCadreMortaise(bpy.types.Operator, AddObjectHelper):
         bpy.types.Scene.dif_parts.append(mesh_obj.name)
 
         """ place_empties_on_bounding_box(mesh_obj) """
-
 
         mesh_obj.location = (
             posprops.cadre_mortaise_position[0],
@@ -71,7 +70,6 @@ class AddCadreMortaise(bpy.types.Operator, AddObjectHelper):
 
         if posprops.cadre_mortaise_rotation:
             mesh_obj.rotation_euler = [0, 0, math.radians(90)]
-
 
         return {"FINISHED"}
 
@@ -728,7 +726,8 @@ class AddCadreMouleLong(bpy.types.Operator, AddObjectHelper):
             mesh_obj.rotation_euler = [0, 0, math.radians(90)]
 
         return {"FINISHED"}
-    
+
+
 class AddColle(bpy.types.Operator, AddObjectHelper):
     bl_idname = "mesh.colle"
     bl_label = "Ajouter Colle"
@@ -741,15 +740,13 @@ class AddColle(bpy.types.Operator, AddObjectHelper):
             scene.dif_props, scene.product_props, scene.usinage_props, scene.array_props
         )
 
-
         gcode_lines = []
         gcode_lines.append("G21 ; Set units to millimeters")
         gcode_lines.append("G1790 ; Absolute positioning")
-        gcode_lines.append("G00 Z20.0F500")
-        for points in vertex : 
-            x,y,z = points
-            x,y,z = x * 100,y*100,z*100
-            print(x)
+        gcode_lines.append("G00 Z10.0F500")
+        for points in vertex:
+            x, y, z = points
+            x, y, z = x * 100, y * 100, z * 100
             gcode_lines.append(f"G1 X{x:.2f} Y{y:.2f} Z{difprops.profondeur * 100:.2f}")
             gcode_lines.append(f"G1 X{x:.2f} Y{y:.2f} Z{z:.2f}")
             gcode_lines.append(f"G1 X{x:.2f} Y{y:.2f} Z{difprops.profondeur * 100:.2f}")
@@ -758,12 +755,11 @@ class AddColle(bpy.types.Operator, AddObjectHelper):
         gcode_lines.append("M30 ; End of program")
 
         # Sauvegarder le G-code dans un fichier
-        with open("/home/fanch/output.gcode", 'w') as f:
+        with open("/home/fanch/output.gcode", "w") as f:
             for line in gcode_lines:
                 f.write(line + "\n")
 
         print("G-code exporté avec succès.")
-            
 
         # create a bmesh
         bm = bmesh.new()
@@ -1019,7 +1015,8 @@ class SetArrayOffset(bpy.types.Operator, AddObjectHelper):
         arrayprops.array_offset = self.arrayOffsetFactor * usinageprops.fraise
 
         return {"FINISHED"}
-    
+
+
 class NoOverlap(bpy.types.Operator, AddObjectHelper):
     bl_idname = "mesh.no_overlap"
     bl_label = "Disperser la selection"
@@ -1071,20 +1068,18 @@ class PrepareToCam(bpy.types.Operator, AddObjectHelper):
             bpy.ops.object.select_all(action="DESELECT")
 
             if prepprops.isHidingOldMesh_prepare:
-                    new_collection = bpy.data.collections.new("origine")
-                    bpy.context.scene.collection.children.link(new_collection)
+                new_collection = bpy.data.collections.new("origine")
+                bpy.context.scene.collection.children.link(new_collection)
 
+                for obj in old_select_objects:
+                    # Délier l'objet de toutes les collections actuelles
+                    for collection in obj.users_collection:
+                        collection.objects.unlink(obj)
+                    # Ajouter l'objet à la nouvelle collection
+                    new_collection.objects.link(obj)
 
-                    for obj in old_select_objects:
-                        # Délier l'objet de toutes les collections actuelles
-                        for collection in obj.users_collection:
-                            collection.objects.unlink(obj)
-                        # Ajouter l'objet à la nouvelle collection
-                        new_collection.objects.link(obj)
-
-                    # Rendre la nouvelle collection non visible dans le viewport
-                    new_collection.hide_viewport = True
-
+                # Rendre la nouvelle collection non visible dans le viewport
+                new_collection.hide_viewport = True
 
             if prepprops.isDeleteOldMesh_prepare:
                 for obj in old_select_objects:
@@ -1142,7 +1137,7 @@ classes = [
     AddColle,
     Add3DModel,
     SetArrayOffset,
-    NoOverlap
+    NoOverlap,
 ]
 
 
