@@ -742,6 +742,7 @@ class AddColle(bpy.types.Operator, AddObjectHelper):
         )
 
 
+
         gcode_lines = []
         gcode_lines.append("G21 ; Set units to millimeters")
         gcode_lines.append("G1790 ; Absolute positioning")
@@ -907,12 +908,17 @@ class AddDiffuseur(bpy.types.Operator, AddObjectHelper):
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
+        scene = context.scene
+
         AddCadreMortaise.execute(self, context)
         AddCadreTenon.execute(self, context)
         AddCarreau.execute(self, context)
-        AddPeigneCourt.execute(self, context)
         AddPeigneLong.execute(self, context)
         AddAccroche.execute(self, context)
+        if scene.product_props.product_type == "0" : 
+            AddPeigneCourt.execute(self, context)
+
+
 
         return {"FINISHED"}
 
@@ -1008,7 +1014,7 @@ class PickPosition(bpy.types.Operator, AddObjectHelper):
 
 class SetArrayOffset(bpy.types.Operator, AddObjectHelper):
     bl_idname = "mesh.set_array_offset"
-    bl_label = "Offset standard (3x)"
+    bl_label = "Offset standard (3>x)"
     bl_options = {"REGISTER", "UNDO"}
     arrayOffsetFactor: IntProperty(name="array offset factor")
 
@@ -1017,6 +1023,43 @@ class SetArrayOffset(bpy.types.Operator, AddObjectHelper):
         arrayprops = scene.array_props
         usinageprops = scene.usinage_props
         arrayprops.array_offset = self.arrayOffsetFactor * usinageprops.fraise
+
+        return {"FINISHED"}
+    
+class SetRecommendedArray(bpy.types.Operator, AddObjectHelper):
+    bl_idname = "mesh.set_array_recommended"
+    bl_label = "Pré-remplissage Array"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        scene = context.scene
+        arrayprops = scene.array_props
+        difprops = scene.dif_props
+        if scene.product_props.product_type == "0" : 
+            arrayprops.peigne_court_x = int(difprops.type * difprops.longueur_diffuseur - 1)
+            arrayprops.peigne_court_y = 1
+            arrayprops.peigne_long_x = difprops.type - 1
+            arrayprops.peigne_long_y = 1
+            arrayprops.cadre_mortaise_x = 2
+            arrayprops.cadre_mortaise_y = 1
+            arrayprops.cadre_tenon_x = 2
+            arrayprops.cadre_tenon_y = 1
+            arrayprops.carreau_x = difprops.type 
+            arrayprops.carreau_y = difprops.type
+            arrayprops.accroche_x = 2
+            arrayprops.accroche_y = 2
+
+        if scene.product_props.product_type == "1" : 
+            arrayprops.peigne_long_x = difprops.type - 1
+            arrayprops.peigne_long_y = 1
+            arrayprops.cadre_mortaise_x = 2
+            arrayprops.cadre_mortaise_y = 1
+            arrayprops.cadre_tenon_x = 2
+            arrayprops.cadre_tenon_y = 1
+            arrayprops.carreau_x = difprops.type 
+            arrayprops.carreau_y = 1
+            arrayprops.accroche_x = 2
+            arrayprops.accroche_y = 2
 
         return {"FINISHED"}
     
@@ -1059,7 +1102,7 @@ class PrepareToCam(bpy.types.Operator, AddObjectHelper):
         if prepprops.selection_prepare == "2":
             bpy.ops.object.select_all(action="SELECT")
 
-        # copy selected mesh
+        # copy selected mesh>
         if prepprops.isNewMesh_prepare:
             C = bpy.context
             old_select_objects = C.selected_objects
@@ -1142,7 +1185,8 @@ classes = [
     AddColle,
     Add3DModel,
     SetArrayOffset,
-    NoOverlap
+    NoOverlap,
+    SetRecommendedArray
 ]
 
 

@@ -603,8 +603,6 @@ class ArrayProps(bpy.types.PropertyGroup):
                 ]
             case "1":
                 return [
-                    "peigne_court_x",
-                    "peigne_court_y",
                     "peigne_long_x",
                     "peigne_long_y",
                     "cadre_mortaise_x",
@@ -758,13 +756,11 @@ class PositionProps(bpy.types.PropertyGroup):
                 ]
             case "1":
                 return [
-                    "peigne_court_position",
                     "peigne_long_position",
                     "cadre_mortaise_position",
                     "cadre_tenon_position",
                     "carreau_position",
                     "accroche_position",
-                    "peigne_court_rotation",
                     "peigne_long_rotation",
                     "cadre_mortaise_rotation",
                     "cadre_tenon_rotation",

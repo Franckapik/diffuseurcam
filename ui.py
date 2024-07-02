@@ -123,6 +123,11 @@ class Diffuseur_SideBar(Panel):
         col1.operator("mesh.set_array_offset", text="Standard (3x)").arrayOffsetFactor = 3 
         col2.operator("mesh.set_array_offset", text="Minimal (2x)").arrayOffsetFactor = 2 
         box.prop(arrayprops, "array_offset")
+
+       
+        box.separator()
+        box.operator("mesh.set_array_recommended", text="Pré-remplir") 
+
         split = box.split()
         col1 = split.column()
         col2 = split.column()
