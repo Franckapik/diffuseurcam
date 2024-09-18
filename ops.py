@@ -742,14 +742,14 @@ class AddColle(bpy.types.Operator, AddObjectHelper):
 
         gcode_lines = []
         gcode_lines.append("G21 ; Set units to millimeters")
-        gcode_lines.append("G1790 ; Absolute positioning")
-        gcode_lines.append("G00 Z10.0F500")
+        gcode_lines.append("G17G90 ; Absolute positioning")
         for points in vertex:
             x, y, z = points
-            x, y, z = x * 100, y * 100, z * 100
-            gcode_lines.append(f"G1 X{x:.2f} Y{y:.2f} Z{difprops.profondeur * 100:.2f}")
+            x, y, z = x * 1000, y * 1000, z * 1000
+            print(x)
+            gcode_lines.append(f"G1 X{x:.2f} Y{y:.2f} Z{difprops.profondeur * 1000:.2f} F500")
             gcode_lines.append(f"G1 X{x:.2f} Y{y:.2f} Z{z:.2f}")
-            gcode_lines.append(f"G1 X{x:.2f} Y{y:.2f} Z{difprops.profondeur * 100:.2f}")
+            gcode_lines.append(f"G1 X{x:.2f} Y{y:.2f} Z{difprops.profondeur * 1000:.2f}")
 
         gcode_lines.append("G00 Z20.0")
         gcode_lines.append("M30 ; End of program")
