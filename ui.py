@@ -140,6 +140,8 @@ class Diffuseur_SideBar(Panel):
             if arr[-1] == "y":
                 col2.prop(arrayprops, arr)
 
+        box.label(text=f"Nombre de pièces : {arrayprops.nbPieces(productprops.product_type)}")
+
         # Generateur
         layout.separator()
         box = layout.box()
@@ -231,11 +233,33 @@ class Diffuseur_SideBar(Panel):
         col2.label(text="Largeur")
         col1.prop(devisprops, "panelx")
         col2.prop(devisprops, "panely")
-        box.label(text=f"Aire D2 cutted: {round(areaCutted, 3)} m2")
-        box.label(text=f"Aire D2 material : {round(areaMaterial, 3)} m2")
-        box.label(text=f"Aire panneau : {round(areaPanel, 3)} m2")
-        box.label(text=f"% Panel coupé : {round(percentPanel)} %")
+        split = box.split()
+        col1 = split.column()
+        col2 = split.column()
+        col1.label(text=f"Aire D2 cutted: {round(areaCutted, 3)} m2")
+        col1.label(text=f"Aire D2 material : {round(areaMaterial, 3)} m2")
+        col2.label(text=f"Aire panneau : {round(areaPanel, 3)} m2")
+        col2.label(text=f"% Panel coupé : {round(percentPanel)} %")
         box.label(text=f"Nb Panel : {ceil(qtyPanel)} panneau(x)")
+        box.prop(devisprops, "panelPrice")
+        box.prop(devisprops, "marge")
+        box.prop(devisprops, "priceByPiece")
+        box.prop(devisprops, "alea")
+        box.prop(devisprops, "consommable")
+        box.prop(devisprops, "urssaf")
+
+        split = box.split()
+        col3 = split.column()
+        col4 = split.column()
+        col3.label(text="Marge")
+        col3.label(text=f"Diffuseur (Marge) : {ceil(ceil(devisprops.getTTCMarge(ceil(qtyPanel))) / devisprops.qtyDif)} € ")
+        col3.label(text=f"Prix Total : {ceil(devisprops.getTTCMarge(ceil(qtyPanel)) )} € ")
+        col3.label(text=f"Bénéfice : {ceil(devisprops.getBenefMarge(ceil(qtyPanel)) )} € ")
+        
+        col4.label(text="Piece")
+        col4.label(text=f"Diffuseur (Piece) : {ceil(ceil(devisprops.getTTCPiece(arrayprops.nbPieces(productprops.product_type), ceil(qtyPanel) )) / devisprops.qtyDif)} € ")
+        col4.label(text=f"Prix Total : {ceil(devisprops.getTTCPiece(arrayprops.nbPieces(productprops.product_type), ceil(qtyPanel) ))} € ")
+        col4.label(text=f"Bénéfice : {ceil(devisprops.getBenefPiece(arrayprops.nbPieces(productprops.product_type)) )} € ")
 
         box.operator("mesh.add_list")
         box2 = box.box()

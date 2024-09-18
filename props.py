@@ -83,6 +83,63 @@ class DevisProps(bpy.types.PropertyGroup):
         unit="LENGTH",
         precision=3,
     )
+    panelPrice: FloatProperty(
+        name="Prix panneau",
+        description="Le prix du panneau",
+        default=33,
+        step=0.001,
+        unit="NONE",
+        precision=2,
+    )
+    marge: FloatProperty(
+        name="Bénéfice par marge globale",
+        description="La marge du produit (ratio)",
+        default=50,
+        precision=0,  # Nombre de décimales
+        subtype='PERCENTAGE',
+        max=200,
+        min=0
+
+    )
+    priceByPiece: FloatProperty(
+        name="Bénéfice par pièce (€)",
+        description="Benefice par pièce pour estimer le temps de travail",
+        default=0.10,
+        step=1,
+        precision=2,  # Nombre de décimales
+
+    )
+    urssaf: FloatProperty(
+        name="Taxe de l'Urssaf",
+        description="La taxe de l'urssaf",
+        default=12.3,
+        precision=1,  # Nombre de décimales
+        subtype='PERCENTAGE'
+
+    )
+    alea: FloatProperty(
+        name="Aléa",
+        description="Le pourcentage de perte courant",
+        default=10,
+        precision=0,  # Nombre de décimales
+        subtype='PERCENTAGE',
+        min=0,
+        max=50
+    )
+    consommable: IntProperty(
+        name="Consommable/Diffuseur (€)",
+        description="Le prix de la colle, ponçage, fraises, electricité...",
+        default=3
+    )
+
+    def getTTCPiece(self,nbPieces, qtyPanel):
+        return ((self.panelPrice * qtyPanel + self.consommable * self.qtyDif) * (1 + self.alea/100) + nbPieces * self.priceByPiece*self.qtyDif) * (1+self.urssaf/100) 
+    def getTTCMarge(self, qtyPanel):
+        return (self.panelPrice * qtyPanel + self.consommable * self.qtyDif) * (1 + self.alea/100) * (1 + self.marge/100)  * (1+self.urssaf/100) 
+    def getBenefMarge(self, qtyPanel):
+        return (self.panelPrice * qtyPanel + self.consommable * self.qtyDif) * (1 + self.alea/100) *  self.marge/100
+    def getBenefPiece(self,nbPieces):
+        return nbPieces * self.priceByPiece*self.qtyDif
 
 class DevisList(bpy.types.PropertyGroup):
     listDif : StringProperty()
@@ -642,6 +699,23 @@ class ArrayProps(bpy.types.PropertyGroup):
                     "pilier_moule_x",
                     "pilier_moule_y"
                 ]
+            case _:
+                return
+            
+    def nbPieces(self, product):
+        match product:
+            case "0":
+                return self.peigne_court_x * self.peigne_court_y+self.peigne_long_x *self.peigne_long_y +self.cadre_mortaise_x  *self.cadre_mortaise_y +self.cadre_tenon_x *self.cadre_tenon_y +self.carreau_x  *self.carreau_y +self.accroche_x   *self.accroche_y
+            
+            case "1":
+                return self.peigne_court_x*self.peigne_court_y+ self.peigne_long_x*self.peigne_long_y+self.cadre_mortaise_x*self.cadre_mortaise_y+ self.cadre_tenon_x*self.cadre_tenon_y+self.carreau_x* self.carreau_y+ self.accroche_x* self.accroche_y            
+                
+            case "2":
+                return self.cadre_mortaise_x* self.cadre_mortaise_y+ self.cadre_tenon_x* self.cadre_tenon_y+ self.accroche_x* self.accroche_y+ self.accroche_inverse_x* self.accroche_inverse_y+ self.cadre_central_x* self.cadre_central_y+ self.cadre_avant_x* self.cadre_avant_y
+                
+            case "3":
+                return self.fond_moule_x* self.fond_moule_y+ self.cadre_moule_x* self.cadre_moule_y+ self.cadre_moule_long_x* self.cadre_moule_long_y+ self.pilier_moule_x* self.pilier_moule_y
+                
             case _:
                 return
 
