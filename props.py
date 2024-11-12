@@ -7,7 +7,7 @@ from bpy.props import (
     IntProperty,
     FloatVectorProperty,
     EnumProperty,
-    StringProperty
+    StringProperty,
 )
 
 productType = (
@@ -20,6 +20,16 @@ productType = (
 
 class UIProductProps(bpy.types.PropertyGroup):
     product_type: EnumProperty(items=productType)
+    motif_display: EnumProperty(
+        name="Vue",
+        description="Choisissez un affichage",
+        items=[
+            ("depth", "Depth", "Profondeur devant les cellules"),
+            ("height", "Height", "Hauteur derrière les cellules"),
+            ("ratio", "Ratio", "Ratio"),
+        ],
+        default="depth",
+    )
 
 
 class Usinageprops(bpy.types.PropertyGroup):
@@ -31,7 +41,7 @@ class Usinageprops(bpy.types.PropertyGroup):
         unit="LENGTH",
         precision=4,
         min=0.001,
-        max=0.030
+        max=0.030,
     )
     offset: EnumProperty(
         name="Offset %",
@@ -44,13 +54,10 @@ class Usinageprops(bpy.types.PropertyGroup):
             ("0.50", "50%", ""),
         ),
     )
-    
 
     def getOffset(self):
         offset = float(self.offset) * float(self.fraise)
         return round(offset, 4)
-        
-
 
     def listAttributes(self):
         return [
@@ -58,7 +65,7 @@ class Usinageprops(bpy.types.PropertyGroup):
             "offset",
             "offset_peigne",
         ]
-    
+
 
 class DevisProps(bpy.types.PropertyGroup):
     qtyDif: IntProperty(
@@ -96,10 +103,9 @@ class DevisProps(bpy.types.PropertyGroup):
         description="La marge du produit (ratio)",
         default=50,
         precision=0,  # Nombre de décimales
-        subtype='PERCENTAGE',
+        subtype="PERCENTAGE",
         max=200,
-        min=0
-
+        min=0,
     )
     priceByPiece: FloatProperty(
         name="Bénéfice par pièce (€)",
@@ -107,43 +113,63 @@ class DevisProps(bpy.types.PropertyGroup):
         default=0.10,
         step=1,
         precision=2,  # Nombre de décimales
-
     )
     urssaf: FloatProperty(
         name="Taxe de l'Urssaf",
         description="La taxe de l'urssaf",
         default=12.3,
         precision=1,  # Nombre de décimales
-        subtype='PERCENTAGE'
-
+        subtype="PERCENTAGE",
     )
     alea: FloatProperty(
         name="Aléa",
         description="Le pourcentage de perte courant",
         default=10,
         precision=0,  # Nombre de décimales
-        subtype='PERCENTAGE',
+        subtype="PERCENTAGE",
         min=0,
-        max=50
+        max=50,
     )
     consommable: IntProperty(
         name="Consommable/Diffuseur (€)",
         description="Le prix de la colle, ponçage, fraises, electricité...",
-        default=3
+        default=3,
     )
 
-    def getTTCPiece(self,nbPieces, qtyPanel):
-        return ((self.panelPrice * qtyPanel + self.consommable * self.qtyDif) * (1 + self.alea/100) + nbPieces * self.priceByPiece*self.qtyDif) * (1+self.urssaf/100) 
+    def getTTCPiece(self, nbPieces, qtyPanel):
+        return (
+            (self.panelPrice * qtyPanel + self.consommable * self.qtyDif)
+            * (1 + self.alea / 100)
+            + nbPieces * self.priceByPiece * self.qtyDif
+        ) * (1 + self.urssaf / 100)
+
     def getTTCMarge(self, qtyPanel):
-        return (self.panelPrice * qtyPanel + self.consommable * self.qtyDif) * (1 + self.alea/100) * (1 + self.marge/100)  * (1+self.urssaf/100) 
+        return (
+            (self.panelPrice * qtyPanel + self.consommable * self.qtyDif)
+            * (1 + self.alea / 100)
+            * (1 + self.marge / 100)
+            * (1 + self.urssaf / 100)
+        )
+
     def getBenefMarge(self, qtyPanel):
-        return (self.panelPrice * qtyPanel + self.consommable * self.qtyDif) * (1 + self.alea/100) *  self.marge/100
-    def getBenefPiece(self,nbPieces):
-        return nbPieces * self.priceByPiece*self.qtyDif
+        return (
+            (self.panelPrice * qtyPanel + self.consommable * self.qtyDif)
+            * (1 + self.alea / 100)
+            * self.marge
+            / 100
+        )
+
+    def getBenefPiece(self, nbPieces):
+        return nbPieces * self.priceByPiece * self.qtyDif
+
+    def getPriceMP(self, qtyPanel):
+        return (self.panelPrice * qtyPanel + self.consommable * self.qtyDif) * (
+            1 + self.alea / 100
+        )
+
 
 class DevisList(bpy.types.PropertyGroup):
-    listDif : StringProperty()
-    
+    listDif: StringProperty()
 
 
 class DiffuseurProps(bpy.types.PropertyGroup):
@@ -274,10 +300,24 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         unit="LENGTH",
         precision=4,
     )
-    pillier_1d_only: BoolProperty(
-        name="Pillier 1D seulement",
-        description="Generer les pilliers utiles au 1D seulement",
+    moule_type: EnumProperty(
+        name="Type de Moule",
+        items=(
+            ("2d", "2D", ""),
+            ("1d", "1D", "")
+        )
     )
+
+    socle_monopilier: FloatProperty(
+        name="Hauteur socle",
+        description="Socle additionnel sur les piliers",
+        min=0.010,
+        max=0.1,
+        default=0.030,
+        unit="LENGTH",
+        precision=3,
+    )
+
     epaisseur_pilier: FloatProperty(
         name="Epaisseur_pilier",
         description="Epaisseur des piliers",
@@ -321,6 +361,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         items=(
             ("stable", "Stable - 2 epaisseurs", ""),
             ("eco", "Eco - 1 epaisseur", ""),
+            ("mono", "Mono-Pilier - 1D seulement", ""),
         ),
     )
 
@@ -333,7 +374,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
     )
 
     def getOffsetPeigne(self):
-        offset = float(self.offset_peigne/100) * float(self.epaisseur)
+        offset = float(self.offset_peigne / 100) * float(self.epaisseur)
         return round(offset, 4)
 
     def getDifName(self):
@@ -358,17 +399,15 @@ class DiffuseurProps(bpy.types.PropertyGroup):
     def getHauteurTenon(self):
         match self.type_tenon_peigne:
             case "0":
-                """ Pas de tenons """
+                """Pas de tenons"""
                 return 0
             case "1":
                 return self.epaisseur / 2
             case "2":
                 return self.epaisseur
             case "3":
-                """ Mono tenon mi traversant """
+                """Mono tenon mi traversant"""
                 return self.epaisseur / 2
-
-
 
     def getLongueur(self):
         longueurTotale = (
@@ -384,32 +423,50 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         )
         return round(largeur_pilier, 4)
 
-    def getRatio(self):
+    def getMotif(self, display):
         ratio = []
-        for k in range(0, self.type * round(self.type * self.longueur_diffuseur) ):
+        for k in range(0, self.type * round(self.type * self.longueur_diffuseur)):
             n = k % self.type
             m = math.floor(k / self.type)
             an = int(
                 (math.pow(n + self.decalage_h, 2) + math.pow(m + self.decalage_v, 2))
                 % self.type
-            )
-            ratio.append(an)
+            ) #phase shifted = 1 on qrdude
+            ratio.append(an / 1000)
 
         amax = max(ratio)
 
         depth = []
-        for k in range(0, self.type * round(self.type * self.longueur_diffuseur) ):
+        for k in range(0, self.type * round(self.type * self.longueur_diffuseur)):
             y = (ratio[k] * self.profondeur) / amax
-            depth.append(y)
+            depth.append(round(y, 3))
 
-        
-        if(self.pillier_1d_only):
-            return depth[0:self.type]
-        else:
-             return depth
-    
+        height = [self.profondeur - x for x in depth]
+
+        if display == "ratio":
+            if self.moule_type =="1d":
+                return ratio[0 : self.type]
+            else:
+                return ratio
+
+        if display == "height":
+            if self.moule_type =="1d":
+                return height[0 : self.type]
+            else:
+                return height
+
+        if display == "depth":
+            if self.moule_type =="1d":
+                return depth[0 : self.type]
+            else:
+                return depth
+
     def getArea(self):
-        area = (self.getLongueur() * self.profondeur * (self.type + 1) + self.largeur_diffuseur * self.profondeur * (self.type + 1) + len(self.getRatio()) * self.getRang() * self.getRang()) 
+        area = (
+            self.getLongueur() * self.profondeur * (self.type + 1)
+            + self.largeur_diffuseur * self.profondeur * (self.type + 1)
+            + len(self.getMotif("depth")) * self.getRang() * self.getRang()
+        )
         print(self.largeur_diffuseur)
         return area
 
@@ -426,7 +483,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "tenon_peigne",
                     "longueur_diffuseur",
                     "type_tenon_peigne",
-                    "type_tenon_cadre"
+                    "type_tenon_cadre",
                 ]
             case "1":
                 return [
@@ -439,7 +496,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "tenon_peigne",
                     "longueur_diffuseur",
                     "type_tenon_peigne",
-                    "type_tenon_cadre"
+                    "type_tenon_cadre",
                 ]
             case "2":
                 return [
@@ -453,7 +510,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "largeur_cadre_central",
                     "cadre_avant",
                     "cadre_central",
-                    "type_tenon_cadre"
+                    "type_tenon_cadre",
                 ]
             case "3":
                 attributes = [
@@ -465,12 +522,12 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "profondeur",
                     "largeur_diffuseur",
                     "longueur_diffuseur",
-                    "pillier_1d_only"
+                    "socle_monopilier",
                 ]
-                
+
                 if self.type_moule == "stable":
                     attributes.append("epaisseur_pilier")
-                    
+
                 return attributes
 
             case _:
@@ -695,25 +752,51 @@ class ArrayProps(bpy.types.PropertyGroup):
                     "cadre_moule_long_x",
                     "cadre_moule_long_y",
                     "pilier_moule_x",
-                    "pilier_moule_y"
+                    "pilier_moule_y",
                 ]
             case _:
                 return
-            
+
     def nbPieces(self, product):
         match product:
             case "0":
-                return self.peigne_court_x * self.peigne_court_y+self.peigne_long_x *self.peigne_long_y +self.cadre_mortaise_x  *self.cadre_mortaise_y +self.cadre_tenon_x *self.cadre_tenon_y +self.carreau_x  *self.carreau_y +self.accroche_x   *self.accroche_y
-            
+                return (
+                    self.peigne_court_x * self.peigne_court_y
+                    + self.peigne_long_x * self.peigne_long_y
+                    + self.cadre_mortaise_x * self.cadre_mortaise_y
+                    + self.cadre_tenon_x * self.cadre_tenon_y
+                    + self.carreau_x * self.carreau_y
+                    + self.accroche_x * self.accroche_y
+                )
+
             case "1":
-                return self.peigne_court_x*self.peigne_court_y+ self.peigne_long_x*self.peigne_long_y+self.cadre_mortaise_x*self.cadre_mortaise_y+ self.cadre_tenon_x*self.cadre_tenon_y+self.carreau_x* self.carreau_y+ self.accroche_x* self.accroche_y            
-                
+                return (
+                    self.peigne_court_x * self.peigne_court_y
+                    + self.peigne_long_x * self.peigne_long_y
+                    + self.cadre_mortaise_x * self.cadre_mortaise_y
+                    + self.cadre_tenon_x * self.cadre_tenon_y
+                    + self.carreau_x * self.carreau_y
+                    + self.accroche_x * self.accroche_y
+                )
+
             case "2":
-                return self.cadre_mortaise_x* self.cadre_mortaise_y+ self.cadre_tenon_x* self.cadre_tenon_y+ self.accroche_x* self.accroche_y+ self.accroche_inverse_x* self.accroche_inverse_y+ self.cadre_central_x* self.cadre_central_y+ self.cadre_avant_x* self.cadre_avant_y
-                
+                return (
+                    self.cadre_mortaise_x * self.cadre_mortaise_y
+                    + self.cadre_tenon_x * self.cadre_tenon_y
+                    + self.accroche_x * self.accroche_y
+                    + self.accroche_inverse_x * self.accroche_inverse_y
+                    + self.cadre_central_x * self.cadre_central_y
+                    + self.cadre_avant_x * self.cadre_avant_y
+                )
+
             case "3":
-                return self.fond_moule_x* self.fond_moule_y+ self.cadre_moule_x* self.cadre_moule_y+ self.cadre_moule_long_x* self.cadre_moule_long_y+ self.pilier_moule_x* self.pilier_moule_y
-                
+                return (
+                    self.fond_moule_x * self.fond_moule_y
+                    + self.cadre_moule_x * self.cadre_moule_y
+                    + self.cadre_moule_long_x * self.cadre_moule_long_y
+                    + self.pilier_moule_x * self.pilier_moule_y
+                )
+
             case _:
                 return
 
@@ -931,8 +1014,7 @@ classes = [
     UIProductProps,
     Usinageprops,
     DevisProps,
-    DevisList
-
+    DevisList,
 ]
 
 

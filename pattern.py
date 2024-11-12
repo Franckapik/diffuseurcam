@@ -104,7 +104,7 @@ def mortaiseInt(x, y, difprops, usinageprops):
     epaisseur = difprops.epaisseur
     hauteurTenonPeigne = difprops.getHauteurTenon()
 
-    if hauteurTenonPeigne != 0 :
+    if hauteurTenonPeigne != 0:
         return [
             (
                 x - offset,
@@ -129,7 +129,8 @@ def mortaiseInt(x, y, difprops, usinageprops):
         ]
     else:
         return []
-    
+
+
 def mortaiseIntTraversante(x, y, difprops, usinageprops):
     tenon_peigne = difprops.tenon_peigne
     offset = usinageprops.getOffset()
@@ -137,7 +138,7 @@ def mortaiseIntTraversante(x, y, difprops, usinageprops):
     hauteurTenonPeigne = difprops.getHauteurTenon()
     profondeur = difprops.profondeur
 
-    if hauteurTenonPeigne != 0 :
+    if hauteurTenonPeigne != 0:
         return [
             (
                 x - offset,
@@ -269,7 +270,7 @@ def tenonPeigneHaut(x, y, difprops, usinageprops):
     hauteurTenonPeigne = difprops.getHauteurTenon()
     tenon_peigne = difprops.tenon_peigne
 
-    if hauteurTenonPeigne != 0: 
+    if hauteurTenonPeigne != 0:
         return [
             (x + offset, y, 0),
             (
@@ -288,10 +289,8 @@ def tenonPeigneHaut(x, y, difprops, usinageprops):
                 0,
             ),
         ]
-    else : #pas de tenons
-        return [
-            
-        ]
+    else:  # pas de tenons
+        return []
 
 
 def tenonPeigneBas(x, y, difprops, usinageprops):
@@ -318,10 +317,8 @@ def tenonPeigneBas(x, y, difprops, usinageprops):
                 0,
             ),
         ]
-    else : #pas de tenons
-        return [
-            
-        ]
+    else:  # pas de tenons
+        return []
 
 
 def trou_accroche(x, y, division):
@@ -356,19 +353,20 @@ def mortaise_bas_fond_moule(x, y, difprops, usinageprops):
     tenon_cadre = largeur_diffuseur / 8
 
     return [
-        (x + epaisseur_moule + tenon_cadre, y , 0),
-        (x + epaisseur_moule + tenon_cadre, y + epaisseur_moule , 0),
-        (x + epaisseur_moule + tenon_cadre * 2, y + epaisseur_moule , 0),
-        (x + epaisseur_moule + tenon_cadre * 2, y , 0),
-        (x + epaisseur_moule + tenon_cadre * 3, y , 0),
-        (x + epaisseur_moule + tenon_cadre * 3, y + epaisseur_moule , 0),
-        (x + epaisseur_moule + tenon_cadre * 5, y + epaisseur_moule , 0),
-        (x + epaisseur_moule + tenon_cadre * 5, y , 0),
-        (x + epaisseur_moule + tenon_cadre * 6, y , 0),
-        (x + epaisseur_moule + tenon_cadre * 6, y + epaisseur_moule , 0),
-        (x + epaisseur_moule + tenon_cadre * 7, y + epaisseur_moule , 0),
-        (x + epaisseur_moule + tenon_cadre * 7, y , 0),
+        (x + epaisseur_moule + tenon_cadre, y, 0),
+        (x + epaisseur_moule + tenon_cadre, y + epaisseur_moule, 0),
+        (x + epaisseur_moule + tenon_cadre * 2, y + epaisseur_moule, 0),
+        (x + epaisseur_moule + tenon_cadre * 2, y, 0),
+        (x + epaisseur_moule + tenon_cadre * 3, y, 0),
+        (x + epaisseur_moule + tenon_cadre * 3, y + epaisseur_moule, 0),
+        (x + epaisseur_moule + tenon_cadre * 5, y + epaisseur_moule, 0),
+        (x + epaisseur_moule + tenon_cadre * 5, y, 0),
+        (x + epaisseur_moule + tenon_cadre * 6, y, 0),
+        (x + epaisseur_moule + tenon_cadre * 6, y + epaisseur_moule, 0),
+        (x + epaisseur_moule + tenon_cadre * 7, y + epaisseur_moule, 0),
+        (x + epaisseur_moule + tenon_cadre * 7, y, 0),
     ]
+
 
 def mortaise_bas_fond_moule_long(x, y, difprops, usinageprops):
     epaisseur_moule = difprops.epaisseur_moule
@@ -398,9 +396,7 @@ def mortaise_droite_fond_moule(x, y, difprops, usinageprops):
 
     tenon_cadre = longueurTotale / 8
 
-
     return [
-
         (x, y + tenon_cadre, 0),
         (x - epaisseur_moule, y + tenon_cadre, 0),
         (x - epaisseur_moule, y + tenon_cadre * 2, 0),
@@ -413,7 +409,6 @@ def mortaise_droite_fond_moule(x, y, difprops, usinageprops):
         (x - epaisseur_moule, y + tenon_cadre * 6, 0),
         (x - epaisseur_moule, y + tenon_cadre * 7, 0),
         (x, y + tenon_cadre * 7, 0),
-
     ]
 
 
@@ -435,7 +430,6 @@ def mortaise_haut_fond_moule(x, y, difprops, usinageprops):
         (x - tenon_cadre * 6, y - epaisseur_moule, 0),
         (x - tenon_cadre * 7, y - epaisseur_moule, 0),
         (x - tenon_cadre * 7, y, 0),
-
     ]
 
 
@@ -467,11 +461,12 @@ def mortaise_pilier_fond_moule_eco(x, y, difprops, usinageprops):
     offset = usinageprops.getOffset()
 
     return [
-        (x - epaisseur_pilier / 2 , y - epaisseur_moule / 2 , 0),
-        (x + epaisseur_pilier / 2 , y - epaisseur_moule / 2 , 0),
-        (x + epaisseur_pilier / 2 , y + epaisseur_moule / 2 , 0),
-        (x - epaisseur_pilier / 2 , y + epaisseur_moule / 2 , 0),
+        (x - epaisseur_pilier / 2, y - epaisseur_moule / 2, 0),
+        (x + epaisseur_pilier / 2, y - epaisseur_moule / 2, 0),
+        (x + epaisseur_pilier / 2, y + epaisseur_moule / 2, 0),
+        (x - epaisseur_pilier / 2, y + epaisseur_moule / 2, 0),
     ]
+
 
 def mortaise_pilier_fond_moule_stable(x, y, difprops, usinageprops):
     epaisseur_pilier = difprops.epaisseur_pilier
@@ -488,6 +483,47 @@ def mortaise_pilier_fond_moule_stable(x, y, difprops, usinageprops):
         (x + epaisseur_pilier / 2, y + epaisseur_pilier / 2, 0),
         (x + largeur_pilier / 2, y + epaisseur_pilier / 2, 0),
         (x + largeur_pilier / 2, y - epaisseur_pilier / 2, 0),
-        (x + epaisseur_pilier / 2, y -   epaisseur_pilier / 2, 0),
-        (x + epaisseur_pilier / 2, y -largeur_pilier / 2, 0),
+        (x + epaisseur_pilier / 2, y - epaisseur_pilier / 2, 0),
+        (x + epaisseur_pilier / 2, y - largeur_pilier / 2, 0),
     ]
+
+
+def mortaise_pilier_fond_moule_mono(x, y, difprops, distanceMortaises):
+    epaisseur_pilier = difprops.epaisseur_pilier
+    largeur_pilier = difprops.getLargeurPilier()
+    rang = difprops.getRang()
+
+
+    return [
+        (x + distanceMortaises, y-epaisseur_pilier / 2, 0),
+        (x + distanceMortaises, y+epaisseur_pilier/2, 0),
+        (x + 2 * distanceMortaises, y+epaisseur_pilier/2, 0),
+        (x + 2 * distanceMortaises, y-epaisseur_pilier/2, 0),
+
+    ]
+
+
+def monopilier_hauteurs(x, y, difprops):
+    ratios = difprops.getMotif("depth")
+    amax = max(ratios)
+    epaisseur = difprops.epaisseur
+    profondeur = difprops.profondeur
+    largeur_pilier = round(difprops.getLargeurPilier(), 4)
+
+    x0, y0 = x, y  # Initialisation des coordonnées de départ
+    array_offset = 0  # Remplacez par la valeur appropriée pour l'offset
+    result = []
+
+    for i in range(difprops.type):
+        result.extend(
+            [
+                (x0, y0, 0),
+                (x0, y0 + ratios[i], 0),
+                (x0 + largeur_pilier, y0 + ratios[i], 0),
+                (x0 + largeur_pilier, y0, 0),
+            ]
+        )
+
+        x0 += largeur_pilier + epaisseur
+
+    return result

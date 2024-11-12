@@ -798,14 +798,15 @@ class Add3DModel(bpy.types.Operator, AddObjectHelper):
         scene = context.scene
         difprops = scene.dif_props
 
-        ratio = difprops.getRatio()
+        depth = difprops.getMotif("depth")
+        print(depth)
 
-        for i in range(difprops.type):
+        for i in range(1 if difprops.moule_type == "1d" else difprops.type):
             y = i * difprops.getRang()
             for k in range(difprops.type):
                 index = i * difprops.type + k
                 x = k * difprops.getRang()
-                z = ratio[index]
+                z = depth[index]
                 vertex, edges, name = add_carreau(
                     scene.dif_props, scene.product_props, scene.usinage_props
                 )
@@ -966,7 +967,7 @@ class AddList(bpy.types.Operator, AddObjectHelper):
             + (difprops.largeur_diffuseur + arrayprops.array_offset)
             * (difprops.profondeur + arrayprops.array_offset)
             * (difprops.type + 1)
-            + len(difprops.getRatio())
+            + len(difprops.getMotif("depth"))
             * (difprops.getRang() + arrayprops.array_offset)
             * (difprops.getRang() + arrayprops.array_offset)
         )

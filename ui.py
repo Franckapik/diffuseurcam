@@ -33,7 +33,6 @@ class OT_AddMyPreset(AddPresetBase, Operator):
     ]
     # Directory to store the presets
     preset_subdir = "object/display"
-    
 
 
 class Diffuseur_SideBar(Panel):
@@ -56,12 +55,25 @@ class Diffuseur_SideBar(Panel):
         usinageprops = scene.usinage_props
         devisprops = scene.devis_props
         devislist = scene.devis_list
-        areaCutted =  (difprops.getLongueur() * difprops.profondeur * (difprops.type + 1) + difprops.largeur_diffuseur * difprops.profondeur * (difprops.type + 1) + len(difprops.getRatio()) * difprops.getRang() * difprops.getRang()) 
-        areaMaterial =  ((difprops.getLongueur()+ arrayprops.array_offset) * (difprops.profondeur+ arrayprops.array_offset) * (difprops.type + 1) + (difprops.largeur_diffuseur+ arrayprops.array_offset) * (difprops.profondeur+ arrayprops.array_offset) * (difprops.type + 1) + len(difprops.getRatio()) * (difprops.getRang()+ arrayprops.array_offset) * (difprops.getRang()+ arrayprops.array_offset)) 
+        areaCutted = (
+            difprops.getLongueur() * difprops.profondeur * (difprops.type + 1)
+            + difprops.largeur_diffuseur * difprops.profondeur * (difprops.type + 1)
+            + len(difprops.getMotif("depth")) * difprops.getRang() * difprops.getRang()
+        )
+        areaMaterial = (
+            (difprops.getLongueur() + arrayprops.array_offset)
+            * (difprops.profondeur + arrayprops.array_offset)
+            * (difprops.type + 1)
+            + (difprops.largeur_diffuseur + arrayprops.array_offset)
+            * (difprops.profondeur + arrayprops.array_offset)
+            * (difprops.type + 1)
+            + len(difprops.getMotif("depth"))
+            * (difprops.getRang() + arrayprops.array_offset)
+            * (difprops.getRang() + arrayprops.array_offset)
+        )
         areaPanel = devisprops.panelx * devisprops.panely
         percentPanel = areaMaterial * 100 / areaPanel
         qtyPanel = devisprops.qtyDif * areaMaterial / areaPanel
-        
 
         # presets
         row1 = layout.row(align=True)
@@ -78,7 +90,7 @@ class Diffuseur_SideBar(Panel):
             box.prop(usinageprops, att) """
         box.prop(usinageprops, "fraise")
         box.prop(difprops, "offset_peigne")
-        
+
         box.label(text=f"Offset de fraise : {usinageprops.getOffset() * 1000} mm")
         box.label(text=f"Offset des peignes : {difprops.getOffsetPeigne() * 1000} mm")
 
@@ -90,43 +102,45 @@ class Diffuseur_SideBar(Panel):
             + (
                 "D2"
                 if productprops.product_type == "0"
-                else "D1"
-                if productprops.product_type == "1"
-                else "A"
-                if productprops.product_type == "2"
-                else "M"
+                else (
+                    "D1"
+                    if productprops.product_type == "1"
+                    else "A" if productprops.product_type == "2" else "M"
+                )
             )
             + difprops.getDifName(),
             icon="X",
         )
         row = box.row()
+        row2 = box.row()
         row.prop(productprops, "product_type", expand=True)
+        if productprops.product_type == "3":
+            row2.prop(difprops, "moule_type", expand=True)
         for att in (x for x in difprops.listAttributes(productprops.product_type)):
             box.prop(difprops, att)
         box.label(text=f"Rang : {difprops.getRang() * 1000} mm")
-        box.label(text=f"Pilier : {difprops.getLargeurPilier() * 1000} mm")
-
-
+        box.label(text=f"Pilier : {round(difprops.getLargeurPilier() * 1000 , 3)} mm")
 
         # Array
         layout.separator()
         box = layout.box()
         box.label(text="Array", icon="X")
-        """ continuer le travail d'application d'argument sur cette ligne """ 
         row = box.row()
         row.label(text="Option")
         split = row.split()
         col1 = split.column()
         col2 = split.column()
-        
-        
-        col1.operator("mesh.set_array_offset", text="Standard (3x)").arrayOffsetFactor = 3 
-        col2.operator("mesh.set_array_offset", text="Minimal (2x)").arrayOffsetFactor = 2 
+
+        col1.operator(
+            "mesh.set_array_offset", text="Standard (3x)"
+        ).arrayOffsetFactor = 3
+        col2.operator(
+            "mesh.set_array_offset", text="Minimal (2x)"
+        ).arrayOffsetFactor = 2
         box.prop(arrayprops, "array_offset")
 
-       
         box.separator()
-        box.operator("mesh.set_array_recommended", text="Pré-remplir") 
+        box.operator("mesh.set_array_recommended", text="Pré-remplir")
 
         split = box.split()
         col1 = split.column()
@@ -145,7 +159,9 @@ class Diffuseur_SideBar(Panel):
             if arr[-1] == "y":
                 col2.prop(arrayprops, arr)
 
-        box.label(text=f"Nombre de pièces : {arrayprops.nbPieces(productprops.product_type)}")
+        box.label(
+            text=f"Nombre de pièces : {arrayprops.nbPieces(productprops.product_type)}"
+        )
 
         # Generateur
         layout.separator()
@@ -159,8 +175,6 @@ class Diffuseur_SideBar(Panel):
 
         else:
             cursor = bpy.context.scene.cursor.location
-
-
 
         box.label(
             text=f"{'Mesh selectionné' if bpy.context.selected_objects else 'Cursor 3D'} : X{round(cursor[0], 2)}  Y{round(cursor[1], 2)}  Z{round(cursor[2], 2)}"
@@ -254,21 +268,50 @@ class Diffuseur_SideBar(Panel):
         box.prop(devisprops, "urssaf")
 
         split = box.split()
+        col8 = split.column()
+        col9 = split.column()
+        col8.label(
+            text=f"Matière première/Diffuseur) : {ceil(ceil(devisprops.getPriceMP(ceil(qtyPanel))) / devisprops.qtyDif)} € "
+        )
+        col9.label(
+            text=f"Matière première Totale) : {ceil(ceil(devisprops.getPriceMP(ceil(qtyPanel))))} € "
+        )
+
+        split = box.split()
         col3 = split.column()
         col4 = split.column()
-        col3.label(text="Marge")
-        col3.label(text=f"Diffuseur (Marge) : {ceil(ceil(devisprops.getTTCMarge(ceil(qtyPanel))) / devisprops.qtyDif)} € ")
-        col3.label(text=f"Prix Total : {ceil(devisprops.getTTCMarge(ceil(qtyPanel)) )} € ")
-        col3.label(text=f"Bénéfice : {ceil(devisprops.getBenefMarge(ceil(qtyPanel)) )} € ")
-        
-        col4.label(text="Piece")
-        col4.label(text=f"Diffuseur (Piece) : {ceil(ceil(devisprops.getTTCPiece(arrayprops.nbPieces(productprops.product_type), ceil(qtyPanel) )) / devisprops.qtyDif)} € ")
-        col4.label(text=f"Prix Total : {ceil(devisprops.getTTCPiece(arrayprops.nbPieces(productprops.product_type), ceil(qtyPanel) ))} € ")
-        col4.label(text=f"Bénéfice : {ceil(devisprops.getBenefPiece(arrayprops.nbPieces(productprops.product_type)) )} € ")
+        col3.label(text="--- Marge ---")
+        col3.label(
+            text=f"Prix du Diffuseur : {ceil(ceil(devisprops.getTTCMarge(ceil(qtyPanel))) / devisprops.qtyDif)} € "
+        )
+        col3.label(
+            text=f"Prix Total : {ceil(devisprops.getTTCMarge(ceil(qtyPanel)) )} € "
+        )
+        col3.label(
+            text=f"Dont Urssaf : {ceil(devisprops.getTTCMarge(ceil(qtyPanel) ) * devisprops.urssaf/100)} € "
+        )
+
+        col3.label(
+            text=f"Bénéfice : {ceil(devisprops.getBenefMarge(ceil(qtyPanel)) )} € "
+        )
+
+        col4.label(text="--- Piece ---")
+        col4.label(
+            text=f"Prix du Diffuseur : {ceil(ceil(devisprops.getTTCPiece(arrayprops.nbPieces(productprops.product_type), ceil(qtyPanel) )) / devisprops.qtyDif)} € "
+        )
+        col4.label(
+            text=f"Prix Total : {ceil(devisprops.getTTCPiece(arrayprops.nbPieces(productprops.product_type), ceil(qtyPanel) ))} € "
+        )
+        col4.label(
+            text=f"Dont Urssaf : {ceil(devisprops.getTTCPiece(arrayprops.nbPieces(productprops.product_type), ceil(qtyPanel) ) * devisprops.urssaf/100)} € "
+        )
+        col4.label(
+            text=f"Bénéfice : {ceil(devisprops.getBenefPiece(arrayprops.nbPieces(productprops.product_type)) )} € "
+        )
 
         box.operator("mesh.add_list")
         box2 = box.box()
-        for i,listDif in enumerate(devislist):
+        for i, listDif in enumerate(devislist):
             row = box2.row()
             row.label(text=listDif.listDif, icon="FILE_VOLUME")
             oprm = row.operator("mesh.remove_list", icon="X")
@@ -278,36 +321,32 @@ class Diffuseur_SideBar(Panel):
         layout.separator()
         box = layout.box()
         box.label(text="Motif", icon="X")
-
+        row = box.row(align=True)
+        row.prop(productprops, "motif_display", expand=True)
 
         box.prop(difprops, "decalage_h")
         box.prop(difprops, "decalage_v")
+             
+        ratio = difprops.getMotif(productprops.motif_display)
 
-        ratio = difprops.getRatio()
-
-        if difprops.pillier_1d_only:
+        if difprops.moule_type  =="1d":
             row = box.row()
             split = box.split()
-            for k in range(difprops.type):             
-                    col = split.column()
-                    col.label(text=str(
-                        int(ratio[k] * 1000)
-                        
-                        ))
+            for k in range(difprops.type):
+                col = split.column()
+                col.label(text=str(int(ratio[k] * 1000)))
         else:
             for i in range(round(difprops.type * difprops.longueur_diffuseur)):
                 row = box.row()
                 split = box.split()
                 for k in range(difprops.type):
-                    
+
                     col = split.column()
-                    col.label(text=str(
-                        int(ratio[i*difprops.type + k] * 1000)
-                        
-                        ))
-        
+                    col.label(text=str(int(ratio[i * difprops.type + k] * 1000)))
+
         box.operator("mesh.colle")
         box.operator("mesh.simulation")
+
 
 ui_classes = [DIF_MT_Presets, OT_AddMyPreset]
 
@@ -329,3 +368,4 @@ def unregister():
         bpy.utils.unregister_class(cls)
     bpy.types.VIEW3D_MT_mesh_add.remove(menu_func)
     bpy.utils.unregister_class(Diffuseur_SideBar)
+"""  """
