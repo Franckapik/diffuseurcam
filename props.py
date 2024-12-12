@@ -194,7 +194,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         name="Profondeur",
         description="Box profondeur",
         min=0.05,
-        max=0.2,
+        max=0.5,
         default=0.1,
         unit="LENGTH",
         precision=4,

@@ -1289,9 +1289,11 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
             largeur_monopilier = rang * type - epaisseur
 
             vertsCadre += [
-                (x0, y0, 0),
+                (x0 - epaisseur, y0, 0),
+                (x0 - epaisseur, y0 + socle_monopilier, 0),
                 *monopilier_hauteurs(x0, y0 + socle_monopilier, difprops),
-                (largeur_monopilier, y0, 0),
+                (largeur_monopilier+epaisseur, y0 + socle_monopilier, 0),
+                (largeur_monopilier+epaisseur, y0, 0),
                 (largeur_monopilier - largeur_monopilier / 5, y0, 0),
                 (largeur_monopilier - largeur_monopilier / 5, y0-epaisseur_moule, 0),
                 (largeur_monopilier - 2 * largeur_monopilier / 5, y0-epaisseur_moule, 0),

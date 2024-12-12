@@ -509,6 +509,7 @@ def monopilier_hauteurs(x, y, difprops):
     epaisseur = difprops.epaisseur
     profondeur = difprops.profondeur
     largeur_pilier = round(difprops.getLargeurPilier(), 4)
+    reduction = 0.008
 
     x0, y0 = x, y  # Initialisation des coordonnées de départ
     array_offset = 0  # Remplacez par la valeur appropriée pour l'offset
@@ -518,9 +519,9 @@ def monopilier_hauteurs(x, y, difprops):
         result.extend(
             [
                 (x0, y0, 0),
-                (x0, y0 + ratios[i], 0),
-                (x0 + largeur_pilier, y0 + ratios[i], 0),
-                (x0 + largeur_pilier, y0, 0),
+                (x0+reduction, y0 + ratios[i], 0),
+                (x0 + largeur_pilier-reduction, y0 + ratios[i], 0),
+                (x0 + largeur_pilier  , y0, 0),
             ]
         )
 
