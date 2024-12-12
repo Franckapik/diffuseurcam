@@ -503,7 +503,7 @@ def mortaise_pilier_fond_moule_mono(x, y, difprops, distanceMortaises):
     ]
 
 
-def monopilier_hauteurs(x, y, difprops):
+def monopilier_profondeurs(x, y, difprops):
     ratios = difprops.getMotif("depth")
     amax = max(ratios)
     epaisseur = difprops.epaisseur
@@ -521,6 +521,32 @@ def monopilier_hauteurs(x, y, difprops):
                 (x0, y0, 0),
                 (x0+reduction, y0 + ratios[i], 0),
                 (x0 + largeur_pilier-reduction, y0 + ratios[i], 0),
+                (x0 + largeur_pilier  , y0, 0),
+            ]
+        )
+
+        x0 += largeur_pilier + epaisseur
+
+    return result
+
+def contremonopilier_hauteurs(x, y, difprops):
+    ratios = difprops.getMotif("height")
+    amax = max(ratios)
+    epaisseur = difprops.epaisseur
+    profondeur = difprops.profondeur
+    largeur_pilier = round(difprops.getLargeurPilier(), 4)
+    reduction = 0.008
+
+    x0, y0 = x, y  # Initialisation des coordonnées de départ
+    array_offset = 0  # Remplacez par la valeur appropriée pour l'offset
+    result = []
+
+    for i in range(difprops.type):
+        result.extend(
+            [
+                (x0, y0, 0),
+                (x0+reduction, y0 + ratios[i]-epaisseur, 0),
+                (x0 + largeur_pilier-reduction, y0 + ratios[i]-epaisseur, 0),
                 (x0 + largeur_pilier  , y0, 0),
             ]
         )

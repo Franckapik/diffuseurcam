@@ -138,8 +138,7 @@ class DevisProps(bpy.types.PropertyGroup):
 
     def getTTCPiece(self, nbPieces, qtyPanel):
         return (
-            (self.panelPrice * qtyPanel + self.consommable * self.qtyDif)
-            * (1 + self.alea / 100)
+            (self.panelPrice * qtyPanel + self.consommable * self.qtyDif) * (1 + self.alea / 100)
             + nbPieces * self.priceByPiece * self.qtyDif
         ) * (1 + self.urssaf / 100)
 
@@ -152,20 +151,13 @@ class DevisProps(bpy.types.PropertyGroup):
         )
 
     def getBenefMarge(self, qtyPanel):
-        return (
-            (self.panelPrice * qtyPanel + self.consommable * self.qtyDif)
-            * (1 + self.alea / 100)
-            * self.marge
-            / 100
-        )
+        return (self.panelPrice * qtyPanel + self.consommable * self.qtyDif) * (1 + self.alea / 100) * self.marge / 100
 
     def getBenefPiece(self, nbPieces):
         return nbPieces * self.priceByPiece * self.qtyDif
 
     def getPriceMP(self, qtyPanel):
-        return (self.panelPrice * qtyPanel + self.consommable * self.qtyDif) * (
-            1 + self.alea / 100
-        )
+        return (self.panelPrice * qtyPanel + self.consommable * self.qtyDif) * (1 + self.alea / 100)
 
 
 class DevisList(bpy.types.PropertyGroup):
@@ -300,13 +292,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         unit="LENGTH",
         precision=4,
     )
-    moule_type: EnumProperty(
-        name="Type de Moule",
-        items=(
-            ("2d", "2D", ""),
-            ("1d", "1D", "")
-        )
-    )
+    moule_type: EnumProperty(name="Type de Moule", items=(("2d", "2D", ""), ("1d", "1D", "")))
 
     socle_monopilier: FloatProperty(
         name="Hauteur socle",
@@ -410,17 +396,11 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                 return self.epaisseur / 2
 
     def getLongueur(self):
-        longueurTotale = (
-            round(self.type * self.longueur_diffuseur) * self.getRang() + self.epaisseur
-        )
+        longueurTotale = round(self.type * self.longueur_diffuseur) * self.getRang() + self.epaisseur
         return longueurTotale
 
     def getLargeurPilier(self):
-        largeur_pilier = (
-            self.getRang()
-            - self.epaisseur
-            - self.getRang() * float(self.pilier_reduction)
-        )
+        largeur_pilier = self.getRang() - self.epaisseur - self.getRang() * float(self.pilier_reduction)
         return round(largeur_pilier, 4)
 
     def getMotif(self, display):
@@ -429,9 +409,8 @@ class DiffuseurProps(bpy.types.PropertyGroup):
             n = k % self.type
             m = math.floor(k / self.type)
             an = int(
-                (math.pow(n + self.decalage_h, 2) + math.pow(m + self.decalage_v, 2))
-                % self.type
-            ) #phase shifted = 1 on qrdude
+                (math.pow(n + self.decalage_h, 2) + math.pow(m + self.decalage_v, 2)) % self.type
+            )  # phase shifted = 1 on qrdude
             ratio.append(an / 1000)
 
         amax = max(ratio)
@@ -444,19 +423,19 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         height = [self.profondeur - x for x in depth]
 
         if display == "ratio":
-            if self.moule_type =="1d":
+            if self.moule_type == "1d":
                 return ratio[0 : self.type]
             else:
                 return ratio
 
         if display == "height":
-            if self.moule_type =="1d":
+            if self.moule_type == "1d":
                 return height[0 : self.type]
             else:
                 return height
 
         if display == "depth":
-            if self.moule_type =="1d":
+            if self.moule_type == "1d":
                 return depth[0 : self.type]
             else:
                 return depth
@@ -697,6 +676,16 @@ class ArrayProps(bpy.types.PropertyGroup):
         default=1,
         min=0,
     )
+    contre_pilier_moule_x: IntProperty(
+        name="Contre Piliers Moule",
+        default=1,
+        min=0,
+    )
+    contre_pilier_moule_y: IntProperty(
+        name="Contre Piliers Moule",
+        default=1,
+        min=0,
+    )
 
     def listAttributes(self, product):
         match product:
@@ -753,6 +742,8 @@ class ArrayProps(bpy.types.PropertyGroup):
                     "cadre_moule_long_y",
                     "pilier_moule_x",
                     "pilier_moule_y",
+                    "contre_pilier_moule_x",
+                    "contre_pilier_moule_y",
                 ]
             case _:
                 return
@@ -795,6 +786,7 @@ class ArrayProps(bpy.types.PropertyGroup):
                     + self.cadre_moule_x * self.cadre_moule_y
                     + self.cadre_moule_long_x * self.cadre_moule_long_y
                     + self.pilier_moule_x * self.pilier_moule_y
+                    + self.contre_pilier_moule_x * self.contre_pilier_moule_y
                 )
 
             case _:
@@ -861,6 +853,11 @@ class PositionProps(bpy.types.PropertyGroup):
         unit="LENGTH",
         precision=4,
     )
+    contre_pilier_moule_position: FloatVectorProperty(
+        name="Contre Pilier Moule",
+        unit="LENGTH",
+        precision=4,
+    )
     cadre_moule_position: FloatVectorProperty(
         name="Cadre Moule",
         unit="LENGTH",
@@ -871,6 +868,7 @@ class PositionProps(bpy.types.PropertyGroup):
         unit="LENGTH",
         precision=4,
     )
+
     peigne_court_rotation: BoolProperty(name="Peigne court", description="Rotation")
 
     peigne_long_rotation: BoolProperty(name="Peigne long", description="Rotation")
@@ -881,13 +879,12 @@ class PositionProps(bpy.types.PropertyGroup):
 
     carreau_rotation: BoolProperty(name="Carreau", description="Rotation")
     accroche_rotation: BoolProperty(name="Accroche", description="Rotation")
-    accroche_inverse_rotation: BoolProperty(
-        name="Accroche inverse", description="Rotation"
-    )
+    accroche_inverse_rotation: BoolProperty(name="Accroche inverse", description="Rotation")
     cadre_central_rotation: BoolProperty(name="Cadre Central", description="Rotation")
     cadre_avant_rotation: BoolProperty(name="Cadre Avant", description="Rotation")
     fond_moule_rotation: BoolProperty(name="Fond Moule", description="Rotation")
     pilier_moule_rotation: BoolProperty(name="Pilier Moule", description="Rotation")
+    contre_pilier_moule_rotation: BoolProperty(name="Contre Pilier Moule", description="Rotation")
     cadre_moule_rotation: BoolProperty(name="Cadre Moule", description="Rotation")
     cadre_moule_long_rotation: BoolProperty(name="Cadre Moule", description="Rotation")
 
@@ -945,6 +942,8 @@ class PositionProps(bpy.types.PropertyGroup):
                     "fond_moule_rotation",
                     "pilier_moule_position",
                     "pilier_moule_rotation",
+                    "contre_pilier_moule_position",
+                    "contre_pilier_moule_rotation",
                     "cadre_moule_position",
                     "cadre_moule_rotation",
                     "cadre_moule_long_position",
@@ -955,9 +954,7 @@ class PositionProps(bpy.types.PropertyGroup):
 
 
 class PrepareProps(bpy.types.PropertyGroup):
-    selection_prepare: EnumProperty(
-        items=(("0", "Generated", ""), ("1", "Selected", ""), ("2", "All", ""))
-    )
+    selection_prepare: EnumProperty(items=(("0", "Generated", ""), ("1", "Selected", ""), ("2", "All", "")))
 
     isConvertToCurve_prepare: BoolProperty(
         name="Convert to curve",

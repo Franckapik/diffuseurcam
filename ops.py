@@ -897,6 +897,66 @@ class AddPilierMoule(bpy.types.Operator, AddObjectHelper):
             mesh_obj.rotation_euler = [0, 0, math.radians(90)]
 
         return {"FINISHED"}
+    
+class AddContrePilierMoule(bpy.types.Operator, AddObjectHelper):
+    bl_idname = "mesh.contre_pilier_moule"
+    bl_label = "Ajouter Contre Piliers Moule"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        scene = context.scene
+        difprops = scene.dif_props
+        arrayprops = scene.array_props
+        vertex, edges, name = add_contre_pilier_moule(
+            scene.dif_props, scene.product_props, scene.usinage_props, scene.array_props
+        )
+
+        arrayprops = scene.array_props
+
+        # create a bmesh
+        bm = bmesh.new()
+
+        # Create new mesh data.
+        mesh = bpy.data.meshes.new(name)
+        mesh.from_pydata(vertex, edges, [])
+
+        # Positionning according to position props
+        posprops = scene.pos_props
+
+        mesh.update(calc_edges=True)
+
+        # Load BMesh with mesh data
+        bm.from_mesh(mesh)
+
+        # Convert BMesh to mesh data, then release BMesh.
+        bm.to_mesh(mesh)
+        bm.free()
+
+        # Add Object to the default collection from mesh
+        mesh_obj = bpy.data.objects.new(mesh.name, mesh)
+        bpy.context.collection.objects.link(mesh_obj)
+        bpy.types.Scene.dif_parts.append(mesh_obj.name)
+
+        mesh_obj.location = (
+            posprops.contre_pilier_moule_position[1],
+            posprops.contre_pilier_moule_position[2],
+            posprops.contre_pilier_moule_position[0],
+        )
+
+        difArray(
+            mesh_obj,
+            arrayprops.array_offset,
+            arrayprops.contre_pilier_moule_x,
+            arrayprops.contre_pilier_moule_y,
+            (difprops.getLargeurPilier() + arrayprops.array_offset)
+            * (difprops.type + 1),
+            difprops.longueur_diffuseur,  # calcul à faire sur l'addition des ratios
+        )
+
+        if posprops.contre_pilier_moule_rotation:
+            mesh_obj.rotation_euler = [0, 0, math.radians(90)]
+
+        return {"FINISHED"}
 
 
 class AddDiffuseur(bpy.types.Operator, AddObjectHelper):
@@ -1174,6 +1234,7 @@ classes = [
     AddMoule,
     AddFondMoule,
     AddPilierMoule,
+    AddContrePilierMoule,
     AddCadreMoule,
     AddList,
     RemoveList,
