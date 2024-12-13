@@ -1070,7 +1070,7 @@ def add_cadre_moule(difprops, productprops, usinageprops):
     rang = difprops.getRang()
     epaisseur_moule = difprops.epaisseur_moule
     largeur_diffuseur = difprops.largeur_diffuseur
-    debord_moule = 0.010
+    debord_moule = 0.050
 
     N = difprops.type
 
@@ -1117,7 +1117,7 @@ def add_cadre_moule_long(difprops, productprops, usinageprops):
     epaisseur_moule = difprops.epaisseur_moule
     largeur_diffuseur = difprops.largeur_diffuseur
     longueurTotale = difprops.getLongueur()
-    debord_moule = 0.010
+    debord_moule = 0.050
 
     N = difprops.type
 
@@ -1351,103 +1351,7 @@ def add_contre_pilier_moule(difprops, productprops, usinageprops, arrayprops):
     if product_type == "3":
         y0 = 0
         x0 = 0
-        if difprops.type_moule == "eco":
-            for i in range(len(ratio)):
-                if ratio[i][0] != 0:  # delete hauteur = 0
-                    if ratio[i][0] == amax:
-                        y = ((ratio[i][0] * profondeur) / amax) - epaisseur
-                    else:
-                        y = (ratio[i][0] * profondeur) / amax
-
-                    for k in range(ratio[i][1]):
-                        vertsCadre += [
-                            (x0, y0 + y + epaisseur_moule, 0),
-                            (x0 + largeur_pilier, y0 + y + epaisseur_moule, 0),
-                            (x0 + largeur_pilier, y0 + epaisseur_moule, 0),
-                            (
-                                x0 + largeur_pilier / 2 + epaisseur_moule / 2,
-                                y0 + epaisseur_moule,
-                                0,
-                            ),
-                            (
-                                x0 + largeur_pilier / 2 + epaisseur_moule / 2,
-                                y0,
-                                0,
-                            ),
-                            (
-                                x0 + largeur_pilier / 2 - epaisseur_moule / 2,
-                                y0,
-                                0,
-                            ),
-                            (
-                                x0 + largeur_pilier / 2 - epaisseur_moule / 2,
-                                y0 + epaisseur_moule,
-                                0,
-                            ),
-                            (x0, y0 + epaisseur_moule, 0),
-                        ]
-                        x0 += largeur_pilier + array_offset
-
-                    x0 = 0
-                    y0 += y + array_offset + epaisseur_moule
-
-            for i in range(len(vertsCadre)):
-                if i % 8 == 0:
-                    edgesCadre += [
-                        (i, i + 1),
-                        (i + 1, i + 2),
-                        (i + 2, i + 3),
-                        (i + 3, i + 4),
-                        (i + 4, i + 5),
-                        (i + 5, i + 6),
-                        (i + 6, i + 7),
-                        (i + 7, i),
-                    ]
-
-        if difprops.type_moule == "stable":
-            for i in range(len(ratio)):
-                if ratio[i][0] != 0:  # delete hauteur = 0
-                    if ratio[i][0] == amax:
-                        y = ((ratio[i][0] * profondeur) / amax) - epaisseur
-                    else:
-                        y = (ratio[i][0] * profondeur) / amax
-
-                    for k in range(ratio[i][1]):
-                        vertsCadre += [
-                            (x0, y0 + y, 0),
-                            (x0 + largeur_pilier, y0 + y, 0),
-                            (x0 + largeur_pilier, y0, 0),
-                            (x0 + largeur_pilier / 2 + epaisseur_pilier / 2, y0, 0),
-                            (
-                                x0 + largeur_pilier / 2 + epaisseur_pilier / 2,
-                                y0 + y / 2 + epaisseur_pilier / 2,
-                                0,
-                            ),
-                            (
-                                x0 + largeur_pilier / 2 - epaisseur_pilier / 2,
-                                y0 + y / 2 + epaisseur_pilier / 2,
-                                0,
-                            ),
-                            (x0 + largeur_pilier / 2 - epaisseur_pilier / 2, y0, 0),
-                            (x0, y0, 0),
-                        ]
-                        x0 += largeur_pilier + array_offset
-
-                    x0 = 0
-                    y0 += y + array_offset
-
-            for i in range(len(vertsCadre)):
-                if i % 8 == 0:
-                    edgesCadre += [
-                        (i, i + 1),
-                        (i + 1, i + 2),
-                        (i + 2, i + 3),
-                        (i + 3, i + 4),
-                        (i + 4, i + 5),
-                        (i + 5, i + 6),
-                        (i + 6, i + 7),
-                        (i + 7, i),
-                    ]
+       
 
         if difprops.type_moule == "mono":
 

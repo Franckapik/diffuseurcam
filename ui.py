@@ -3,6 +3,7 @@ import bpy
 from .ops import classes
 from bl_operators.presets import AddPresetBase
 from math import ceil
+from collections import Counter
 
 
 class DIF_MT_Presets(Menu):
@@ -328,6 +329,16 @@ class Diffuseur_SideBar(Panel):
         box.prop(difprops, "decalage_v")
              
         ratio = difprops.getMotif(productprops.motif_display)
+        ratio_readable = [int(x * 1000) for x in ratio]
+        compteur = Counter(ratio_readable)
+
+        rowC = box.row()
+        rowC.scale_y = 3
+        split = rowC.split() 
+        
+        for x, occurence in compteur.items():
+            col = split.column()
+            col.label(text=f"{x}:{occurence}x")
 
         if difprops.moule_type  =="1d":
             row = box.row()

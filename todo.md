@@ -1,3 +1,11 @@
+meiulleur affichage a faire du nombre d'occurences des piliers.
+
+Attention : a faire, mono pilier et contrepilier lorsque il existe une reduction des piliers !
+mono pilier/contre si stable ou eco ? (code supprimé en attendant)
+debord moule réglé à 5cm => en faire une variable ?
+hide old modele apres overcut
+
+
 Trouve rle moyen d'avoir un gcode clair sur ncviewer avec cette histoire de difprops.profondeur.
 
 La génération d'une curve est possible mais le chemin ne semble pas clair alors qu'un fichier gcode est finalement facile a generer depuis python. IL faut travailler en ce sens pour avoir un fichier générer a la base du fichier blend avec les instructions gocde inspirées des fichiers blendercam.

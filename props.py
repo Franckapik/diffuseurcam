@@ -1,6 +1,7 @@
 import bpy
 import math
 
+
 from bpy.props import (
     FloatProperty,
     BoolProperty,
@@ -414,6 +415,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
             ratio.append(an / 1000)
 
         amax = max(ratio)
+
 
         depth = []
         for k in range(0, self.type * round(self.type * self.longueur_diffuseur)):
