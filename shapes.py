@@ -900,6 +900,7 @@ def add_fond_moule(difprops, productprops, usinageprops):
     debord_moule = 0.010
     type = difprops.type
     largeur_monopilier = rang * type - epaisseur
+    ratio = difprops.getMotif("ratio")
 
     N = difprops.type
     rang2 = rang - epaisseur
@@ -922,16 +923,18 @@ def add_fond_moule(difprops, productprops, usinageprops):
                 x0 = rang2 / 2 + epaisseur + epaisseur_moule + debord_moule
 
             if difprops.type_moule == "eco":
-                vertsMortaisesInt += [
-                    *mortaise_pilier_fond_moule_eco(x0, y0, difprops, usinageprops)
-                ]
+                if(ratio[k] != 0) :
+                    vertsMortaisesInt += [
+                        *mortaise_pilier_fond_moule_eco(x0, y0, difprops, usinageprops)
+                    ]
 
                 x0 += rang2 + epaisseur
 
             if difprops.type_moule == "stable":
-                vertsMortaisesInt += [
-                    *mortaise_pilier_fond_moule_stable(x0, y0, difprops, usinageprops)
-                ]
+                if(ratio[k] != 0) :
+                    vertsMortaisesInt += [
+                        *mortaise_pilier_fond_moule_stable(x0, y0, difprops, usinageprops)
+                    ]
 
                 x0 += rang2 + epaisseur
 
