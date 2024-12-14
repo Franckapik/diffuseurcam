@@ -1179,6 +1179,8 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
     ratios = difprops.getMotif("depth")
 
     amax = max(ratios)
+    amin = min([x for x in ratios if x > 0])
+    cross_monopilier_min = amin + socle_monopilier
     a = []
 
     for k in ratios:
@@ -1288,25 +1290,28 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
                     ]
 
         if difprops.type_moule == "mono":
-
+            y0 = 0
             largeur_monopilier = rang * type - epaisseur
+            for i in range(len(ratio)):
+                if (difprops.moule_type == "1d" and i < 1) or difprops.moule_type == "2d"  :
+                    vertsCadre += [
+                        (x0 - epaisseur, y0, 0),
+                        (x0 - epaisseur, y0 + socle_monopilier, 0),
+                        *monopilier_profondeurs(x0, y0 + socle_monopilier, difprops, i, cross_monopilier_min),
+                        (largeur_monopilier+epaisseur, y0 + socle_monopilier, 0),
+                        (largeur_monopilier+epaisseur, y0, 0),
+                        (largeur_monopilier - largeur_monopilier / 5, y0, 0),
+                        (largeur_monopilier - largeur_monopilier / 5, y0-epaisseur_moule, 0),
+                        (largeur_monopilier - 2 * largeur_monopilier / 5, y0-epaisseur_moule, 0),
+                        (largeur_monopilier - 2 * largeur_monopilier / 5, y0, 0),
+                        (largeur_monopilier - 3 * largeur_monopilier / 5, y0, 0),
+                        (largeur_monopilier - 3 * largeur_monopilier / 5, y0-epaisseur_moule, 0),
+                        (largeur_monopilier - 4 * largeur_monopilier / 5, y0-epaisseur_moule, 0),
+                        (largeur_monopilier - 4 * largeur_monopilier / 5, y0, 0),
+                        (x0 - epaisseur, y0, 0),
+                    ]
 
-            vertsCadre += [
-                (x0 - epaisseur, y0, 0),
-                (x0 - epaisseur, y0 + socle_monopilier, 0),
-                *monopilier_profondeurs(x0, y0 + socle_monopilier, difprops),
-                (largeur_monopilier+epaisseur, y0 + socle_monopilier, 0),
-                (largeur_monopilier+epaisseur, y0, 0),
-                (largeur_monopilier - largeur_monopilier / 5, y0, 0),
-                (largeur_monopilier - largeur_monopilier / 5, y0-epaisseur_moule, 0),
-                (largeur_monopilier - 2 * largeur_monopilier / 5, y0-epaisseur_moule, 0),
-                (largeur_monopilier - 2 * largeur_monopilier / 5, y0, 0),
-                (largeur_monopilier - 3 * largeur_monopilier / 5, y0, 0),
-                (largeur_monopilier - 3 * largeur_monopilier / 5, y0-epaisseur_moule, 0),
-                (largeur_monopilier - 4 * largeur_monopilier / 5, y0-epaisseur_moule, 0),
-                (largeur_monopilier - 4 * largeur_monopilier / 5, y0, 0),
-        
-            ]
+                    y0 += amax + array_offset + epaisseur_moule + socle_monopilier
 
             for k in range(0, len(vertsCadre) - 1):
                 edgesCadre += [

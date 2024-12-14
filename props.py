@@ -348,7 +348,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         items=(
             ("stable", "Stable - 2 epaisseurs", ""),
             ("eco", "Eco - 1 epaisseur", ""),
-            ("mono", "Mono-Pilier - 1D seulement", ""),
+            ("mono", "Mono-Pilier", ""),
         ),
     )
 
@@ -506,7 +506,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "socle_monopilier",
                 ]
 
-                if self.type_moule == "stable":
+                if self.type_moule == "stable" or self.type_moule == "mono" :
                     attributes.append("epaisseur_pilier")
 
                 return attributes

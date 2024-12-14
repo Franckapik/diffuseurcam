@@ -1,4 +1,9 @@
+travailler sur les edges entres les mono piliers du 2D.
+faire coincider reduction des piliers avec la variable existante pour le 2d stable a la base.
+
 meiulleur affichage a faire du nombre d'occurences des piliers.
+prendre en consideration la profondeur du moule pour la hauteur des piliers qui s'enfonce dans le moule
+avoir un perimetre decouper autours d'une selection de pieces pour permetre le poncage groupé a la calibreuse
 
 Attention : a faire, mono pilier et contrepilier lorsque il existe une reduction des piliers !
 mono pilier/contre si stable ou eco ? (code supprimé en attendant)

@@ -493,41 +493,64 @@ def mortaise_pilier_fond_moule_mono(x, y, difprops, distanceMortaises):
     largeur_pilier = difprops.getLargeurPilier()
     rang = difprops.getRang()
 
-
     return [
-        (x + distanceMortaises, y-epaisseur_pilier / 2, 0),
-        (x + distanceMortaises, y+epaisseur_pilier/2, 0),
-        (x + 2 * distanceMortaises, y+epaisseur_pilier/2, 0),
-        (x + 2 * distanceMortaises, y-epaisseur_pilier/2, 0),
-
+        (x + distanceMortaises, y - epaisseur_pilier / 2, 0),
+        (x + distanceMortaises, y + epaisseur_pilier / 2, 0),
+        (x + 2 * distanceMortaises, y + epaisseur_pilier / 2, 0),
+        (x + 2 * distanceMortaises, y - epaisseur_pilier / 2, 0),
     ]
 
 
-def monopilier_profondeurs(x, y, difprops):
+def monopilier_profondeurs(x, y, difprops, colonne, cross_monopilier_min):
     ratios = difprops.getMotif("depth")
     amax = max(ratios)
     epaisseur = difprops.epaisseur
+    epaisseur_pilier = difprops.epaisseur_pilier
     profondeur = difprops.profondeur
     largeur_pilier = round(difprops.getLargeurPilier(), 4)
-    reduction = 0.008
+    reduction = 0.2 * largeur_pilier
 
     x0, y0 = x, y  # Initialisation des coordonnées de départ
     array_offset = 0  # Remplacez par la valeur appropriée pour l'offset
     result = []
 
     for i in range(difprops.type):
-        result.extend(
-            [
-                (x0, y0, 0),
-                (x0+reduction, y0 + ratios[i], 0),
-                (x0 + largeur_pilier-reduction, y0 + ratios[i], 0),
-                (x0 + largeur_pilier  , y0, 0),
-            ]
-        )
+        index = colonne * difprops.type + i
+        if(ratios[index]) : # if not pilier 0
+            result.extend(
+                [
+                    (x0, y0, 0),
+                    (x0 + reduction, y0 + ratios[index], 0),
+                    (
+                        x0 + reduction + (largeur_pilier - reduction * 2 - epaisseur_pilier ) / 2,
+                        y0 + ratios[index],
+                        0,
+                    ),
+                    (
+                        x0 + reduction + (largeur_pilier - reduction * 2 - epaisseur_pilier ) / 2,
+                        y0 + ratios[index] - cross_monopilier_min / 2 - epaisseur_pilier/2, # epaisseur_pilier/2 à confirmer selon overcuts ou non . Différence avec stable qui s'équilibre car il touche le fond
+                        0,
+                    ),
+                    (
+                        x0 + reduction + (largeur_pilier - reduction * 2 + epaisseur_pilier ) / 2,
+                        y0 + ratios[index] - cross_monopilier_min / 2 - epaisseur_pilier/2,
+                        0,
+                    ),
+                    (
+                        x0 + reduction + (largeur_pilier - reduction * 2 + epaisseur_pilier ) / 2,
+                        y0 + ratios[index],
+                        0,
+                    ),
+                    (x0 + largeur_pilier - reduction, y0 + ratios[index], 0),
+                    (x0 + largeur_pilier, y0, 0),
+                ]
+            )
 
         x0 += largeur_pilier + epaisseur
+    print("|")
 
     return result
+
 
 def contremonopilier_hauteurs(x, y, difprops):
     ratios = difprops.getMotif("height")
@@ -545,9 +568,9 @@ def contremonopilier_hauteurs(x, y, difprops):
         result.extend(
             [
                 (x0, y0, 0),
-                (x0+reduction, y0 + ratios[i]-epaisseur, 0),
-                (x0 + largeur_pilier-reduction, y0 + ratios[i]-epaisseur, 0),
-                (x0 + largeur_pilier  , y0, 0),
+                (x0 + reduction, y0 + ratios[i] - epaisseur, 0),
+                (x0 + largeur_pilier - reduction, y0 + ratios[i] - epaisseur, 0),
+                (x0 + largeur_pilier, y0, 0),
             ]
         )
 
