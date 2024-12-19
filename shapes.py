@@ -326,6 +326,7 @@ def add_peigne_court(difprops, productprops, usinageprops):
     type_tenon_peigne = difprops.type_tenon_peigne
     offset = usinageprops.getOffset()
     offset_peigne = difprops.getOffsetPeigne()
+    rainure_offset = 0.0005
 
     N = difprops.type
 
@@ -336,12 +337,12 @@ def add_peigne_court(difprops, productprops, usinageprops):
         peignes += [
             (profondeur, largeur_diffuseur - rang * k + offset_peigne, 0),
             (
-                profondeur / 2 - epaisseur,
+                profondeur / 2 - rainure_offset,
                 largeur_diffuseur - rang * k + offset_peigne,
                 0,
             ),
             (
-                profondeur / 2 - epaisseur,
+                profondeur / 2 - rainure_offset,
                 largeur_diffuseur - rang * k - epaisseur - offset_peigne,
                 0,
             ),
@@ -402,6 +403,7 @@ def add_peigne_long(difprops, productprops, usinageprops):
     offset = usinageprops.getOffset()
     offset_peigne = difprops.getOffsetPeigne()
     type_tenon_peigne = difprops.type_tenon_peigne
+    rainure_offset = 0.0005
 
     N = difprops.type
 
@@ -414,9 +416,9 @@ def add_peigne_long(difprops, productprops, usinageprops):
     for k in range(1, round(N * longueur_diffuseur)):
         peignes += [
             (profondeur, longueurTotale - rang * k + offset_peigne, 0),
-            (profondeur / 2 - epaisseur, longueurTotale - rang * k + offset_peigne, 0),
+            (profondeur / 2 - rainure_offset, longueurTotale - rang * k + offset_peigne, 0),
             (
-                profondeur / 2 - epaisseur,
+                profondeur / 2 - rainure_offset,
                 longueurTotale - rang * k - epaisseur - offset_peigne,
                 0,
             ),
@@ -1311,7 +1313,7 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
                         (x0 - epaisseur, y0, 0),
                     ]
 
-                    y0 += amax + array_offset + epaisseur_moule + socle_monopilier
+                    y0 += amax + array_offset + socle_monopilier
 
             for k in range(0, len(vertsCadre) - 1):
                 edgesCadre += [
@@ -1326,6 +1328,52 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
     edges = [*list(edgesCadre)]
 
     return verts, edges, "Piliers"
+
+#creer des cercles pour reconnaitre les monopiliers. Chatgpt proposition pour le dessin d'un cercle.
+
+""" def create_circle(name, diameter, segments): 
+    # Calculer le rayon
+    radius = diameter / 2.0
+
+    # Générer les vertices pour un cercle
+    vertices = []
+    edges = []
+
+    for i in range(segments):
+        angle = 2 * math.pi * i / segments
+        x = radius * math.cos(angle)
+        y = radius * math.sin(angle)
+        vertices.append((x, y, 0))  # Cercle dans le plan XY
+
+    # Générer les edges reliant les vertices
+    for i in range(segments):
+        edges.append((i, (i + 1) % segments))  # Relier chaque vertex au suivant
+
+    # Créer le bmesh
+    bm = bmesh.new()
+
+    # Ajouter les vertices
+    for v in vertices:
+        bm.verts.new(v)
+
+    # Mettre à jour le bmesh
+    bm.verts.ensure_lookup_table()
+
+    # Ajouter les edges
+    for e in edges:
+        bm.edges.new((bm.verts[e[0]], bm.verts[e[1]]))
+
+    # Créer une nouvelle mesh et lui attribuer le bmesh
+    mesh = bpy.data.meshes.new(name)
+    bm.to_mesh(mesh)
+    bm.free()
+
+    # Créer un nouvel objet pour afficher la mesh
+    obj = bpy.data.objects.new(name, mesh)
+    bpy.context.collection.objects.link(obj)
+
+# Créer un cercle de diamètre 5 mm et 32 segments
+create_circle("MyCircle", diameter=5, segments=32) """
 
 def add_contre_pilier_moule(difprops, productprops, usinageprops, arrayprops):
     product_type = productprops.product_type

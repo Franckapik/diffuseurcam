@@ -1,5 +1,6 @@
 travailler sur les edges entres les mono piliers du 2D.
 faire coincider reduction des piliers avec la variable existante pour le 2d stable a la base.
+Pouvoir faire des cercles pour recconiatre les piliers de 1 à 13 par ex.
 
 meiulleur affichage a faire du nombre d'occurences des piliers.
 prendre en consideration la profondeur du moule pour la hauteur des piliers qui s'enfonce dans le moule
