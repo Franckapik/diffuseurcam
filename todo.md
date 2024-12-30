@@ -1,3 +1,5 @@
+ajouter nombre panneaux superposés pour faire des comptes (ex : dp123) et agencer tout de meme selon un array different
+
 travailler sur les edges entres les mono piliers du 2D.
 faire coincider reduction des piliers avec la variable existante pour le 2d stable a la base.
 Pouvoir faire des cercles pour recconiatre les piliers de 1 à 13 par ex.

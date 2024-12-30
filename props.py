@@ -219,6 +219,15 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         unit="LENGTH",
         precision=4,
     )
+    tenon_accroche: FloatProperty(
+        name="Tenon_accroche",
+        description="Box tenon_accroche",
+        min=0.01,
+        max=0.1,
+        default=0.05,
+        unit="LENGTH",
+        precision=4,
+    )
 
     tenon_peigne: FloatProperty(
         name="Tenon peigne",
@@ -231,8 +240,8 @@ class DiffuseurProps(bpy.types.PropertyGroup):
     )
 
     longueur_diffuseur: FloatProperty(
-        name="Longueur_diffuseur",
-        description="Box longueur_diffuseur",
+        name="Longueur",
+        description="Box longueur",
         min=0.5,
         max=2,
         default=1,
@@ -483,9 +492,9 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                 return [
                     "epaisseur",
                     "profondeur",
-                    "bord_cadre",
                     "largeur_diffuseur",
                     "tenon_cadre",
+                    "tenon_accroche",
                     "longueur_diffuseur",
                     "largeur_accroche",
                     "largeur_cadre_central",

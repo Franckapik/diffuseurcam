@@ -564,7 +564,7 @@ def add_accroche(difprops, productprops, usinageprops):
     epaisseur = difprops.epaisseur
     largeur_accroche = difprops.largeur_accroche
     largeur_diffuseur = difprops.largeur_diffuseur
-    tenon_cadre = difprops.tenon_cadre
+    tenon_accroche = difprops.tenon_accroche
 
     longueurTotale = difprops.getLongueur()
     division = (rang - epaisseur) / 12
@@ -600,19 +600,19 @@ def add_accroche(difprops, productprops, usinageprops):
             (epaisseur, 0, 0),
             *tenonGauche(
                 epaisseur,
-                epaisseur + (largeur_accroche / 2 - tenon_cadre / 2),
+                epaisseur + (largeur_accroche / 2 - tenon_accroche / 2),
                 difprops,
                 usinageprops,
             ),
             (epaisseur, largeur_accroche, 0),
             *tenonHaut(
-                (largeur_accroche / 2 - tenon_cadre / 2),
+                (largeur_accroche / 2 - tenon_accroche / 2),
                 largeur_accroche,
                 difprops,
                 usinageprops,
             ),
             *tenonHaut(
-                (largeur_diffuseur - largeur_accroche / 2 - tenon_cadre / 2),
+                (largeur_diffuseur - largeur_accroche / 2 - tenon_accroche / 2),
                 largeur_accroche,
                 difprops,
                 usinageprops,
@@ -620,7 +620,7 @@ def add_accroche(difprops, productprops, usinageprops):
             (largeur_diffuseur - epaisseur, largeur_accroche, 0),
             *tenonDroit(
                 largeur_diffuseur - epaisseur,
-                epaisseur + (largeur_accroche / 2 + tenon_cadre / 2),
+                epaisseur + (largeur_accroche / 2 + tenon_accroche / 2),
                 difprops,
                 usinageprops,
             ),
@@ -705,7 +705,7 @@ def add_accroche_inverse(difprops, productprops, usinageprops):
     epaisseur = difprops.epaisseur
     largeur_accroche = difprops.largeur_accroche
     largeur_diffuseur = difprops.largeur_diffuseur
-    tenon_cadre = difprops.tenon_cadre
+    tenon_accroche = difprops.tenon_accroche
 
     division = (rang - epaisseur) / 12
 
@@ -716,19 +716,19 @@ def add_accroche_inverse(difprops, productprops, usinageprops):
         (epaisseur, 0, 0),
         *tenonGauche(
             epaisseur,
-            epaisseur + (largeur_accroche / 2 - tenon_cadre / 2),
+            epaisseur + (largeur_accroche / 2 - tenon_accroche / 2),
             difprops,
             usinageprops,
         ),
         (epaisseur, largeur_accroche, 0),
         *tenonHaut(
-            (largeur_accroche / 2 - tenon_cadre / 2),
+            (largeur_accroche / 2 - tenon_accroche / 2),
             largeur_accroche,
             difprops,
             usinageprops,
         ),
         *tenonHaut(
-            (largeur_diffuseur - largeur_accroche / 2 - tenon_cadre / 2),
+            (largeur_diffuseur - largeur_accroche / 2 - tenon_accroche / 2),
             largeur_accroche,
             difprops,
             usinageprops,
@@ -736,7 +736,7 @@ def add_accroche_inverse(difprops, productprops, usinageprops):
         (largeur_diffuseur - epaisseur, largeur_accroche, 0),
         *tenonDroit(
             largeur_diffuseur - epaisseur,
-            epaisseur + (largeur_accroche / 2 + tenon_cadre / 2),
+            epaisseur + (largeur_accroche / 2 + tenon_accroche / 2),
             difprops,
             usinageprops,
         ),
