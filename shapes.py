@@ -11,8 +11,6 @@ def add_cadre_mortaise(difprops, productprops, usinageprops):
     tenon_peigne = difprops.tenon_peigne
     longueur_diffuseur = difprops.longueur_diffuseur
     largeur_accroche = difprops.largeur_accroche
-    facade_avant = difprops.facade_avant
-    facade_central = difprops.facade_central
     product_type = productprops.product_type
     startup = epaisseur / 2
     N = difprops.type
@@ -22,6 +20,8 @@ def add_cadre_mortaise(difprops, productprops, usinageprops):
     split = difprops.split
     longueur_absorbeur = difprops.longueur_absorbeur
     is_splitted = True if longueur_absorbeur > split and split != 0 else False
+    renfort_central = difprops.renfort_central
+    renfort_angle = difprops.renfort_angle
 
     edgesCadre = []
     vertsMortaisesInt = []
@@ -72,7 +72,11 @@ def add_cadre_mortaise(difprops, productprops, usinageprops):
         if type_tenon_cadre == "1":
             vertsCadre = [
                 (0, 0, 0),
-                *mortaiseGauche(0, (largeur_accroche / 2 - tenon_cadre / 2), difprops, usinageprops),
+                *(
+                    mortaiseGauche(0, (largeur_accroche / 2 - tenon_cadre / 2), difprops, usinageprops)
+                    if renfort_angle == "back" or renfort_angle == "both"
+                    else []
+                ),
                 *(
                     mortaiseGauche(
                         0,
@@ -80,7 +84,17 @@ def add_cadre_mortaise(difprops, productprops, usinageprops):
                         difprops,
                         usinageprops,
                     )
-                    if not is_splitted
+                    if (renfort_angle == "back" or renfort_angle == "both") and not is_splitted
+                    else []
+                ),
+                *(
+                    mortaiseGauche(
+                        0,
+                        longueur_absorbeur / 2 - tenon_cadre / 2,
+                        difprops,
+                        usinageprops,
+                    )
+                    if renfort_central == "back" or renfort_central == "both"
                     else []
                 ),
                 (0, longueur_absorbeur, 0),
@@ -101,34 +115,34 @@ def add_cadre_mortaise(difprops, productprops, usinageprops):
                 ),
                 ((profondeur), longueur_absorbeur, 0),
                 *(
-                    a
-                    for a in mortaiseDroite(
+                    mortaiseDroite(
                         profondeur,
                         longueur_absorbeur - largeur_accroche / 2 + tenon_cadre / 2,
                         difprops,
                         usinageprops,
                     )
-                    if facade_avant == True and not is_splitted
+                    if (renfort_angle == "front" or renfort_angle == "both") and not is_splitted
+                    else []
                 ),
                 *(
-                    a
-                    for a in mortaiseDroite(
+                    mortaiseDroite(
                         profondeur,
                         longueur_absorbeur / 2 + tenon_cadre / 2,
                         difprops,
                         usinageprops,
                     )
-                    if facade_central == True
+                    if renfort_central == "front" or renfort_central == "both"
+                    else []
                 ),
                 *(
-                    a
-                    for a in mortaiseDroite(
+                    mortaiseDroite(
                         profondeur,
                         largeur_accroche / 2 + tenon_cadre / 2,
                         difprops,
                         usinageprops,
                     )
-                    if facade_avant == True
+                    if renfort_angle == "front" or renfort_angle == "both"
+                    else []
                 ),
                 ((profondeur), 0, 0),
                 *mortaiseBas((profondeur / 2 + tenon_cadre / 2), 0, difprops, usinageprops),
@@ -179,11 +193,11 @@ def add_cadre_tenon(difprops, productprops, usinageprops):
     startup = epaisseur / 2
     product_type = productprops.product_type
     largeur_accroche = difprops.largeur_accroche
-    facade_avant = difprops.facade_avant
     type_tenon_cadre = difprops.type_tenon_cadre
     type_tenon_peigne = difprops.type_tenon_peigne
     split = difprops.split
     is_splitted = True if largeur_diffuseur > split and split != 0 else False
+    renfort_angle = difprops.renfort_angle
 
     N = difprops.type
 
@@ -242,7 +256,11 @@ def add_cadre_tenon(difprops, productprops, usinageprops):
         if type_tenon_cadre == "1":
             vertsCadre = [
                 (0, epaisseur, 0),
-                *mortaiseGauche(0, largeur_accroche / 2 - tenon_cadre / 2, difprops, usinageprops),
+                *(
+                    mortaiseGauche(0, largeur_accroche / 2 - tenon_cadre / 2, difprops, usinageprops)
+                    if (renfort_angle == "back" or renfort_angle == "both")
+                    else []
+                ),
                 *(
                     mortaiseGauche(
                         0,
@@ -250,7 +268,7 @@ def add_cadre_tenon(difprops, productprops, usinageprops):
                         difprops,
                         usinageprops,
                     )
-                    if not is_splitted
+                    if (renfort_angle == "back" or renfort_angle == "both") and not is_splitted
                     else []
                 ),
                 (0, largeur_diffuseur - epaisseur, 0),
@@ -271,24 +289,24 @@ def add_cadre_tenon(difprops, productprops, usinageprops):
                 ),
                 ((profondeur), largeur_diffuseur - epaisseur, 0),
                 *(
-                    a
-                    for a in mortaiseDroite(
+                    mortaiseDroite(
                         profondeur,
                         largeur_diffuseur - largeur_accroche / 2 + tenon_cadre / 2,
                         difprops,
                         usinageprops,
                     )
-                    if facade_avant == True and not is_splitted
+                    if (renfort_angle == "front" or renfort_angle == "both") and not is_splitted
+                    else []
                 ),
                 *(
-                    a
-                    for a in mortaiseDroite(
+                    mortaiseDroite(
                         profondeur,
                         largeur_accroche / 2 + tenon_cadre / 2,
                         difprops,
                         usinageprops,
                     )
-                    if facade_avant == True
+                    if renfort_angle == "front" or renfort_angle == "both"
+                    else []
                 ),
                 ((profondeur), epaisseur, 0),
                 *tenonBas(
@@ -512,58 +530,64 @@ def add_carreau(difprops, productprops, usinageprops):
     return vertsCadre, edgesCadre, "Carreau"
 
 
-def add_facade_central(difprops, productprops, usinageprops):
-    largeur_facade_central = difprops.largeur_facade_central
+def add_renfort_central(difprops, productprops, usinageprops):
+    largeur_renfort_central = difprops.largeur_renfort_central
     largeur_diffuseur = difprops.largeur_diffuseur
     tenon_cadre = difprops.tenon_cadre
     epaisseur = difprops.epaisseur
     split = difprops.split
     is_splitted = True if largeur_diffuseur > split and split != 0 else False
-    largeur_diffuseur = largeur_diffuseur / 2 + epaisseur if is_splitted else largeur_diffuseur #epaisseur ajoutée sans comprendre ni verifier
+    largeur_diffuseur = (
+        largeur_diffuseur / 2 + epaisseur if is_splitted else largeur_diffuseur
+    )  # epaisseur ajoutée sans comprendre ni verifier
 
     vertsCadre = [
         (epaisseur, 0, 0),
         *tenonGauche(
             epaisseur,
-            largeur_facade_central / 2 - tenon_cadre / 2,
+            largeur_renfort_central / 2 - tenon_cadre / 2,
             difprops,
             usinageprops,
         ),
-        (epaisseur, largeur_facade_central, 0),
+        (epaisseur, largeur_renfort_central, 0),
         (
             (largeur_diffuseur - epaisseur) / 6,
-            largeur_facade_central - largeur_facade_central / 4,
+            largeur_renfort_central - largeur_renfort_central / 4,
             0,
         ),
         (
             (largeur_diffuseur - epaisseur) - (largeur_diffuseur - epaisseur) / 6,
-            largeur_facade_central - largeur_facade_central / 4,
+            largeur_renfort_central - largeur_renfort_central / 4,
             0,
         ),
-        (largeur_diffuseur - epaisseur, largeur_facade_central, 0),
-        *(tenonDroit(
-            largeur_diffuseur - epaisseur,
-            largeur_facade_central / 2 + tenon_cadre / 2,
-            difprops,
-            usinageprops,
-        ) if not is_splitted else []),
+        (largeur_diffuseur - epaisseur, largeur_renfort_central, 0),
         *(
-                papillonDroit(
-                    largeur_diffuseur - epaisseur,
-                    largeur_facade_central / 2 + tenon_cadre / 2,
-                    difprops,
-                    usinageprops,
-                )
-                if is_splitted
-                else []
-            ),
+            tenonDroit(
+                largeur_diffuseur - epaisseur,
+                largeur_renfort_central / 2 + tenon_cadre / 2,
+                difprops,
+                usinageprops,
+            )
+            if not is_splitted
+            else []
+        ),
+        *(
+            papillonDroit(
+                largeur_diffuseur - epaisseur,
+                largeur_renfort_central / 2 + tenon_cadre / 2,
+                difprops,
+                usinageprops,
+            )
+            if is_splitted
+            else []
+        ),
         (largeur_diffuseur - epaisseur, 0, 0),
         (
             (largeur_diffuseur - epaisseur) - (largeur_diffuseur - epaisseur) / 6,
-            largeur_facade_central / 4,
+            largeur_renfort_central / 4,
             0,
         ),
-        ((largeur_diffuseur - epaisseur) / 6, largeur_facade_central / 4, 0),
+        ((largeur_diffuseur - epaisseur) / 6, largeur_renfort_central / 4, 0),
     ]
 
     edgesCadre = []
@@ -577,7 +601,7 @@ def add_facade_central(difprops, productprops, usinageprops):
         (len(vertsCadre) - 1, 0),
     ]
 
-    return vertsCadre, edgesCadre, "Facade central"
+    return vertsCadre, edgesCadre, "Renfort central"
 
 
 def add_accroche(difprops, productprops, usinageprops):
@@ -606,7 +630,7 @@ def add_accroche(difprops, productprops, usinageprops):
             (rang - epaisseur, 0, 0),
         ]
 
-        vertsAccroche = trou_accroche(division * 6, division * 3, vis/1000)
+        vertsAccroche = trou_accroche(division * 6, division * 3, vis / 1000)
 
     elif product_type == "1":
         vertsCadre = [
@@ -616,8 +640,8 @@ def add_accroche(difprops, productprops, usinageprops):
             (rang - epaisseur, 0, 0),
         ]
 
-        vertsAccroche = trou_accroche(division * 6, division * 3, vis/1000)
-        vertsAccroche2 = trou_accroche(division * 6, longueurTotale - division * 11, vis/1000)
+        vertsAccroche = trou_accroche(division * 6, division * 3, vis / 1000)
+        vertsAccroche2 = trou_accroche(division * 6, longueurTotale - division * 11, vis / 1000)
 
     elif product_type == "2":
         largeur_diffuseur = largeur_diffuseur / 2 if is_splitted else largeur_diffuseur
@@ -687,7 +711,7 @@ def add_accroche(difprops, productprops, usinageprops):
             (largeur_diffuseur / 8, 0, 0),
         ]
 
-        vertsAccroche = trou_accroche(largeur_diffuseur / 12, epaisseur + largeur_accroche / 4, vis/1000)
+        vertsAccroche = trou_accroche(largeur_diffuseur / 12, epaisseur + largeur_accroche / 4, vis / 1000)
         vertsAccroche2 = (
             trou_accroche(
                 largeur_diffuseur - largeur_diffuseur / 12,
@@ -752,7 +776,6 @@ def add_accroche_inverse(difprops, productprops, usinageprops):
 
     division = (rang - epaisseur) / 12
     vis = difprops.vis
-
 
     vertsAccroche = []
     vertsAccroche2 = []
@@ -826,12 +849,12 @@ def add_accroche_inverse(difprops, productprops, usinageprops):
         ),
         (largeur_diffuseur / 8, 0, 0),
     ]
-    vertsAccroche = trou_accroche_inverse(largeur_diffuseur / 12, epaisseur + largeur_accroche / 4, vis/1000)
+    vertsAccroche = trou_accroche_inverse(largeur_diffuseur / 12, epaisseur + largeur_accroche / 4, vis / 1000)
     vertsAccroche2 = (
         trou_accroche_inverse(
             largeur_diffuseur - largeur_diffuseur / 12,
             epaisseur + largeur_accroche / 4,
-            vis/1000,
+            vis / 1000,
         )
         if not is_splitted
         else []
@@ -881,7 +904,7 @@ def add_accroche_inverse(difprops, productprops, usinageprops):
     return verts, edges, "Accroche"
 
 
-def add_facade_avant(difprops, productprops, usinageprops):
+def add_renfort(difprops, productprops, usinageprops):
     product_type = productprops.product_type
     epaisseur = difprops.epaisseur
     largeur_accroche = difprops.largeur_accroche
@@ -889,9 +912,11 @@ def add_facade_avant(difprops, productprops, usinageprops):
     tenon_cadre = difprops.tenon_cadre
     split = difprops.split
     is_splitted = True if largeur_diffuseur > split and split != 0 else False
-    
+
     if product_type == "2":
-        largeur_diffuseur = largeur_diffuseur / 2 + epaisseur if is_splitted else largeur_diffuseur #epaisseur ajoutée sans comprendre ni verifier
+        largeur_diffuseur = (
+            largeur_diffuseur / 2 + epaisseur if is_splitted else largeur_diffuseur
+        )  # epaisseur ajoutée sans comprendre ni verifier
         vertsCadre = [
             (epaisseur, 0, 0),
             *tenonGauche(
@@ -907,17 +932,18 @@ def add_facade_avant(difprops, productprops, usinageprops):
                 difprops,
                 usinageprops,
             ),
-            *(tenonHaut(
-                (largeur_diffuseur - largeur_accroche / 2 - tenon_cadre / 2),
-                largeur_accroche,
-                difprops,
-                usinageprops,
-            )
+            *(
+                tenonHaut(
+                    (largeur_diffuseur - largeur_accroche / 2 - tenon_cadre / 2),
+                    largeur_accroche,
+                    difprops,
+                    usinageprops,
+                )
                 if not is_splitted
                 else []
             ),
             (largeur_diffuseur - epaisseur, largeur_accroche, 0),
-           *(
+            *(
                 tenonDroit(
                     largeur_diffuseur - epaisseur,
                     epaisseur + (largeur_accroche / 2 + tenon_cadre / 2),
@@ -971,7 +997,7 @@ def add_facade_avant(difprops, productprops, usinageprops):
     verts = [*list(vertsCadre)]
     edges = [*list(edgesCadre)]
 
-    return verts, edges, "Facade avant"
+    return verts, edges, "Renfort"
 
 
 def add_fond_moule(difprops, productprops, usinageprops):

@@ -267,22 +267,14 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         unit="LENGTH",
         precision=4,
     )
-    largeur_facade_central: FloatProperty(
-        name="Largeur Facade central",
-        description="Box largeur Facade central",
+    largeur_renfort_central: FloatProperty(
+        name="Largeur Renfort central",
+        description="Box largeur Renfort central",
         min=0.05,
         max=1,
         default=0.5,
         unit="LENGTH",
         precision=4,
-    )
-    facade_avant: BoolProperty(
-        name="Facade avant",
-        description="Facade avant absorbeur",
-    )
-    facade_central: BoolProperty(
-        name="Facade central",
-        description="Facade central absorbeur",
     )
 
     type_tenon_peigne: EnumProperty(
@@ -368,6 +360,24 @@ class DiffuseurProps(bpy.types.PropertyGroup):
             ("stable", "Stable - 2 epaisseurs", ""),
             ("eco", "Eco - 1 epaisseur", ""),
             ("mono", "Mono-Pilier", ""),
+        ),
+    )
+    renfort_central: EnumProperty(
+        name="Renfort central",
+        items=(
+            ("none", "Aucun", ""),
+            ("front", "Avant", ""),
+            ("back", "Arrière", ""),
+            ("both", "Avant/Arrière", ""),
+        ),
+    )
+    renfort_angle: EnumProperty(
+        name="Renfort angle",
+        items=(
+            ("none", "Aucun", ""),
+            ("front", "Avant", ""),
+            ("back", "Arrière", ""),
+            ("both", "Avant/Arrière", ""),
         ),
     )
 
@@ -529,11 +539,11 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "tenon_cadre",
                     "tenon_accroche",
                     "largeur_accroche",
-                    "largeur_facade_central",
+                    "largeur_renfort_central",
                     "split",
                     "vis",
-                    "facade_avant",
-                    "facade_central",
+                    "renfort_central",
+                    "renfort_angle",
                     "type_tenon_cadre",
                     
                 ]
@@ -659,14 +669,14 @@ class ArrayProps(bpy.types.PropertyGroup):
         default=1,
         min=0,
     )
-    facade_central_x: IntProperty(
-        name="Facade central",
+    renfort_central_x: IntProperty(
+        name="Renfort central",
         default=1,
         min=0,
     )
 
-    facade_central_y: IntProperty(
-        name="Facade central",
+    renfort_central_y: IntProperty(
+        name="Renfort central",
         default=1,
         min=0,
     )
@@ -773,8 +783,8 @@ class ArrayProps(bpy.types.PropertyGroup):
                     "accroche_y",
                     "accroche_inverse_x",
                     "accroche_inverse_y",
-                    "facade_central_x",
-                    "facade_central_y",
+                    "renfort_central_x",
+                    "renfort_central_y",
                     "facade_avant_x",
                     "facade_avant_y",
                 ]
@@ -822,7 +832,7 @@ class ArrayProps(bpy.types.PropertyGroup):
                     + self.cadre_tenon_x * self.cadre_tenon_y
                     + self.accroche_x * self.accroche_y
                     + self.accroche_inverse_x * self.accroche_inverse_y
-                    + self.facade_central_x * self.facade_central_y
+                    + self.renfort_central_x * self.renfort_central_y
                     + self.facade_avant_x * self.facade_avant_y
                 )
 
@@ -879,8 +889,8 @@ class PositionProps(bpy.types.PropertyGroup):
         unit="LENGTH",
         precision=4,
     )
-    facade_central_position: FloatVectorProperty(
-        name="Facade central",
+    renfort_central_position: FloatVectorProperty(
+        name="Renfort central",
         unit="LENGTH",
         precision=4,
     )
@@ -926,7 +936,7 @@ class PositionProps(bpy.types.PropertyGroup):
     carreau_rotation: BoolProperty(name="Carreau", description="Rotation")
     accroche_rotation: BoolProperty(name="Accroche", description="Rotation")
     accroche_inverse_rotation: BoolProperty(name="Accroche inverse", description="Rotation")
-    facade_central_rotation: BoolProperty(name="Facade central", description="Rotation")
+    renfort_central_rotation: BoolProperty(name="Renfort central", description="Rotation")
     facade_avant_rotation: BoolProperty(name="Facade avant", description="Rotation")
     fond_moule_rotation: BoolProperty(name="Fond Moule", description="Rotation")
     pilier_moule_rotation: BoolProperty(name="Pilier Moule", description="Rotation")
@@ -973,13 +983,13 @@ class PositionProps(bpy.types.PropertyGroup):
                     "cadre_tenon_position",
                     "accroche_position",
                     "accroche_inverse_position",
-                    "facade_central_position",
+                    "renfort_central_position",
                     "facade_avant_position",
                     "cadre_mortaise_rotation",
                     "cadre_tenon_rotation",
                     "accroche_rotation",
                     "accroche_inverse_rotation",
-                    "facade_central_rotation",
+                    "renfort_central_rotation",
                     "facade_avant_rotation",
                 ]
             case "3":

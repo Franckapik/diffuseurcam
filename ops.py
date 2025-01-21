@@ -316,14 +316,14 @@ class AddAccrocheInverse(bpy.types.Operator, AddObjectHelper):
 
 
 class AddCadreAvant(bpy.types.Operator, AddObjectHelper):
-    bl_idname = "mesh.facade_avant"
-    bl_label = "Ajouter un Facade avant"
+    bl_idname = "mesh.renfort_angle"
+    bl_label = "Ajouter un Renfort"
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_facade_avant(
+        vertex, edges, name = add_renfort_angle(
             scene.dif_props, scene.product_props, scene.usinage_props
         )
         arrayprops = scene.array_props
@@ -354,20 +354,20 @@ class AddCadreAvant(bpy.types.Operator, AddObjectHelper):
         bpy.types.Scene.dif_parts.append(mesh_obj.name)
 
         mesh_obj.location = (
-            posprops.facade_avant_position[0],
-            posprops.facade_avant_position[1],
-            posprops.facade_avant_position[2],
+            posprops.renfort_angle_position[0],
+            posprops.renfort_angle_position[1],
+            posprops.renfort_angle_position[2],
         )
 
         difArray(
             mesh_obj,
             arrayprops.array_offset,
-            arrayprops.facade_avant_x,
-            arrayprops.facade_avant_y,
+            arrayprops.renfort_angle_x,
+            arrayprops.renfort_angle_y,
             difprops.getRang(),
             difprops.getRang(),
         )
-        if posprops.facade_avant_rotation:
+        if posprops.renfort_angle_rotation:
             mesh_obj.rotation_euler = [0, 0, math.radians(90)]
 
         return {"FINISHED"}
@@ -433,14 +433,14 @@ class AddPeigneCourt(bpy.types.Operator, AddObjectHelper):
 
 
 class AddCadreCentral(bpy.types.Operator, AddObjectHelper):
-    bl_idname = "mesh.facade_central"
-    bl_label = "Ajouter Facade central"
+    bl_idname = "mesh.renfort_central"
+    bl_label = "Ajouter Renfort central"
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_facade_central(
+        vertex, edges, name = add_renfort_central(
             scene.dif_props, scene.product_props, scene.usinage_props
         )
 
@@ -472,21 +472,21 @@ class AddCadreCentral(bpy.types.Operator, AddObjectHelper):
         bpy.types.Scene.dif_parts.append(mesh_obj.name)
 
         mesh_obj.location = (
-            posprops.facade_central_position[0],
-            posprops.facade_central_position[1],
-            posprops.facade_central_position[2],
+            posprops.renfort_central_position[0],
+            posprops.renfort_central_position[1],
+            posprops.renfort_central_position[2],
         )
 
         difArray(
             mesh_obj,
             arrayprops.array_offset,
-            arrayprops.facade_central_x,
-            arrayprops.facade_central_y,
+            arrayprops.renfort_central_x,
+            arrayprops.renfort_central_y,
             difprops.profondeur,
             difprops.longueur_diffuseur,
         )
 
-        if posprops.facade_central_rotation:
+        if posprops.renfort_central_rotation:
             mesh_obj.rotation_euler = [0, 0, math.radians(90)]
 
         return {"FINISHED"}
