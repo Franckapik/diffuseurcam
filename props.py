@@ -267,22 +267,22 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         unit="LENGTH",
         precision=4,
     )
-    largeur_cadre_central: FloatProperty(
-        name="Largeur cadre central",
-        description="Box largeur cadre central",
+    largeur_facade_central: FloatProperty(
+        name="Largeur Facade central",
+        description="Box largeur Facade central",
         min=0.05,
         max=1,
         default=0.5,
         unit="LENGTH",
         precision=4,
     )
-    cadre_avant: BoolProperty(
-        name="Cadre avant",
-        description="Cadre avant absorbeur",
+    facade_avant: BoolProperty(
+        name="Facade avant",
+        description="Facade avant absorbeur",
     )
-    cadre_central: BoolProperty(
-        name="Cadre central",
-        description="Cadre central absorbeur",
+    facade_central: BoolProperty(
+        name="Facade central",
+        description="Facade central absorbeur",
     )
 
     type_tenon_peigne: EnumProperty(
@@ -517,10 +517,10 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "tenon_cadre",
                     "tenon_accroche",
                     "largeur_accroche",
-                    "largeur_cadre_central",
+                    "largeur_facade_central",
                     "split",
-                    "cadre_avant",
-                    "cadre_central",
+                    "facade_avant",
+                    "facade_central",
                     "type_tenon_cadre",
                 ]
             case "3":
@@ -645,25 +645,25 @@ class ArrayProps(bpy.types.PropertyGroup):
         default=1,
         min=0,
     )
-    cadre_central_x: IntProperty(
-        name="Cadre Central",
+    facade_central_x: IntProperty(
+        name="Facade central",
         default=1,
         min=0,
     )
 
-    cadre_central_y: IntProperty(
-        name="Cadre Central",
+    facade_central_y: IntProperty(
+        name="Facade central",
         default=1,
         min=0,
     )
-    cadre_avant_x: IntProperty(
-        name="Cadre Avant",
+    facade_avant_x: IntProperty(
+        name="Facade avant",
         default=1,
         min=0,
     )
 
-    cadre_avant_y: IntProperty(
-        name="Cadre Avant",
+    facade_avant_y: IntProperty(
+        name="Facade avant",
         default=1,
         min=0,
     )
@@ -759,10 +759,10 @@ class ArrayProps(bpy.types.PropertyGroup):
                     "accroche_y",
                     "accroche_inverse_x",
                     "accroche_inverse_y",
-                    "cadre_central_x",
-                    "cadre_central_y",
-                    "cadre_avant_x",
-                    "cadre_avant_y",
+                    "facade_central_x",
+                    "facade_central_y",
+                    "facade_avant_x",
+                    "facade_avant_y",
                 ]
             case "3":
                 return [
@@ -808,8 +808,8 @@ class ArrayProps(bpy.types.PropertyGroup):
                     + self.cadre_tenon_x * self.cadre_tenon_y
                     + self.accroche_x * self.accroche_y
                     + self.accroche_inverse_x * self.accroche_inverse_y
-                    + self.cadre_central_x * self.cadre_central_y
-                    + self.cadre_avant_x * self.cadre_avant_y
+                    + self.facade_central_x * self.facade_central_y
+                    + self.facade_avant_x * self.facade_avant_y
                 )
 
             case "3":
@@ -865,13 +865,13 @@ class PositionProps(bpy.types.PropertyGroup):
         unit="LENGTH",
         precision=4,
     )
-    cadre_central_position: FloatVectorProperty(
-        name="Cadre Central",
+    facade_central_position: FloatVectorProperty(
+        name="Facade central",
         unit="LENGTH",
         precision=4,
     )
-    cadre_avant_position: FloatVectorProperty(
-        name="Cadre Avant",
+    facade_avant_position: FloatVectorProperty(
+        name="Facade avant",
         unit="LENGTH",
         precision=4,
     )
@@ -912,8 +912,8 @@ class PositionProps(bpy.types.PropertyGroup):
     carreau_rotation: BoolProperty(name="Carreau", description="Rotation")
     accroche_rotation: BoolProperty(name="Accroche", description="Rotation")
     accroche_inverse_rotation: BoolProperty(name="Accroche inverse", description="Rotation")
-    cadre_central_rotation: BoolProperty(name="Cadre Central", description="Rotation")
-    cadre_avant_rotation: BoolProperty(name="Cadre Avant", description="Rotation")
+    facade_central_rotation: BoolProperty(name="Facade central", description="Rotation")
+    facade_avant_rotation: BoolProperty(name="Facade avant", description="Rotation")
     fond_moule_rotation: BoolProperty(name="Fond Moule", description="Rotation")
     pilier_moule_rotation: BoolProperty(name="Pilier Moule", description="Rotation")
     contre_pilier_moule_rotation: BoolProperty(name="Contre Pilier Moule", description="Rotation")
@@ -959,14 +959,14 @@ class PositionProps(bpy.types.PropertyGroup):
                     "cadre_tenon_position",
                     "accroche_position",
                     "accroche_inverse_position",
-                    "cadre_central_position",
-                    "cadre_avant_position",
+                    "facade_central_position",
+                    "facade_avant_position",
                     "cadre_mortaise_rotation",
                     "cadre_tenon_rotation",
                     "accroche_rotation",
                     "accroche_inverse_rotation",
-                    "cadre_central_rotation",
-                    "cadre_avant_rotation",
+                    "facade_central_rotation",
+                    "facade_avant_rotation",
                 ]
             case "3":
                 return [

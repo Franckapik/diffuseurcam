@@ -11,8 +11,8 @@ def add_cadre_mortaise(difprops, productprops, usinageprops):
     tenon_peigne = difprops.tenon_peigne
     longueur_diffuseur = difprops.longueur_diffuseur
     largeur_accroche = difprops.largeur_accroche
-    cadre_avant = difprops.cadre_avant
-    cadre_central = difprops.cadre_central
+    facade_avant = difprops.facade_avant
+    facade_central = difprops.facade_central
     product_type = productprops.product_type
     startup = epaisseur / 2
     N = difprops.type
@@ -108,7 +108,7 @@ def add_cadre_mortaise(difprops, productprops, usinageprops):
                         difprops,
                         usinageprops,
                     )
-                    if cadre_avant == True and not is_splitted
+                    if facade_avant == True and not is_splitted
                 ),
                 *(
                     a
@@ -118,7 +118,7 @@ def add_cadre_mortaise(difprops, productprops, usinageprops):
                         difprops,
                         usinageprops,
                     )
-                    if cadre_central == True
+                    if facade_central == True
                 ),
                 *(
                     a
@@ -128,7 +128,7 @@ def add_cadre_mortaise(difprops, productprops, usinageprops):
                         difprops,
                         usinageprops,
                     )
-                    if cadre_avant == True
+                    if facade_avant == True
                 ),
                 ((profondeur), 0, 0),
                 *mortaiseBas((profondeur / 2 + tenon_cadre / 2), 0, difprops, usinageprops),
@@ -179,7 +179,7 @@ def add_cadre_tenon(difprops, productprops, usinageprops):
     startup = epaisseur / 2
     product_type = productprops.product_type
     largeur_accroche = difprops.largeur_accroche
-    cadre_avant = difprops.cadre_avant
+    facade_avant = difprops.facade_avant
     type_tenon_cadre = difprops.type_tenon_cadre
     type_tenon_peigne = difprops.type_tenon_peigne
     split = difprops.split
@@ -278,7 +278,7 @@ def add_cadre_tenon(difprops, productprops, usinageprops):
                         difprops,
                         usinageprops,
                     )
-                    if cadre_avant == True and not is_splitted
+                    if facade_avant == True and not is_splitted
                 ),
                 *(
                     a
@@ -288,7 +288,7 @@ def add_cadre_tenon(difprops, productprops, usinageprops):
                         difprops,
                         usinageprops,
                     )
-                    if cadre_avant == True
+                    if facade_avant == True
                 ),
                 ((profondeur), epaisseur, 0),
                 *tenonBas(
@@ -512,8 +512,8 @@ def add_carreau(difprops, productprops, usinageprops):
     return vertsCadre, edgesCadre, "Carreau"
 
 
-def add_cadre_central(difprops, productprops, usinageprops):
-    largeur_cadre_central = difprops.largeur_cadre_central
+def add_facade_central(difprops, productprops, usinageprops):
+    largeur_facade_central = difprops.largeur_facade_central
     largeur_diffuseur = difprops.largeur_diffuseur
     tenon_cadre = difprops.tenon_cadre
     epaisseur = difprops.epaisseur
@@ -522,35 +522,35 @@ def add_cadre_central(difprops, productprops, usinageprops):
         (epaisseur, 0, 0),
         *tenonGauche(
             epaisseur,
-            largeur_cadre_central / 2 - tenon_cadre / 2,
+            largeur_facade_central / 2 - tenon_cadre / 2,
             difprops,
             usinageprops,
         ),
-        (epaisseur, largeur_cadre_central, 0),
+        (epaisseur, largeur_facade_central, 0),
         (
             (largeur_diffuseur - epaisseur) / 6,
-            largeur_cadre_central - largeur_cadre_central / 4,
+            largeur_facade_central - largeur_facade_central / 4,
             0,
         ),
         (
             (largeur_diffuseur - epaisseur) - (largeur_diffuseur - epaisseur) / 6,
-            largeur_cadre_central - largeur_cadre_central / 4,
+            largeur_facade_central - largeur_facade_central / 4,
             0,
         ),
-        (largeur_diffuseur - epaisseur, largeur_cadre_central, 0),
+        (largeur_diffuseur - epaisseur, largeur_facade_central, 0),
         *tenonDroit(
             largeur_diffuseur - epaisseur,
-            largeur_cadre_central / 2 + tenon_cadre / 2,
+            largeur_facade_central / 2 + tenon_cadre / 2,
             difprops,
             usinageprops,
         ),
         (largeur_diffuseur - epaisseur, 0, 0),
         (
             (largeur_diffuseur - epaisseur) - (largeur_diffuseur - epaisseur) / 6,
-            largeur_cadre_central / 4,
+            largeur_facade_central / 4,
             0,
         ),
-        ((largeur_diffuseur - epaisseur) / 6, largeur_cadre_central / 4, 0),
+        ((largeur_diffuseur - epaisseur) / 6, largeur_facade_central / 4, 0),
     ]
 
     edgesCadre = []
@@ -564,7 +564,7 @@ def add_cadre_central(difprops, productprops, usinageprops):
         (len(vertsCadre) - 1, 0),
     ]
 
-    return vertsCadre, edgesCadre, "Cadre central"
+    return vertsCadre, edgesCadre, "Facade central"
 
 
 def add_accroche(difprops, productprops, usinageprops):
@@ -811,7 +811,7 @@ def add_accroche_inverse(difprops, productprops, usinageprops):
     return verts, edges, "Accroche"
 
 
-def add_cadre_avant(difprops, productprops, usinageprops):
+def add_facade_avant(difprops, productprops, usinageprops):
     product_type = productprops.product_type
     epaisseur = difprops.epaisseur
     largeur_accroche = difprops.largeur_accroche
@@ -881,7 +881,7 @@ def add_cadre_avant(difprops, productprops, usinageprops):
     verts = [*list(vertsCadre)]
     edges = [*list(edgesCadre)]
 
-    return verts, edges, "Cadre Avant"
+    return verts, edges, "Facade avant"
 
 
 def add_fond_moule(difprops, productprops, usinageprops):
