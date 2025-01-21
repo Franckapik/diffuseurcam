@@ -681,13 +681,13 @@ class ArrayProps(bpy.types.PropertyGroup):
         min=0,
     )
     renfort_angle_x: IntProperty(
-        name="Facade avant",
+        name="Renfort angle",
         default=1,
         min=0,
     )
 
     renfort_angle_y: IntProperty(
-        name="Facade avant",
+        name="Renfort angle",
         default=1,
         min=0,
     )
@@ -895,7 +895,7 @@ class PositionProps(bpy.types.PropertyGroup):
         precision=4,
     )
     renfort_angle_position: FloatVectorProperty(
-        name="Facade avant",
+        name="Renfort angle",
         unit="LENGTH",
         precision=4,
     )
@@ -937,7 +937,7 @@ class PositionProps(bpy.types.PropertyGroup):
     accroche_rotation: BoolProperty(name="Accroche", description="Rotation")
     accroche_inverse_rotation: BoolProperty(name="Accroche inverse", description="Rotation")
     renfort_central_rotation: BoolProperty(name="Renfort central", description="Rotation")
-    renfort_angle_rotation: BoolProperty(name="Facade avant", description="Rotation")
+    renfort_angle_rotation: BoolProperty(name="Renfort angle", description="Rotation")
     fond_moule_rotation: BoolProperty(name="Fond Moule", description="Rotation")
     pilier_moule_rotation: BoolProperty(name="Pilier Moule", description="Rotation")
     contre_pilier_moule_rotation: BoolProperty(name="Contre Pilier Moule", description="Rotation")
