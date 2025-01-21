@@ -92,7 +92,7 @@ def add_cadre_mortaise(difprops, productprops, usinageprops):
                         usinageprops,
                     )
                     if not is_splitted
-                    else papillonIn(
+                    else papillonHaut(
                         (profondeur / 2 - tenon_cadre / 2),
                         longueur_absorbeur,
                         difprops,
@@ -262,7 +262,7 @@ def add_cadre_tenon(difprops, productprops, usinageprops):
                         usinageprops,
                     )
                     if not is_splitted
-                    else papillonIn(
+                    else papillonHaut(
                         (profondeur / 2 - tenon_cadre / 2),
                         largeur_diffuseur - epaisseur,
                         difprops,
@@ -517,6 +517,9 @@ def add_facade_central(difprops, productprops, usinageprops):
     largeur_diffuseur = difprops.largeur_diffuseur
     tenon_cadre = difprops.tenon_cadre
     epaisseur = difprops.epaisseur
+    split = difprops.split
+    is_splitted = True if largeur_diffuseur > split and split != 0 else False
+    largeur_diffuseur = largeur_diffuseur / 2 + epaisseur if is_splitted else largeur_diffuseur #epaisseur ajoutée sans comprendre ni verifier
 
     vertsCadre = [
         (epaisseur, 0, 0),
@@ -538,12 +541,22 @@ def add_facade_central(difprops, productprops, usinageprops):
             0,
         ),
         (largeur_diffuseur - epaisseur, largeur_facade_central, 0),
-        *tenonDroit(
+        *(tenonDroit(
             largeur_diffuseur - epaisseur,
             largeur_facade_central / 2 + tenon_cadre / 2,
             difprops,
             usinageprops,
-        ),
+        ) if not is_splitted else []),
+        *(
+                papillonDroit(
+                    largeur_diffuseur - epaisseur,
+                    largeur_facade_central / 2 + tenon_cadre / 2,
+                    difprops,
+                    usinageprops,
+                )
+                if is_splitted
+                else []
+            ),
         (largeur_diffuseur - epaisseur, 0, 0),
         (
             (largeur_diffuseur - epaisseur) - (largeur_diffuseur - epaisseur) / 6,
@@ -581,6 +594,9 @@ def add_accroche(difprops, productprops, usinageprops):
     vertsAccroche = []
     vertsAccroche2 = []
 
+    split = difprops.split
+    is_splitted = True if largeur_diffuseur > split and split != 0 else False
+
     if product_type == "0":
         vertsCadre = [
             (0, 0, 0),
@@ -603,6 +619,7 @@ def add_accroche(difprops, productprops, usinageprops):
         vertsAccroche2 = trou_accroche(division * 6, longueurTotale - division * 11, division)
 
     elif product_type == "2":
+        largeur_diffuseur = largeur_diffuseur / 2 if is_splitted else largeur_diffuseur
         vertsCadre = [
             (epaisseur, 0, 0),
             *tenonGauche(
@@ -618,18 +635,36 @@ def add_accroche(difprops, productprops, usinageprops):
                 difprops,
                 usinageprops,
             ),
-            *tenonHaut(
-                (largeur_diffuseur - largeur_accroche / 2 - tenon_accroche / 2),
-                largeur_accroche,
-                difprops,
-                usinageprops,
+            *(
+                tenonHaut(
+                    (largeur_diffuseur - largeur_accroche / 2 - tenon_accroche / 2),
+                    largeur_accroche,
+                    difprops,
+                    usinageprops,
+                )
+                if not is_splitted
+                else []
             ),
             (largeur_diffuseur - epaisseur, largeur_accroche, 0),
-            *tenonDroit(
-                largeur_diffuseur - epaisseur,
-                epaisseur + (largeur_accroche / 2 + tenon_accroche / 2),
-                difprops,
-                usinageprops,
+            *(
+                tenonDroit(
+                    largeur_diffuseur - epaisseur,
+                    epaisseur + (largeur_accroche / 2 + tenon_accroche / 2),
+                    difprops,
+                    usinageprops,
+                )
+                if not is_splitted
+                else []
+            ),
+            *(
+                papillonDroit(
+                    largeur_diffuseur - epaisseur,
+                    largeur_accroche / 2 + tenon_accroche / 2,
+                    difprops,
+                    usinageprops,
+                )
+                if is_splitted
+                else []
             ),
             (largeur_diffuseur - epaisseur, 0, 0),
             (largeur_diffuseur - epaisseur - largeur_diffuseur / 8, 0, 0),
@@ -652,10 +687,14 @@ def add_accroche(difprops, productprops, usinageprops):
         ]
 
         vertsAccroche = trou_accroche(largeur_diffuseur / 12, epaisseur + largeur_accroche / 4, division)
-        vertsAccroche2 = trou_accroche(
-            largeur_diffuseur - largeur_diffuseur / 12,
-            epaisseur + largeur_accroche / 4,
-            division,
+        vertsAccroche2 = (
+            trou_accroche(
+                largeur_diffuseur - largeur_diffuseur / 12,
+                epaisseur + largeur_accroche / 4,
+                division,
+            )
+            if not is_splitted
+            else []
         )
 
     edgesCadre = []
@@ -680,20 +719,21 @@ def add_accroche(difprops, productprops, usinageprops):
     ]
 
     if product_type == "1" or product_type == "2":
-        for k in range(
-            len(vertsCadre) + len(vertsAccroche),
-            len(vertsCadre) + len(vertsAccroche) + len(vertsAccroche2) - 1,
-        ):
-            edgesAccroche2 += [
-                (k, k + 1),
-            ]
-
-        edgesAccroche2 += [
-            (
+        if is_splitted is not True:
+            for k in range(
                 len(vertsCadre) + len(vertsAccroche),
                 len(vertsCadre) + len(vertsAccroche) + len(vertsAccroche2) - 1,
-            ),
-        ]
+            ):
+                edgesAccroche2 += [
+                    (k, k + 1),
+                ]
+
+            edgesAccroche2 += [
+                (
+                    len(vertsCadre) + len(vertsAccroche),
+                    len(vertsCadre) + len(vertsAccroche) + len(vertsAccroche2) - 1,
+                ),
+            ]
 
     verts = [*list(vertsCadre), *list(vertsAccroche), *list(vertsAccroche2)]
     edges = [*list(edgesCadre), *list(edgesAccroche), *list(edgesAccroche2)]
@@ -714,6 +754,10 @@ def add_accroche_inverse(difprops, productprops, usinageprops):
     vertsAccroche = []
     vertsAccroche2 = []
 
+    split = difprops.split
+    is_splitted = True if largeur_diffuseur > split and split != 0 else False
+    largeur_diffuseur = largeur_diffuseur / 2 if is_splitted else largeur_diffuseur
+
     vertsCadre = [
         (epaisseur, 0, 0),
         *tenonGauche(
@@ -729,18 +773,36 @@ def add_accroche_inverse(difprops, productprops, usinageprops):
             difprops,
             usinageprops,
         ),
-        *tenonHaut(
-            (largeur_diffuseur - largeur_accroche / 2 - tenon_accroche / 2),
-            largeur_accroche,
-            difprops,
-            usinageprops,
+        *(
+            tenonHaut(
+                (largeur_diffuseur - largeur_accroche / 2 - tenon_accroche / 2),
+                largeur_accroche,
+                difprops,
+                usinageprops,
+            )
+            if not is_splitted
+            else []
         ),
         (largeur_diffuseur - epaisseur, largeur_accroche, 0),
-        *tenonDroit(
-            largeur_diffuseur - epaisseur,
-            epaisseur + (largeur_accroche / 2 + tenon_accroche / 2),
-            difprops,
-            usinageprops,
+        *(
+            tenonDroit(
+                largeur_diffuseur - epaisseur,
+                epaisseur + (largeur_accroche / 2 + tenon_accroche / 2),
+                difprops,
+                usinageprops,
+            )
+            if not is_splitted
+            else []
+        ),
+        *(
+            papillonDroit(
+                largeur_diffuseur - epaisseur,
+                largeur_accroche / 2 + tenon_accroche / 2,
+                difprops,
+                usinageprops,
+            )
+            if is_splitted
+            else []
         ),
         (largeur_diffuseur - epaisseur, 0, 0),
         (largeur_diffuseur - epaisseur - largeur_diffuseur / 8, 0, 0),
@@ -762,10 +824,14 @@ def add_accroche_inverse(difprops, productprops, usinageprops):
         (largeur_diffuseur / 8, 0, 0),
     ]
     vertsAccroche = trou_accroche_inverse(largeur_diffuseur / 12, epaisseur + largeur_accroche / 4, division)
-    vertsAccroche2 = trou_accroche_inverse(
-        largeur_diffuseur - largeur_diffuseur / 12,
-        epaisseur + largeur_accroche / 4,
-        division,
+    vertsAccroche2 = (
+        trou_accroche_inverse(
+            largeur_diffuseur - largeur_diffuseur / 12,
+            epaisseur + largeur_accroche / 4,
+            division,
+        )
+        if not is_splitted
+        else []
     )
 
     edgesCadre = []
@@ -790,20 +856,21 @@ def add_accroche_inverse(difprops, productprops, usinageprops):
     ]
 
     if product_type == "1" or product_type == "2":
-        for k in range(
-            len(vertsCadre) + len(vertsAccroche),
-            len(vertsCadre) + len(vertsAccroche) + len(vertsAccroche2) - 1,
-        ):
-            edgesAccroche2 += [
-                (k, k + 1),
-            ]
-
-        edgesAccroche2 += [
-            (
+        if is_splitted is not True:
+            for k in range(
                 len(vertsCadre) + len(vertsAccroche),
                 len(vertsCadre) + len(vertsAccroche) + len(vertsAccroche2) - 1,
-            ),
-        ]
+            ):
+                edgesAccroche2 += [
+                    (k, k + 1),
+                ]
+
+            edgesAccroche2 += [
+                (
+                    len(vertsCadre) + len(vertsAccroche),
+                    len(vertsCadre) + len(vertsAccroche) + len(vertsAccroche2) - 1,
+                ),
+            ]
 
     verts = [*list(vertsCadre), *list(vertsAccroche), *list(vertsAccroche2)]
     edges = [*list(edgesCadre), *list(edgesAccroche), *list(edgesAccroche2)]
@@ -817,8 +884,11 @@ def add_facade_avant(difprops, productprops, usinageprops):
     largeur_accroche = difprops.largeur_accroche
     largeur_diffuseur = difprops.largeur_diffuseur
     tenon_cadre = difprops.tenon_cadre
-
+    split = difprops.split
+    is_splitted = True if largeur_diffuseur > split and split != 0 else False
+    
     if product_type == "2":
+        largeur_diffuseur = largeur_diffuseur / 2 + epaisseur if is_splitted else largeur_diffuseur #epaisseur ajoutée sans comprendre ni verifier
         vertsCadre = [
             (epaisseur, 0, 0),
             *tenonGauche(
@@ -834,18 +904,35 @@ def add_facade_avant(difprops, productprops, usinageprops):
                 difprops,
                 usinageprops,
             ),
-            *tenonHaut(
+            *(tenonHaut(
                 (largeur_diffuseur - largeur_accroche / 2 - tenon_cadre / 2),
                 largeur_accroche,
                 difprops,
                 usinageprops,
+            )
+                if not is_splitted
+                else []
             ),
             (largeur_diffuseur - epaisseur, largeur_accroche, 0),
-            *tenonDroit(
-                largeur_diffuseur - epaisseur,
-                epaisseur + (largeur_accroche / 2 + tenon_cadre / 2),
-                difprops,
-                usinageprops,
+           *(
+                tenonDroit(
+                    largeur_diffuseur - epaisseur,
+                    epaisseur + (largeur_accroche / 2 + tenon_cadre / 2),
+                    difprops,
+                    usinageprops,
+                )
+                if not is_splitted
+                else []
+            ),
+            *(
+                papillonDroit(
+                    largeur_diffuseur - epaisseur,
+                    largeur_accroche / 2 + tenon_cadre / 2,
+                    difprops,
+                    usinageprops,
+                )
+                if is_splitted
+                else []
             ),
             (largeur_diffuseur - epaisseur, 0, 0),
             (largeur_diffuseur - epaisseur - largeur_diffuseur / 8, 0, 0),
