@@ -722,8 +722,10 @@ def add_accroche(difprops, productprops, usinageprops, invert):
 
         vertsEndroit = trou_accroche(largeur_diffuseur / 12, epaisseur + largeur_accroche / 4 , vis / 1000)
         vertsEndroit2 = ( trou_accroche( largeur_diffuseur - largeur_diffuseur / 12, epaisseur + largeur_accroche / 4, vis / 1000, ) if not is_splitted else [] )
-        vertsAccroche = miroir_sur_y_centre(vertsEndroit) if invert else vertsEndroit
-        vertsAccroche2 = miroir_sur_y_centre(vertsEndroit2) if invert else vertsEndroit2
+
+        vertsAccroche += miroir_sur_y_centre(vertsEndroit) if invert else vertsEndroit
+        if not is_splitted:
+            vertsAccroche2 += miroir_sur_y_centre(vertsEndroit2) if invert else vertsEndroit2
 
         edgesCadre = []
         edgesAccroche = []
