@@ -206,7 +206,7 @@ class AddAccroche(bpy.types.Operator, AddObjectHelper):
         scene = context.scene
         difprops = scene.dif_props
         vertex, edges, name = add_accroche(
-            scene.dif_props, scene.product_props, scene.usinage_props
+            scene.dif_props, scene.product_props, scene.usinage_props, False
         )
         arrayprops = scene.array_props
 
@@ -264,8 +264,8 @@ class AddAccrocheInverse(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_accroche_inverse(
-            scene.dif_props, scene.product_props, scene.usinage_props
+        vertex, edges, name = add_accroche(
+            scene.dif_props, scene.product_props, scene.usinage_props, True
         )
         arrayprops = scene.array_props
 
@@ -317,7 +317,7 @@ class AddAccrocheInverse(bpy.types.Operator, AddObjectHelper):
 
 class AddCadreAvant(bpy.types.Operator, AddObjectHelper):
     bl_idname = "mesh.renfort_angle"
-    bl_label = "Ajouter un Renfort"
+    bl_label = "Ajouter un Renfort angle"
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):

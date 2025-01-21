@@ -604,7 +604,7 @@ def add_renfort_central(difprops, productprops, usinageprops):
     return vertsCadre, edgesCadre, "Renfort central"
 
 
-def add_accroche(difprops, productprops, usinageprops):
+def add_accroche(difprops, productprops, usinageprops, invert):
     product_type = productprops.product_type
     rang = difprops.getRang()
     epaisseur = difprops.epaisseur
@@ -711,37 +711,40 @@ def add_accroche(difprops, productprops, usinageprops):
             (largeur_diffuseur / 8, 0, 0),
         ]
 
-        vertsAccroche = trou_accroche(largeur_diffuseur / 12, epaisseur + largeur_accroche / 4, vis / 1000)
-        vertsAccroche2 = (
-            trou_accroche(
-                largeur_diffuseur - largeur_diffuseur / 12,
-                epaisseur + largeur_accroche / 4,
-                division,
-            )
-            if not is_splitted
-            else []
-        )
+        def miroir_sur_y_centre(vertices):
+            # Calculer le centre sur Y
+            y_centre = sum(y for _, y, _ in vertices) / len(vertices)
+            
+            # Appliquer le miroir sur Y par rapport au centre
+            mirrored_vertices = [(x, 2 * y_centre - y, z) for x, y, z in vertices]
+            
+            return mirrored_vertices
 
-    edgesCadre = []
-    edgesAccroche = []
-    edgesAccroche2 = []
+        vertsEndroit = trou_accroche(largeur_diffuseur / 12, epaisseur + largeur_accroche / 4 , vis / 1000)
+        vertsEndroit2 = ( trou_accroche( largeur_diffuseur - largeur_diffuseur / 12, epaisseur + largeur_accroche / 4, vis / 1000, ) if not is_splitted else [] )
+        vertsAccroche = miroir_sur_y_centre(vertsEndroit) if invert else vertsEndroit
+        vertsAccroche2 = miroir_sur_y_centre(vertsEndroit2) if invert else vertsEndroit2
 
-    for k in range(0, len(vertsCadre) - 1):
+        edgesCadre = []
+        edgesAccroche = []
+        edgesAccroche2 = []
+
+        for k in range(0, len(vertsCadre) - 1):
+            edgesCadre += [
+                (k, k + 1),
+            ]
+
         edgesCadre += [
-            (k, k + 1),
+            (len(vertsCadre) - 1, 0),
         ]
 
-    edgesCadre += [
-        (len(vertsCadre) - 1, 0),
-    ]
-
-    for k in range(len(vertsCadre), len(vertsCadre) + len(vertsAccroche) - 1):
+        for k in range(len(vertsCadre), len(vertsCadre) + len(vertsAccroche) - 1):
+            edgesAccroche += [
+                (k, k + 1),
+            ]
         edgesAccroche += [
-            (k, k + 1),
+            (len(vertsCadre), len(vertsCadre) + len(vertsAccroche) - 1),
         ]
-    edgesAccroche += [
-        (len(vertsCadre), len(vertsCadre) + len(vertsAccroche) - 1),
-    ]
 
     if product_type == "1" or product_type == "2":
         if is_splitted is not True:
@@ -763,148 +766,9 @@ def add_accroche(difprops, productprops, usinageprops):
     verts = [*list(vertsCadre), *list(vertsAccroche), *list(vertsAccroche2)]
     edges = [*list(edgesCadre), *list(edgesAccroche), *list(edgesAccroche2)]
 
-    return verts, edges, "Accroche"
+    return verts, edges, "Accroche inverse" if invert else "Accroche"
 
-
-def add_accroche_inverse(difprops, productprops, usinageprops):
-    product_type = productprops.product_type
-    rang = difprops.getRang()
-    epaisseur = difprops.epaisseur
-    largeur_accroche = difprops.largeur_accroche
-    largeur_diffuseur = difprops.largeur_diffuseur
-    tenon_accroche = difprops.tenon_accroche
-
-    division = (rang - epaisseur) / 12
-    vis = difprops.vis
-
-    vertsAccroche = []
-    vertsAccroche2 = []
-
-    split = difprops.split
-    is_splitted = True if largeur_diffuseur > split and split != 0 else False
-    largeur_diffuseur = largeur_diffuseur / 2 if is_splitted else largeur_diffuseur
-
-    vertsCadre = [
-        (epaisseur, 0, 0),
-        *tenonGauche(
-            epaisseur,
-            epaisseur + (largeur_accroche / 2 - tenon_accroche / 2),
-            difprops,
-            usinageprops,
-        ),
-        (epaisseur, largeur_accroche, 0),
-        *tenonHaut(
-            (largeur_accroche / 2 - tenon_accroche / 2),
-            largeur_accroche,
-            difprops,
-            usinageprops,
-        ),
-        *(
-            tenonHaut(
-                (largeur_diffuseur - largeur_accroche / 2 - tenon_accroche / 2),
-                largeur_accroche,
-                difprops,
-                usinageprops,
-            )
-            if not is_splitted
-            else []
-        ),
-        (largeur_diffuseur - epaisseur, largeur_accroche, 0),
-        *(
-            tenonDroit(
-                largeur_diffuseur - epaisseur,
-                epaisseur + (largeur_accroche / 2 + tenon_accroche / 2),
-                difprops,
-                usinageprops,
-            )
-            if not is_splitted
-            else []
-        ),
-        *(
-            papillonDroit(
-                largeur_diffuseur - epaisseur,
-                largeur_accroche / 2 + tenon_accroche / 2,
-                difprops,
-                usinageprops,
-            )
-            if is_splitted
-            else []
-        ),
-        (largeur_diffuseur - epaisseur, 0, 0),
-        (largeur_diffuseur - epaisseur - largeur_diffuseur / 8, 0, 0),
-        (
-            largeur_diffuseur - epaisseur - largeur_diffuseur / 8 - largeur_diffuseur / 8,
-            largeur_accroche / 3,
-            0,
-        ),
-        (
-            largeur_diffuseur / 8 + largeur_diffuseur / 8 + largeur_diffuseur / 8,
-            largeur_accroche / 3,
-            0,
-        ),
-        (
-            largeur_diffuseur / 8 + largeur_diffuseur / 8,
-            largeur_accroche / 3,
-            0,
-        ),
-        (largeur_diffuseur / 8, 0, 0),
-    ]
-    vertsAccroche = trou_accroche_inverse(largeur_diffuseur / 12, epaisseur + largeur_accroche / 4, vis / 1000)
-    vertsAccroche2 = (
-        trou_accroche_inverse(
-            largeur_diffuseur - largeur_diffuseur / 12,
-            epaisseur + largeur_accroche / 4,
-            vis / 1000,
-        )
-        if not is_splitted
-        else []
-    )
-
-    edgesCadre = []
-    edgesAccroche = []
-    edgesAccroche2 = []
-
-    for k in range(0, len(vertsCadre) - 1):
-        edgesCadre += [
-            (k, k + 1),
-        ]
-
-    edgesCadre += [
-        (len(vertsCadre) - 1, 0),
-    ]
-
-    for k in range(len(vertsCadre), len(vertsCadre) + len(vertsAccroche) - 1):
-        edgesAccroche += [
-            (k, k + 1),
-        ]
-    edgesAccroche += [
-        (len(vertsCadre), len(vertsCadre) + len(vertsAccroche) - 1),
-    ]
-
-    if product_type == "1" or product_type == "2":
-        if is_splitted is not True:
-            for k in range(
-                len(vertsCadre) + len(vertsAccroche),
-                len(vertsCadre) + len(vertsAccroche) + len(vertsAccroche2) - 1,
-            ):
-                edgesAccroche2 += [
-                    (k, k + 1),
-                ]
-
-            edgesAccroche2 += [
-                (
-                    len(vertsCadre) + len(vertsAccroche),
-                    len(vertsCadre) + len(vertsAccroche) + len(vertsAccroche2) - 1,
-                ),
-            ]
-
-    verts = [*list(vertsCadre), *list(vertsAccroche), *list(vertsAccroche2)]
-    edges = [*list(edgesCadre), *list(edgesAccroche), *list(edgesAccroche2)]
-
-    return verts, edges, "Accroche"
-
-
-def add_renfort(difprops, productprops, usinageprops):
+def add_renfort_angle(difprops, productprops, usinageprops):
     product_type = productprops.product_type
     epaisseur = difprops.epaisseur
     largeur_accroche = difprops.largeur_accroche
@@ -997,7 +861,7 @@ def add_renfort(difprops, productprops, usinageprops):
     verts = [*list(vertsCadre)]
     edges = [*list(edgesCadre)]
 
-    return verts, edges, "Renfort"
+    return verts, edges, "Renfort angle"
 
 
 def add_fond_moule(difprops, productprops, usinageprops):

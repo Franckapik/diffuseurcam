@@ -680,13 +680,13 @@ class ArrayProps(bpy.types.PropertyGroup):
         default=1,
         min=0,
     )
-    facade_avant_x: IntProperty(
+    renfort_angle_x: IntProperty(
         name="Facade avant",
         default=1,
         min=0,
     )
 
-    facade_avant_y: IntProperty(
+    renfort_angle_y: IntProperty(
         name="Facade avant",
         default=1,
         min=0,
@@ -785,8 +785,8 @@ class ArrayProps(bpy.types.PropertyGroup):
                     "accroche_inverse_y",
                     "renfort_central_x",
                     "renfort_central_y",
-                    "facade_avant_x",
-                    "facade_avant_y",
+                    "renfort_angle_x",
+                    "renfort_angle_y",
                 ]
             case "3":
                 return [
@@ -833,7 +833,7 @@ class ArrayProps(bpy.types.PropertyGroup):
                     + self.accroche_x * self.accroche_y
                     + self.accroche_inverse_x * self.accroche_inverse_y
                     + self.renfort_central_x * self.renfort_central_y
-                    + self.facade_avant_x * self.facade_avant_y
+                    + self.renfort_angle_x * self.renfort_angle_y
                 )
 
             case "3":
@@ -894,7 +894,7 @@ class PositionProps(bpy.types.PropertyGroup):
         unit="LENGTH",
         precision=4,
     )
-    facade_avant_position: FloatVectorProperty(
+    renfort_angle_position: FloatVectorProperty(
         name="Facade avant",
         unit="LENGTH",
         precision=4,
@@ -937,7 +937,7 @@ class PositionProps(bpy.types.PropertyGroup):
     accroche_rotation: BoolProperty(name="Accroche", description="Rotation")
     accroche_inverse_rotation: BoolProperty(name="Accroche inverse", description="Rotation")
     renfort_central_rotation: BoolProperty(name="Renfort central", description="Rotation")
-    facade_avant_rotation: BoolProperty(name="Facade avant", description="Rotation")
+    renfort_angle_rotation: BoolProperty(name="Facade avant", description="Rotation")
     fond_moule_rotation: BoolProperty(name="Fond Moule", description="Rotation")
     pilier_moule_rotation: BoolProperty(name="Pilier Moule", description="Rotation")
     contre_pilier_moule_rotation: BoolProperty(name="Contre Pilier Moule", description="Rotation")
@@ -984,13 +984,13 @@ class PositionProps(bpy.types.PropertyGroup):
                     "accroche_position",
                     "accroche_inverse_position",
                     "renfort_central_position",
-                    "facade_avant_position",
+                    "renfort_angle_position",
                     "cadre_mortaise_rotation",
                     "cadre_tenon_rotation",
                     "accroche_rotation",
                     "accroche_inverse_rotation",
                     "renfort_central_rotation",
-                    "facade_avant_rotation",
+                    "renfort_angle_rotation",
                 ]
             case "3":
                 return [
