@@ -19,6 +19,9 @@ def add_cadre_mortaise(difprops, productprops, usinageprops):
     rang = difprops.getRang()
     longueurTotale = difprops.getLongueur()
     type_tenon_peigne = difprops.type_tenon_peigne
+    split = difprops.split
+    longueur_absorbeur = difprops.longueur_absorbeur
+    is_splitted = True if longueur_absorbeur > split and split != 0 else False
 
     edgesCadre = []
     vertsMortaisesInt = []
@@ -37,9 +40,7 @@ def add_cadre_mortaise(difprops, productprops, usinageprops):
                 ),
                 ((profondeur), longueurTotale, 0),
                 ((profondeur), 0, 0),
-                *mortaiseBas(
-                    (profondeur / 2 + tenon_cadre / 2), 0, difprops, usinageprops
-                ),
+                *mortaiseBas((profondeur / 2 + tenon_cadre / 2), 0, difprops, usinageprops),
             ]
         else:
             vertsCadre = [
@@ -53,15 +54,11 @@ def add_cadre_mortaise(difprops, productprops, usinageprops):
             if product_type == "0":
                 if type_tenon_peigne == "3":
                     vertsMortaisesInt += [
-                        *mortaiseIntTraversante(
-                            0, (startup + rang * k), difprops, usinageprops
-                        ),
+                        *mortaiseIntTraversante(0, (startup + rang * k), difprops, usinageprops),
                     ]
                 else:
                     vertsMortaisesInt += [
-                        *mortaiseInt(
-                            bord_cadre, (startup + rang * k), difprops, usinageprops
-                        ),
+                        *mortaiseInt(bord_cadre, (startup + rang * k), difprops, usinageprops),
                         *mortaiseInt(
                             profondeur - bord_cadre - tenon_peigne,
                             (startup + rang * k),
@@ -71,41 +68,53 @@ def add_cadre_mortaise(difprops, productprops, usinageprops):
                     ]
 
     if product_type == "2":
+        longueur_absorbeur = longueur_absorbeur / 2 if is_splitted else longueur_absorbeur
         if type_tenon_cadre == "1":
             vertsCadre = [
                 (0, 0, 0),
-                *mortaiseGauche(
-                    0, (largeur_accroche / 2 - tenon_cadre / 2), difprops, usinageprops
-                ),
-                *mortaiseGauche(
-                    0,
-                    (longueurTotale - largeur_accroche / 2 - tenon_cadre / 2),
-                    difprops,
-                    usinageprops,
-                ),
-                (0, longueurTotale, 0),
-                *mortaiseHaut(
-                    (profondeur / 2 - tenon_cadre / 2),
-                    longueurTotale,
-                    difprops,
-                    usinageprops,
-                ),
-                ((profondeur), longueurTotale, 0),
+                *mortaiseGauche(0, (largeur_accroche / 2 - tenon_cadre / 2), difprops, usinageprops),
                 *(
-                    a
-                    for a in mortaiseDroite(
-                        profondeur,
-                        longueurTotale - largeur_accroche / 2 + tenon_cadre / 2,
+                    mortaiseGauche(
+                        0,
+                        (longueur_absorbeur - largeur_accroche / 2 - tenon_cadre / 2),
                         difprops,
                         usinageprops,
                     )
-                    if cadre_avant == True
+                    if not is_splitted
+                    else []
+                ),
+                (0, longueur_absorbeur, 0),
+                *(
+                    mortaiseHaut(
+                        (profondeur / 2 - tenon_cadre / 2),
+                        longueur_absorbeur,
+                        difprops,
+                        usinageprops,
+                    )
+                    if not is_splitted
+                    else papillonIn(
+                        (profondeur / 2 - tenon_cadre / 2),
+                        longueur_absorbeur,
+                        difprops,
+                        usinageprops,
+                    )
+                ),
+                ((profondeur), longueur_absorbeur, 0),
+                *(
+                    a
+                    for a in mortaiseDroite(
+                        profondeur,
+                        longueur_absorbeur - largeur_accroche / 2 + tenon_cadre / 2,
+                        difprops,
+                        usinageprops,
+                    )
+                    if cadre_avant == True and not is_splitted
                 ),
                 *(
                     a
                     for a in mortaiseDroite(
                         profondeur,
-                        longueurTotale / 2 + tenon_cadre / 2,
+                        longueur_absorbeur / 2 + tenon_cadre / 2,
                         difprops,
                         usinageprops,
                     )
@@ -122,15 +131,13 @@ def add_cadre_mortaise(difprops, productprops, usinageprops):
                     if cadre_avant == True
                 ),
                 ((profondeur), 0, 0),
-                *mortaiseBas(
-                    (profondeur / 2 + tenon_cadre / 2), 0, difprops, usinageprops
-                ),
+                *mortaiseBas((profondeur / 2 + tenon_cadre / 2), 0, difprops, usinageprops),
             ]
         else:
             vertsCadre = [
                 (0, 0, 0),
-                (0, longueurTotale, 0),
-                ((profondeur), longueurTotale, 0),
+                (0, longueur_absorbeur, 0),
+                ((profondeur), longueur_absorbeur, 0),
                 ((profondeur), 0, 0),
             ]
 
@@ -175,6 +182,8 @@ def add_cadre_tenon(difprops, productprops, usinageprops):
     cadre_avant = difprops.cadre_avant
     type_tenon_cadre = difprops.type_tenon_cadre
     type_tenon_peigne = difprops.type_tenon_peigne
+    split = difprops.split
+    is_splitted = True if largeur_diffuseur > split and split != 0 else False
 
     N = difprops.type
 
@@ -215,15 +224,11 @@ def add_cadre_tenon(difprops, productprops, usinageprops):
         for k in range(1, round(N)):
             if type_tenon_peigne == "3":
                 vertsMortaisesInt += [
-                    *mortaiseIntTraversante(
-                        0, (startup + rang * k), difprops, usinageprops
-                    ),
+                    *mortaiseIntTraversante(0, (startup + rang * k), difprops, usinageprops),
                 ]
             else:
                 vertsMortaisesInt += [
-                    *mortaiseInt(
-                        bord_cadre, (startup + rang * k), difprops, usinageprops
-                    ),
+                    *mortaiseInt(bord_cadre, (startup + rang * k), difprops, usinageprops),
                     *mortaiseInt(
                         profondeur - bord_cadre - tenon_peigne,
                         (startup + rang * k),
@@ -233,24 +238,36 @@ def add_cadre_tenon(difprops, productprops, usinageprops):
                 ]
 
     if product_type == "2":
+        largeur_diffuseur = largeur_diffuseur / 2 if is_splitted else largeur_diffuseur
         if type_tenon_cadre == "1":
             vertsCadre = [
                 (0, epaisseur, 0),
-                *mortaiseGauche(
-                    0, largeur_accroche / 2 - tenon_cadre / 2, difprops, usinageprops
-                ),
-                *mortaiseGauche(
-                    0,
-                    largeur_diffuseur - largeur_accroche / 2 - tenon_cadre / 2,
-                    difprops,
-                    usinageprops,
+                *mortaiseGauche(0, largeur_accroche / 2 - tenon_cadre / 2, difprops, usinageprops),
+                *(
+                    mortaiseGauche(
+                        0,
+                        largeur_diffuseur - largeur_accroche / 2 - tenon_cadre / 2,
+                        difprops,
+                        usinageprops,
+                    )
+                    if not is_splitted
+                    else []
                 ),
                 (0, largeur_diffuseur - epaisseur, 0),
-                *tenonHaut(
-                    (profondeur / 2 - tenon_cadre / 2),
-                    largeur_diffuseur - epaisseur,
-                    difprops,
-                    usinageprops,
+                *(
+                    tenonHaut(
+                        (profondeur / 2 - tenon_cadre / 2),
+                        largeur_diffuseur - epaisseur,
+                        difprops,
+                        usinageprops,
+                    )
+                    if not is_splitted
+                    else papillonIn(
+                        (profondeur / 2 - tenon_cadre / 2),
+                        largeur_diffuseur - epaisseur,
+                        difprops,
+                        usinageprops,
+                    )
                 ),
                 ((profondeur), largeur_diffuseur - epaisseur, 0),
                 *(
@@ -261,7 +278,7 @@ def add_cadre_tenon(difprops, productprops, usinageprops):
                         difprops,
                         usinageprops,
                     )
-                    if cadre_avant == True
+                    if cadre_avant == True and not is_splitted
                 ),
                 *(
                     a
@@ -363,9 +380,7 @@ def add_peigne_court(difprops, productprops, usinageprops):
         vertsCadre = [
             (0, epaisseur, 0),
             (0, largeur_diffuseur - epaisseur, 0),
-            *tenonPeigneHaut(
-                bord_cadre, largeur_diffuseur - epaisseur, difprops, usinageprops
-            ),
+            *tenonPeigneHaut(bord_cadre, largeur_diffuseur - epaisseur, difprops, usinageprops),
             *tenonPeigneHaut(
                 profondeur - bord_cadre - tenon_peigne,
                 largeur_diffuseur - epaisseur,
@@ -377,9 +392,7 @@ def add_peigne_court(difprops, productprops, usinageprops):
             *list(peignes),
             (profondeur, epaisseur, 0),
             *tenonPeigneBas(profondeur - bord_cadre, epaisseur, difprops, usinageprops),
-            *tenonPeigneBas(
-                bord_cadre + tenon_peigne, epaisseur, difprops, usinageprops
-            ),
+            *tenonPeigneBas(bord_cadre + tenon_peigne, epaisseur, difprops, usinageprops),
             (0, epaisseur, 0),
         ]
 
@@ -439,9 +452,7 @@ def add_peigne_long(difprops, productprops, usinageprops):
         vertsCadre = [
             (0, epaisseur, 0),
             (0, longueurTotale - epaisseur, 0),
-            *tenonPeigneHaut(
-                bord_cadre, longueurTotale - epaisseur, difprops, usinageprops
-            ),
+            *tenonPeigneHaut(bord_cadre, longueurTotale - epaisseur, difprops, usinageprops),
             *tenonPeigneHaut(
                 profondeur - bord_cadre - tenon_peigne,
                 longueurTotale - epaisseur,
@@ -453,9 +464,7 @@ def add_peigne_long(difprops, productprops, usinageprops):
             *[x for x in peignes if product_type == "0"],
             (profondeur, epaisseur, 0),
             *tenonPeigneBas(profondeur - bord_cadre, epaisseur, difprops, usinageprops),
-            *tenonPeigneBas(
-                bord_cadre + tenon_peigne, epaisseur, difprops, usinageprops
-            ),
+            *tenonPeigneBas(bord_cadre + tenon_peigne, epaisseur, difprops, usinageprops),
             (0, epaisseur, 0),
         ]
 
@@ -591,9 +600,7 @@ def add_accroche(difprops, productprops, usinageprops):
         ]
 
         vertsAccroche = trou_accroche(division * 6, division * 3, division)
-        vertsAccroche2 = trou_accroche(
-            division * 6, longueurTotale - division * 11, division
-        )
+        vertsAccroche2 = trou_accroche(division * 6, longueurTotale - division * 11, division)
 
     elif product_type == "2":
         vertsCadre = [
@@ -627,10 +634,7 @@ def add_accroche(difprops, productprops, usinageprops):
             (largeur_diffuseur - epaisseur, 0, 0),
             (largeur_diffuseur - epaisseur - largeur_diffuseur / 8, 0, 0),
             (
-                largeur_diffuseur
-                - epaisseur
-                - largeur_diffuseur / 8
-                - largeur_diffuseur / 8,
+                largeur_diffuseur - epaisseur - largeur_diffuseur / 8 - largeur_diffuseur / 8,
                 largeur_accroche / 3,
                 0,
             ),
@@ -647,9 +651,7 @@ def add_accroche(difprops, productprops, usinageprops):
             (largeur_diffuseur / 8, 0, 0),
         ]
 
-        vertsAccroche = trou_accroche(
-            largeur_diffuseur / 12, epaisseur + largeur_accroche / 4, division
-        )
+        vertsAccroche = trou_accroche(largeur_diffuseur / 12, epaisseur + largeur_accroche / 4, division)
         vertsAccroche2 = trou_accroche(
             largeur_diffuseur - largeur_diffuseur / 12,
             epaisseur + largeur_accroche / 4,
@@ -743,10 +745,7 @@ def add_accroche_inverse(difprops, productprops, usinageprops):
         (largeur_diffuseur - epaisseur, 0, 0),
         (largeur_diffuseur - epaisseur - largeur_diffuseur / 8, 0, 0),
         (
-            largeur_diffuseur
-            - epaisseur
-            - largeur_diffuseur / 8
-            - largeur_diffuseur / 8,
+            largeur_diffuseur - epaisseur - largeur_diffuseur / 8 - largeur_diffuseur / 8,
             largeur_accroche / 3,
             0,
         ),
@@ -762,9 +761,7 @@ def add_accroche_inverse(difprops, productprops, usinageprops):
         ),
         (largeur_diffuseur / 8, 0, 0),
     ]
-    vertsAccroche = trou_accroche_inverse(
-        largeur_diffuseur / 12, epaisseur + largeur_accroche / 4, division
-    )
+    vertsAccroche = trou_accroche_inverse(largeur_diffuseur / 12, epaisseur + largeur_accroche / 4, division)
     vertsAccroche2 = trou_accroche_inverse(
         largeur_diffuseur - largeur_diffuseur / 12,
         epaisseur + largeur_accroche / 4,
@@ -853,10 +850,7 @@ def add_cadre_avant(difprops, productprops, usinageprops):
             (largeur_diffuseur - epaisseur, 0, 0),
             (largeur_diffuseur - epaisseur - largeur_diffuseur / 8, 0, 0),
             (
-                largeur_diffuseur
-                - epaisseur
-                - largeur_diffuseur / 8
-                - largeur_diffuseur / 8,
+                largeur_diffuseur - epaisseur - largeur_diffuseur / 8 - largeur_diffuseur / 8,
                 largeur_accroche / 3,
                 0,
             ),
@@ -925,18 +919,14 @@ def add_fond_moule(difprops, productprops, usinageprops):
                 x0 = rang2 / 2 + epaisseur + epaisseur_moule + debord_moule
 
             if difprops.type_moule == "eco":
-                if(ratio[k] != 0) :
-                    vertsMortaisesInt += [
-                        *mortaise_pilier_fond_moule_eco(x0, y0, difprops, usinageprops)
-                    ]
+                if ratio[k] != 0:
+                    vertsMortaisesInt += [*mortaise_pilier_fond_moule_eco(x0, y0, difprops, usinageprops)]
 
                 x0 += rang2 + epaisseur
 
             if difprops.type_moule == "stable":
-                if(ratio[k] != 0) :
-                    vertsMortaisesInt += [
-                        *mortaise_pilier_fond_moule_stable(x0, y0, difprops, usinageprops)
-                    ]
+                if ratio[k] != 0:
+                    vertsMortaisesInt += [*mortaise_pilier_fond_moule_stable(x0, y0, difprops, usinageprops)]
 
                 x0 += rang2 + epaisseur
 
@@ -948,16 +938,12 @@ def add_fond_moule(difprops, productprops, usinageprops):
 
             for k in range(0, round(N * longueur_diffuseur * 2)):
                 if k % (round(N * longueur_diffuseur)) == 0 and k != 0:
-                    x0 += largeur_monopilier/5 *2
+                    x0 += largeur_monopilier / 5 * 2
                     y0 = rang2 / 2 + epaisseur + epaisseur_moule + debord_moule
 
-                vertsMortaisesInt += [
-                    *mortaise_pilier_fond_moule_mono(x0,y0,difprops,largeur_monopilier/5)
-                ]
+                vertsMortaisesInt += [*mortaise_pilier_fond_moule_mono(x0, y0, difprops, largeur_monopilier / 5)]
 
                 y0 += rang2 + epaisseur
-
-                
 
         vertsCadre = [
             (0, 0, 0),
@@ -1017,7 +1003,7 @@ def add_fond_moule(difprops, productprops, usinageprops):
     i = 0
 
     for k in range(len(vertsCadre), len(vertsCadre) + len(vertsMortaisesInt)):
-        if difprops.type_moule == "eco" or  difprops.type_moule == "mono" :
+        if difprops.type_moule == "eco" or difprops.type_moule == "mono":
             i += 1
             if i == 4 or k == len(vertsCadre):
                 i = 0
@@ -1295,20 +1281,20 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
             y0 = 0
             largeur_monopilier = rang * type - epaisseur
             for i in range(len(ratio)):
-                if (difprops.moule_type == "1d" and i < 1) or difprops.moule_type == "2d"  :
+                if (difprops.moule_type == "1d" and i < 1) or difprops.moule_type == "2d":
                     vertsCadre += [
                         (x0 - epaisseur, y0, 0),
                         (x0 - epaisseur, y0 + socle_monopilier, 0),
                         *monopilier_profondeurs(x0, y0 + socle_monopilier, difprops, i, cross_monopilier_min),
-                        (largeur_monopilier+epaisseur, y0 + socle_monopilier, 0),
-                        (largeur_monopilier+epaisseur, y0, 0),
+                        (largeur_monopilier + epaisseur, y0 + socle_monopilier, 0),
+                        (largeur_monopilier + epaisseur, y0, 0),
                         (largeur_monopilier - largeur_monopilier / 5, y0, 0),
-                        (largeur_monopilier - largeur_monopilier / 5, y0-epaisseur_moule, 0),
-                        (largeur_monopilier - 2 * largeur_monopilier / 5, y0-epaisseur_moule, 0),
+                        (largeur_monopilier - largeur_monopilier / 5, y0 - epaisseur_moule, 0),
+                        (largeur_monopilier - 2 * largeur_monopilier / 5, y0 - epaisseur_moule, 0),
                         (largeur_monopilier - 2 * largeur_monopilier / 5, y0, 0),
                         (largeur_monopilier - 3 * largeur_monopilier / 5, y0, 0),
-                        (largeur_monopilier - 3 * largeur_monopilier / 5, y0-epaisseur_moule, 0),
-                        (largeur_monopilier - 4 * largeur_monopilier / 5, y0-epaisseur_moule, 0),
+                        (largeur_monopilier - 3 * largeur_monopilier / 5, y0 - epaisseur_moule, 0),
+                        (largeur_monopilier - 4 * largeur_monopilier / 5, y0 - epaisseur_moule, 0),
                         (largeur_monopilier - 4 * largeur_monopilier / 5, y0, 0),
                         (x0 - epaisseur, y0, 0),
                     ]
@@ -1329,7 +1315,8 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
 
     return verts, edges, "Piliers"
 
-#creer des cercles pour reconnaitre les monopiliers. Chatgpt proposition pour le dessin d'un cercle.
+
+# creer des cercles pour reconnaitre les monopiliers. Chatgpt proposition pour le dessin d'un cercle.
 
 """ def create_circle(name, diameter, segments): 
     # Calculer le rayon
@@ -1375,12 +1362,13 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
 # Créer un cercle de diamètre 5 mm et 32 segments
 create_circle("MyCircle", diameter=5, segments=32) """
 
+
 def add_contre_pilier_moule(difprops, productprops, usinageprops, arrayprops):
     product_type = productprops.product_type
     epaisseur = difprops.epaisseur
     profondeur = difprops.profondeur
     epaisseur_pilier = difprops.epaisseur_pilier
-    socle_contrepiliers  = 0.05
+    socle_contrepiliers = 0.05
     epaisseur_moule = difprops.epaisseur_moule
     array_offset = arrayprops.array_offset
     rang = difprops.getRang()
@@ -1407,7 +1395,6 @@ def add_contre_pilier_moule(difprops, productprops, usinageprops, arrayprops):
     if product_type == "3":
         y0 = 0
         x0 = 0
-       
 
         if difprops.type_moule == "mono":
 
@@ -1415,17 +1402,23 @@ def add_contre_pilier_moule(difprops, productprops, usinageprops, arrayprops):
 
             vertsCadre += [
                 (x0, y0, 0),
-                (x0 , y0+socle_contrepiliers+profondeur , 0),
-                (x0+0.05 , y0+socle_contrepiliers+profondeur , 0),
-                (x0+0.05 , y0+socle_contrepiliers , 0),
-                (x0+0.05+double_epaisseur , y0+socle_contrepiliers , 0),
-                *contremonopilier_hauteurs(x0+0.05+double_epaisseur, y0 + socle_contrepiliers, difprops),
-                (x0+0.05+double_epaisseur+largeur_monopilier+double_epaisseur, y0 + socle_contrepiliers, 0),
-                (x0+0.05+double_epaisseur+largeur_monopilier+double_epaisseur, y0 + socle_contrepiliers+profondeur, 0),
-                (x0+0.05+double_epaisseur+largeur_monopilier+double_epaisseur+0.05, y0 + socle_contrepiliers+profondeur, 0),
-                (x0+0.05+double_epaisseur+largeur_monopilier+double_epaisseur+0.05, y0, 0),
-
-        
+                (x0, y0 + socle_contrepiliers + profondeur, 0),
+                (x0 + 0.05, y0 + socle_contrepiliers + profondeur, 0),
+                (x0 + 0.05, y0 + socle_contrepiliers, 0),
+                (x0 + 0.05 + double_epaisseur, y0 + socle_contrepiliers, 0),
+                *contremonopilier_hauteurs(x0 + 0.05 + double_epaisseur, y0 + socle_contrepiliers, difprops),
+                (x0 + 0.05 + double_epaisseur + largeur_monopilier + double_epaisseur, y0 + socle_contrepiliers, 0),
+                (
+                    x0 + 0.05 + double_epaisseur + largeur_monopilier + double_epaisseur,
+                    y0 + socle_contrepiliers + profondeur,
+                    0,
+                ),
+                (
+                    x0 + 0.05 + double_epaisseur + largeur_monopilier + double_epaisseur + 0.05,
+                    y0 + socle_contrepiliers + profondeur,
+                    0,
+                ),
+                (x0 + 0.05 + double_epaisseur + largeur_monopilier + double_epaisseur + 0.05, y0, 0),
             ]
 
             for k in range(0, len(vertsCadre) - 1):

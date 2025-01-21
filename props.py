@@ -205,7 +205,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         name="Largeur",
         description="Box largeur_diffuseur",
         min=0.05,
-        max=1,
+        max=5,
         default=0.5,
         unit="LENGTH",
         precision=4,
@@ -246,6 +246,16 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         max=2,
         default=1,
         step=25,
+    )
+
+    longueur_absorbeur: FloatProperty(
+        name="Longueur",
+        description="Longueur absorbeur",
+        min=0.05,
+        max=5,
+        default=0.5,
+        unit="LENGTH",
+        precision=4,
     )
 
     largeur_accroche: FloatProperty(
@@ -368,6 +378,16 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         max=10,
         default=0,
     )
+
+    split: FloatProperty(
+    name="Split",
+    description="Coupe une pièce en deux si depasse cette longueur de martyr",
+    min=0,
+    max=5,
+    default=0,
+    unit="LENGTH",
+    precision=4,
+)
 
     def getOffsetPeigne(self):
         offset = float(self.offset_peigne / 100) * float(self.epaisseur)
@@ -493,11 +513,12 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "epaisseur",
                     "profondeur",
                     "largeur_diffuseur",
+                    "longueur_absorbeur",
                     "tenon_cadre",
                     "tenon_accroche",
-                    "longueur_diffuseur",
                     "largeur_accroche",
                     "largeur_cadre_central",
+                    "split",
                     "cadre_avant",
                     "cadre_central",
                     "type_tenon_cadre",

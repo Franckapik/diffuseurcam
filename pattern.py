@@ -22,6 +22,29 @@ def mortaiseHaut(x, y, difprops, usinageprops):
         ),
     ]
 
+def papillonIn(x, y, difprops, usinageprops):
+    offset = usinageprops.getOffset()
+    tenon_cadre = difprops.tenon_cadre
+
+    return [
+        (x, y, 0),
+        (
+            x -tenon_cadre/6,
+            y - 0.03,
+            0,
+        ),
+        (
+            x +  tenon_cadre+ tenon_cadre/6,
+            y - 0.03,
+            0,
+        ),
+        (
+            x + tenon_cadre,
+            y,
+            0,
+        ),
+    ]
+
 
 def mortaiseBas(x, y, difprops, usinageprops):
     offset = usinageprops.getOffset()

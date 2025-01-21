@@ -112,6 +112,7 @@ class Diffuseur_SideBar(Panel):
             + difprops.getDifName(),
             icon="X",
         )
+        
         row = box.row()
         row2 = box.row()
         row.prop(productprops, "product_type", expand=True)
@@ -119,8 +120,13 @@ class Diffuseur_SideBar(Panel):
             row2.prop(difprops, "moule_type", expand=True)
         for att in (x for x in difprops.listAttributes(productprops.product_type)):
             box.prop(difprops, att)
-        box.label(text=f"Rang : {difprops.getRang() * 1000} mm")
-        box.label(text=f"Pilier : {round(difprops.getLargeurPilier() * 1000 , 3)} mm")
+        if productprops.product_type is not "2":
+            box.label(text=f"Rang : {difprops.getRang() * 1000} mm")
+            box.label(text=f"Pilier : {round(difprops.getLargeurPilier() * 1000 , 3)} mm")
+        
+        if productprops.product_type is "2" :
+            is_splitted = True if difprops.longueur_absorbeur > difprops.split and difprops.split != 0 else False
+            box.label(text=f"Splitted : {is_splitted}")
 
         # Array
         layout.separator()
