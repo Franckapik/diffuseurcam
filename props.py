@@ -379,6 +379,14 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         default=0,
     )
 
+    vis: IntProperty(
+        name="Diamètre vis accroche",
+        description="Le diamètre max pour les vis d'accroche",
+        min=4,
+        max=12,
+        default=6,
+    )
+
     split: FloatProperty(
     name="Split",
     description="Coupe une pièce en deux si depasse cette longueur de martyr",
@@ -492,8 +500,10 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "tenon_cadre",
                     "tenon_peigne",
                     "longueur_diffuseur",
+                    "vis",
                     "type_tenon_peigne",
                     "type_tenon_cadre",
+                    
                 ]
             case "1":
                 return [
@@ -505,8 +515,10 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "tenon_cadre",
                     "tenon_peigne",
                     "longueur_diffuseur",
+                    "vis",
                     "type_tenon_peigne",
                     "type_tenon_cadre",
+                    
                 ]
             case "2":
                 return [
@@ -519,9 +531,11 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "largeur_accroche",
                     "largeur_facade_central",
                     "split",
+                    "vis",
                     "facade_avant",
                     "facade_central",
                     "type_tenon_cadre",
+                    
                 ]
             case "3":
                 attributes = [

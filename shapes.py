@@ -587,6 +587,7 @@ def add_accroche(difprops, productprops, usinageprops):
     largeur_accroche = difprops.largeur_accroche
     largeur_diffuseur = difprops.largeur_diffuseur
     tenon_accroche = difprops.tenon_accroche
+    vis = difprops.vis
 
     longueurTotale = difprops.getLongueur()
     division = (rang - epaisseur) / 12
@@ -605,7 +606,7 @@ def add_accroche(difprops, productprops, usinageprops):
             (rang - epaisseur, 0, 0),
         ]
 
-        vertsAccroche = trou_accroche(division * 6, division * 3, division)
+        vertsAccroche = trou_accroche(division * 6, division * 3, vis/1000)
 
     elif product_type == "1":
         vertsCadre = [
@@ -615,8 +616,8 @@ def add_accroche(difprops, productprops, usinageprops):
             (rang - epaisseur, 0, 0),
         ]
 
-        vertsAccroche = trou_accroche(division * 6, division * 3, division)
-        vertsAccroche2 = trou_accroche(division * 6, longueurTotale - division * 11, division)
+        vertsAccroche = trou_accroche(division * 6, division * 3, vis/1000)
+        vertsAccroche2 = trou_accroche(division * 6, longueurTotale - division * 11, vis/1000)
 
     elif product_type == "2":
         largeur_diffuseur = largeur_diffuseur / 2 if is_splitted else largeur_diffuseur
@@ -686,7 +687,7 @@ def add_accroche(difprops, productprops, usinageprops):
             (largeur_diffuseur / 8, 0, 0),
         ]
 
-        vertsAccroche = trou_accroche(largeur_diffuseur / 12, epaisseur + largeur_accroche / 4, division)
+        vertsAccroche = trou_accroche(largeur_diffuseur / 12, epaisseur + largeur_accroche / 4, vis/1000)
         vertsAccroche2 = (
             trou_accroche(
                 largeur_diffuseur - largeur_diffuseur / 12,
@@ -750,6 +751,8 @@ def add_accroche_inverse(difprops, productprops, usinageprops):
     tenon_accroche = difprops.tenon_accroche
 
     division = (rang - epaisseur) / 12
+    vis = difprops.vis
+
 
     vertsAccroche = []
     vertsAccroche2 = []
@@ -823,12 +826,12 @@ def add_accroche_inverse(difprops, productprops, usinageprops):
         ),
         (largeur_diffuseur / 8, 0, 0),
     ]
-    vertsAccroche = trou_accroche_inverse(largeur_diffuseur / 12, epaisseur + largeur_accroche / 4, division)
+    vertsAccroche = trou_accroche_inverse(largeur_diffuseur / 12, epaisseur + largeur_accroche / 4, vis/1000)
     vertsAccroche2 = (
         trou_accroche_inverse(
             largeur_diffuseur - largeur_diffuseur / 12,
             epaisseur + largeur_accroche / 4,
-            division,
+            vis/1000,
         )
         if not is_splitted
         else []
