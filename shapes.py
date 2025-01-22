@@ -536,6 +536,7 @@ def add_renfort_central(difprops, productprops, usinageprops):
     tenon_cadre = difprops.tenon_cadre
     epaisseur = difprops.epaisseur
     split = difprops.split
+    puitsSerrage = difprops.puits_serrage
     is_splitted = True if largeur_diffuseur > split and split != 0 else False
     largeur_diffuseur = (
         largeur_diffuseur / 2 + epaisseur if is_splitted else largeur_diffuseur
@@ -590,7 +591,18 @@ def add_renfort_central(difprops, productprops, usinageprops):
         ((largeur_diffuseur - epaisseur) / 6, largeur_renfort_central / 4, 0),
     ]
 
+    vertsPuits = []
+
+    if puitsSerrage :
+        vertsPuits+= [
+            *puits(epaisseur *2,largeur_renfort_central /6, 0.002, 0.008),
+            *puits(epaisseur *2,largeur_renfort_central - largeur_renfort_central /6, 0.002, 0.008),
+            *(puits(largeur_diffuseur - epaisseur *2,largeur_renfort_central /6, 0.002, 0.008) if not is_splitted else []),
+            *(puits(largeur_diffuseur - epaisseur *2,largeur_renfort_central - largeur_renfort_central /6, 0.002, 0.008) if not is_splitted else []),
+        ]
+
     edgesCadre = []
+    edgesPuits = []
 
     for k in range(0, len(vertsCadre) - 1):
         edgesCadre += [
@@ -601,7 +613,23 @@ def add_renfort_central(difprops, productprops, usinageprops):
         (len(vertsCadre) - 1, 0),
     ]
 
-    return vertsCadre, edgesCadre, "Renfort central"
+    i= 0
+
+    for k in range(len(vertsCadre), len(vertsCadre) + len(vertsPuits)):
+        i += 1
+        if i == 4 or k == len(vertsCadre):
+            i = 0
+            edgesPuits += [
+                (k, k + 1),
+                (k + 1, k + 2),
+                (k + 2, k + 3),
+                (k + 3, k),
+            ]
+
+    verts = [*list(vertsCadre), *list(vertsPuits)]
+    edges = [*list(edgesCadre), *list(edgesPuits)]
+
+    return verts, edges, "Renfort central"
 
 
 def add_accroche(difprops, productprops, usinageprops, invert):
@@ -612,6 +640,7 @@ def add_accroche(difprops, productprops, usinageprops, invert):
     largeur_diffuseur = difprops.largeur_diffuseur
     tenon_accroche = difprops.tenon_accroche
     vis = difprops.vis
+    puitsSerrage = difprops.puits_serrage
 
     longueurTotale = difprops.getLongueur()
     division = (rang - epaisseur) / 12
@@ -726,10 +755,22 @@ def add_accroche(difprops, productprops, usinageprops, invert):
         vertsAccroche += miroir_sur_y_centre(vertsEndroit) if invert else vertsEndroit
         if not is_splitted:
             vertsAccroche2 += miroir_sur_y_centre(vertsEndroit2) if invert else vertsEndroit2
+        
+        vertsPuits = []
+
+        if puitsSerrage :
+            vertsPuits+= [
+                *puits(epaisseur *2,largeur_accroche /6, 0.002, 0.008),
+                *puits(epaisseur *2,largeur_accroche - largeur_accroche /6, 0.002, 0.008),
+            *(puits(largeur_diffuseur - epaisseur *2,largeur_accroche /6, 0.002, 0.008) if not is_splitted else []),
+            *(puits(largeur_diffuseur - epaisseur *2,largeur_accroche - largeur_accroche /6, 0.002, 0.008) if not is_splitted else []),
+            ]
+
 
         edgesCadre = []
         edgesAccroche = []
         edgesAccroche2 = []
+        edgesPuits = []
 
         for k in range(0, len(vertsCadre) - 1):
             edgesCadre += [
@@ -748,6 +789,9 @@ def add_accroche(difprops, productprops, usinageprops, invert):
             (len(vertsCadre), len(vertsCadre) + len(vertsAccroche) - 1),
         ]
 
+
+
+
     if product_type == "1" or product_type == "2":
         if is_splitted is not True:
             for k in range(
@@ -765,8 +809,22 @@ def add_accroche(difprops, productprops, usinageprops, invert):
                 ),
             ]
 
-    verts = [*list(vertsCadre), *list(vertsAccroche), *list(vertsAccroche2)]
-    edges = [*list(edgesCadre), *list(edgesAccroche), *list(edgesAccroche2)]
+    if product_type =="2":
+         i= 0
+
+    for k in range(len(vertsCadre) + len(vertsAccroche) + len(vertsAccroche2), len(vertsCadre) + len(vertsAccroche) + len(vertsAccroche2) + len(vertsPuits)):
+        i += 1
+        if i == 4 or k == (len(vertsCadre) + len(vertsAccroche) + len(vertsAccroche2)):
+            i = 0
+            edgesPuits += [
+                (k, k + 1),
+                (k + 1, k + 2),
+                (k + 2, k + 3),
+                (k + 3, k),
+            ]
+
+    verts = [*list(vertsCadre), *list(vertsAccroche), *list(vertsAccroche2), *list(vertsPuits)]
+    edges = [*list(edgesCadre), *list(edgesAccroche), *list(edgesAccroche2), *list(edgesPuits)]
 
     return verts, edges, "Accroche inverse" if invert else "Accroche"
 
@@ -778,12 +836,14 @@ def add_renfort_angle(difprops, productprops, usinageprops):
     tenon_cadre = difprops.tenon_cadre
     split = difprops.split
     is_splitted = True if largeur_diffuseur > split and split != 0 else False
+    puitsSerrage = difprops.puits_serrage
+
 
     if product_type == "2":
         largeur_diffuseur = (
             largeur_diffuseur / 2 + epaisseur if is_splitted else largeur_diffuseur
         )  # epaisseur ajoutée sans comprendre ni verifier
-        vertsCadre = [
+        vertsCadre = [  
             (epaisseur, 0, 0),
             *tenonGauche(
                 epaisseur,
@@ -849,7 +909,19 @@ def add_renfort_angle(difprops, productprops, usinageprops):
             (largeur_diffuseur / 8, 0, 0),
         ]
 
+    vertsPuits = []
+
+    if puitsSerrage :
+        vertsPuits+= [
+            *puits(epaisseur *2,largeur_accroche /6, 0.002, 0.008),
+            *puits(epaisseur *2,largeur_accroche - largeur_accroche /6, 0.002, 0.008),
+            *(puits(largeur_diffuseur - epaisseur *2,largeur_accroche /6, 0.002, 0.008) if not is_splitted else []),
+            *(puits(largeur_diffuseur - epaisseur *2,largeur_accroche - largeur_accroche /6, 0.002, 0.008) if not is_splitted else []),
+        ]
+
+
     edgesCadre = []
+    edgesPuits = []
 
     for k in range(0, len(vertsCadre) - 1):
         edgesCadre += [
@@ -860,8 +932,22 @@ def add_renfort_angle(difprops, productprops, usinageprops):
         (len(vertsCadre) - 1, 0),
     ]
 
-    verts = [*list(vertsCadre)]
-    edges = [*list(edgesCadre)]
+
+    i= 0
+
+    for k in range(len(vertsCadre), len(vertsCadre) + len(vertsPuits)):
+        i += 1
+        if i == 4 or k == len(vertsCadre):
+            i = 0
+            edgesPuits += [
+                (k, k + 1),
+                (k + 1, k + 2),
+                (k + 2, k + 3),
+                (k + 3, k),
+            ]
+
+    verts = [*list(vertsCadre), *list(vertsPuits)]
+    edges = [*list(edgesCadre), *list(edgesPuits)]
 
     return verts, edges, "Renfort angle"
 

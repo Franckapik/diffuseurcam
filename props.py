@@ -397,6 +397,11 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         default=6,
     )
 
+    puits_serrage: BoolProperty(
+        name="Puits de serrage",
+        description="Trou pour le serrage via cales",
+    )
+
     split: FloatProperty(
     name="Split",
     description="Coupe une pièce en deux si depasse cette longueur de martyr",
@@ -545,6 +550,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "renfort_central",
                     "renfort_angle",
                     "type_tenon_cadre",
+                    "puits_serrage",
                     
                 ]
             case "3":

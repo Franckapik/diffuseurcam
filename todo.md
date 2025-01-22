@@ -2,6 +2,7 @@ ajouter nombre panneaux superposés pour faire des comptes (ex : dp123) et agenc
 pré-remplir : le nombre de carreaux doit etre ajusté si modele double!
 Pré-remplir pour l'abs en prenant en compte le is-splitted pour faire x2.
 Travailler les accroches pour avoir un motif plus adapté si besoin.
+Puis de serrage parametrable en terme de dimensions
 
 travailler sur les edges entres les mono piliers du 2D.
 faire coincider reduction des piliers avec la variable existante pour le 2d stable a la base.

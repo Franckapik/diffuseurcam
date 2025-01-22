@@ -175,6 +175,30 @@ def mortaiseInt(x, y, difprops, usinageprops):
         ]
     else:
         return []
+    
+def puits(x, y, width, height):
+        return [
+            (
+                x-width/2 ,
+                y + height / 2  ,
+                0,
+            ),
+            (
+                x + width/2  ,
+                y + height / 2  ,
+                0,
+            ),
+            (
+                x + width/2  ,
+                y - height / 2  ,
+                0,
+            ),
+            (
+                x - width/2 ,
+                y - height / 2  ,
+                0,
+            ),
+        ]
 
 
 def mortaiseIntTraversante(x, y, difprops, usinageprops):
