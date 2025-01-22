@@ -748,6 +748,26 @@ class ArrayProps(bpy.types.PropertyGroup):
         default=1,
         min=0,
     )
+    cadre_tissu_court_x: IntProperty(
+        name="Cadre tissu court",
+        default=1,
+        min=0,
+    )
+    cadre_tissu_court_y: IntProperty(
+        name="Cadre tissu court",
+        default=1,
+        min=0,
+    )
+    cadre_tissu_long_x: IntProperty(
+        name="Cadre tissu long",
+        default=1,
+        min=0,
+    )
+    cadre_tissu_long_y: IntProperty(
+        name="Cadre tissu long",
+        default=1,
+        min=0,
+    )
 
     def listAttributes(self, product):
         match product:
@@ -793,6 +813,10 @@ class ArrayProps(bpy.types.PropertyGroup):
                     "renfort_central_y",
                     "renfort_angle_x",
                     "renfort_angle_y",
+                    "cadre_tissu_court_x",
+                    "cadre_tissu_court_y",
+                    "cadre_tissu_long_x",
+                    "cadre_tissu_long_y",
                 ]
             case "3":
                 return [
@@ -840,6 +864,8 @@ class ArrayProps(bpy.types.PropertyGroup):
                     + self.accroche_inverse_x * self.accroche_inverse_y
                     + self.renfort_central_x * self.renfort_central_y
                     + self.renfort_angle_x * self.renfort_angle_y
+                    + self.cadre_tissu_court_x * self.cadre_tissu_court_y
+                    + self.cadre_tissu_long_x * self.cadre_tissu_long_y
                 )
 
             case "3":
@@ -930,6 +956,16 @@ class PositionProps(bpy.types.PropertyGroup):
         unit="LENGTH",
         precision=4,
     )
+    cadre_tissu_long_position: FloatVectorProperty(
+        name="Cadre Tissu Long",
+        unit="LENGTH",
+        precision=4,
+    )
+    cadre_tissu_court_position: FloatVectorProperty(
+        name="Cadre Tissu Court",
+        unit="LENGTH",
+        precision=4,
+    )
 
     peigne_court_rotation: BoolProperty(name="Peigne court", description="Rotation")
 
@@ -949,6 +985,8 @@ class PositionProps(bpy.types.PropertyGroup):
     contre_pilier_moule_rotation: BoolProperty(name="Contre Pilier Moule", description="Rotation")
     cadre_moule_rotation: BoolProperty(name="Cadre Moule", description="Rotation")
     cadre_moule_long_rotation: BoolProperty(name="Cadre Moule", description="Rotation")
+    cadre_tissu_long_rotation: BoolProperty(name="Cadre Tissu Long", description="Rotation")
+    cadre_tissu_court_rotation: BoolProperty(name="Cadre Tissu Court", description="Rotation")
 
     def update(self, target, cursor):
         self[target] = cursor
@@ -991,12 +1029,16 @@ class PositionProps(bpy.types.PropertyGroup):
                     "accroche_inverse_position",
                     "renfort_central_position",
                     "renfort_angle_position",
+                    "cadre_tissu_court_position",
+                    "cadre_tissu_long_position",
                     "cadre_mortaise_rotation",
                     "cadre_tenon_rotation",
                     "accroche_rotation",
                     "accroche_inverse_rotation",
                     "renfort_central_rotation",
                     "renfort_angle_rotation",
+                    "cadre_tissu_court_rotation",
+                    "cadre_tissu_long_rotation",
                 ]
             case "3":
                 return [

@@ -957,6 +957,126 @@ class AddContrePilierMoule(bpy.types.Operator, AddObjectHelper):
             mesh_obj.rotation_euler = [0, 0, math.radians(90)]
 
         return {"FINISHED"}
+    
+class AddCadreTissuLong(bpy.types.Operator, AddObjectHelper):
+    bl_idname = "mesh.cadre_tissu_long"
+    bl_label = "Ajouter Cadre Tissu Long"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        scene = context.scene
+        difprops = scene.dif_props
+        arrayprops = scene.array_props
+        vertex, edges, name = add_cadre_tissu_long(
+            scene.dif_props, scene.product_props, scene.usinage_props, scene.array_props
+        )
+
+        arrayprops = scene.array_props
+
+        # create a bmesh
+        bm = bmesh.new()
+
+        # Create new mesh data.
+        mesh = bpy.data.meshes.new(name)
+        mesh.from_pydata(vertex, edges, [])
+
+        # Positionning according to position props
+        posprops = scene.pos_props
+
+        mesh.update(calc_edges=True)
+
+        # Load BMesh with mesh data
+        bm.from_mesh(mesh)
+
+        # Convert BMesh to mesh data, then release BMesh.
+        bm.to_mesh(mesh)
+        bm.free()
+
+        # Add Object to the default collection from mesh
+        mesh_obj = bpy.data.objects.new(mesh.name, mesh)
+        bpy.context.collection.objects.link(mesh_obj)
+        bpy.types.Scene.dif_parts.append(mesh_obj.name)
+
+        mesh_obj.location = (
+            posprops.cadre_tissu_long_position[1],
+            posprops.cadre_tissu_long_position[2],
+            posprops.cadre_tissu_long_position[0],
+        )
+
+        difArray(
+            mesh_obj,
+            arrayprops.array_offset,
+            arrayprops.cadre_tissu_long_x,
+            arrayprops.cadre_tissu_long_y,
+            (difprops.getLargeurPilier() + arrayprops.array_offset)
+            * (difprops.type + 1),
+            difprops.longueur_diffuseur,  # calcul à faire sur l'addition des ratios
+        )
+
+        if posprops.cadre_tissu_long_rotation:
+            mesh_obj.rotation_euler = [0, 0, math.radians(90)]
+
+        return {"FINISHED"}
+    
+class AddCadreTissuCourt(bpy.types.Operator, AddObjectHelper):
+    bl_idname = "mesh.cadre_tissu_court"
+    bl_label = "Ajouter Cadre Tissu Court"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        scene = context.scene
+        difprops = scene.dif_props
+        arrayprops = scene.array_props
+        vertex, edges, name = add_cadre_tissu_court(
+            scene.dif_props, scene.product_props, scene.usinage_props, scene.array_props
+        )
+
+        arrayprops = scene.array_props
+
+        # create a bmesh
+        bm = bmesh.new()
+
+        # Create new mesh data.
+        mesh = bpy.data.meshes.new(name)
+        mesh.from_pydata(vertex, edges, [])
+
+        # Positionning according to position props
+        posprops = scene.pos_props
+
+        mesh.update(calc_edges=True)
+
+        # Load BMesh with mesh data
+        bm.from_mesh(mesh)
+
+        # Convert BMesh to mesh data, then release BMesh.
+        bm.to_mesh(mesh)
+        bm.free()
+
+        # Add Object to the default collection from mesh
+        mesh_obj = bpy.data.objects.new(mesh.name, mesh)
+        bpy.context.collection.objects.link(mesh_obj)
+        bpy.types.Scene.dif_parts.append(mesh_obj.name)
+
+        mesh_obj.location = (
+            posprops.cadre_tissu_court_position[1],
+            posprops.cadre_tissu_court_position[2],
+            posprops.cadre_tissu_court_position[0],
+        )
+
+        difArray(
+            mesh_obj,
+            arrayprops.array_offset,
+            arrayprops.cadre_tissu_court_x,
+            arrayprops.cadre_tissu_court_y,
+            (difprops.getLargeurPilier() + arrayprops.array_offset)
+            * (difprops.type + 1),
+            difprops.longueur_diffuseur,  # calcul à faire sur l'addition des ratios
+        )
+
+        if posprops.cadre_tissu_court_rotation:
+            mesh_obj.rotation_euler = [0, 0, math.radians(90)]
+
+        return {"FINISHED"}
 
 
 class AddDiffuseur(bpy.types.Operator, AddObjectHelper):
@@ -992,6 +1112,8 @@ class AddAbsorbeur(bpy.types.Operator, AddObjectHelper):
         AddAccrocheInverse.execute(self, context)
         AddCadreCentral.execute(self, context)
         AddCadreAvant.execute(self, context)
+        AddCadreTissuCourt.execute(self, context)
+        AddCadreTissuLong.execute(self, context)
 
         return {"FINISHED"}
 
@@ -1236,6 +1358,8 @@ classes = [
     AddPilierMoule,
     AddContrePilierMoule,
     AddCadreMoule,
+    AddCadreTissuCourt,
+    AddCadreTissuLong,
     AddList,
     RemoveList,
     AddCadreMouleLong,
