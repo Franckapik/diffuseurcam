@@ -43,9 +43,6 @@ def ensure_gitpython_installed():
 
 def register():
     ensure_gitpython_installed()  # Vérifie GitPython avant d'enregistrer les modules
-    from . import ops, ui  # Imports après la vérification
-    ops.register()
-    ui.register()
     for currentModuleName in modulesFullNames.values():
         if currentModuleName in sys.modules:
             if hasattr(sys.modules[currentModuleName], 'register'):
