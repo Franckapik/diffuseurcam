@@ -4,6 +4,7 @@ Pré-remplir pour l'abs en prenant en compte le is-splitted pour faire x2.
 Travailler les accroches pour avoir un motif plus adapté si besoin.
 Puis de serrage parametrable en terme de dimensions
 travailler les position array pour cadre tissu court et long dans ops car copier coller d'un autre sans modif
+verifier que le rechargement du script s'effectue bien après update (bl info issue).
 
 travailler sur les edges entres les mono piliers du 2D.
 faire coincider reduction des piliers avec la variable existante pour le 2d stable a la base.

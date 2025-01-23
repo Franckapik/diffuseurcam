@@ -364,6 +364,12 @@ class Diffuseur_SideBar(Panel):
         box.operator("mesh.colle")
         box.operator("mesh.simulation")
 
+        # Addon
+        layout.separator()
+        box = layout.box()
+        box.label(text="Addon", icon="X")
+        row = box.row(align=True)
+        box.operator("addon.update_git", text="Mettre à jour l'addon")
 
 ui_classes = [DIF_MT_Presets, OT_AddMyPreset]
 

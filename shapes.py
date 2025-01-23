@@ -595,18 +595,18 @@ def add_renfort_central(difprops, productprops, usinageprops):
 
     if puitsSerrage:
         vertsPuits += [
-            *puits(epaisseur * 2, largeur_renfort_central / 6, 0.002, 0.008),
-            *puits(epaisseur * 2, largeur_renfort_central - largeur_renfort_central / 6, 0.002, 0.008),
+            *puits(epaisseur * 3, largeur_renfort_central / 6, 0.005, 0.008),
+            *puits(epaisseur * 3, largeur_renfort_central - largeur_renfort_central / 6, 0.005, 0.008),
             *(
-                puits(largeur_diffuseur - epaisseur * 2, largeur_renfort_central / 6, 0.002, 0.008)
+                puits(largeur_diffuseur - epaisseur * 3, largeur_renfort_central / 6, 0.005, 0.008)
                 if not is_splitted
                 else []
             ),
             *(
                 puits(
-                    largeur_diffuseur - epaisseur * 2,
+                    largeur_diffuseur - epaisseur * 3,
                     largeur_renfort_central - largeur_renfort_central / 6,
-                    0.002,
+                    0.005,
                     0.008,
                 )
                 if not is_splitted
@@ -781,15 +781,15 @@ def add_accroche(difprops, productprops, usinageprops, invert):
 
         if puitsSerrage:
             vertsPuits += [
-                *puits(epaisseur * 2, largeur_accroche / 6, 0.002, 0.008),
-                *puits(epaisseur * 2, largeur_accroche - largeur_accroche / 6, 0.002, 0.008),
+                *puits(epaisseur * 3, largeur_accroche / 6, 0.005, 0.008),
+                *puits(epaisseur * 3, largeur_accroche - largeur_accroche / 6, 0.005, 0.008),
                 *(
-                    puits(largeur_diffuseur - epaisseur * 2, largeur_accroche / 6, 0.002, 0.008)
+                    puits(largeur_diffuseur - epaisseur * 3, largeur_accroche / 6, 0.005, 0.008)
                     if not is_splitted
                     else []
                 ),
                 *(
-                    puits(largeur_diffuseur - epaisseur * 2, largeur_accroche - largeur_accroche / 6, 0.002, 0.008)
+                    puits(largeur_diffuseur - epaisseur * 3, largeur_accroche - largeur_accroche / 6, 0.005, 0.008)
                     if not is_splitted
                     else []
                 ),
@@ -941,11 +941,11 @@ def add_renfort_angle(difprops, productprops, usinageprops):
 
     if puitsSerrage:
         vertsPuits += [
-            *puits(epaisseur * 2, largeur_accroche / 6, 0.002, 0.008),
-            *puits(epaisseur * 2, largeur_accroche - largeur_accroche / 6, 0.002, 0.008),
-            *(puits(largeur_diffuseur - epaisseur * 2, largeur_accroche / 6, 0.002, 0.008) if not is_splitted else []),
+            *puits(epaisseur * 3, largeur_accroche / 6, 0.005, 0.008),
+            *puits(epaisseur * 3, largeur_accroche - largeur_accroche / 6, 0.005, 0.008),
+            *(puits(largeur_diffuseur - epaisseur * 3, largeur_accroche / 6, 0.005, 0.008) if not is_splitted else []),
             *(
-                puits(largeur_diffuseur - epaisseur * 2, largeur_accroche - largeur_accroche / 6, 0.002, 0.008)
+                puits(largeur_diffuseur - epaisseur * 3, largeur_accroche - largeur_accroche / 6, 0.005, 0.008)
                 if not is_splitted
                 else []
             ),
@@ -1558,8 +1558,10 @@ def add_colle(difprops, productprops, usinageprops, arrayprops):
 
 def add_cadre_tissu_long(difprops, productprops, usinageprops, arrayprops):
     product_type = productprops.product_type
-    is_splitted = difprops.split
-    longueurAbsorbeur = difprops.longueur_absorbeur if not is_splitted else difprops.longueur_absorbeur / 2
+    split = difprops.split
+    epaisseur = difprops.epaisseur
+    is_splitted = True if difprops.longueur_absorbeur > split and split != 0 else False
+    longueurAbsorbeur = (difprops.longueur_absorbeur - 2 * epaisseur) if not is_splitted else (difprops.longueur_absorbeur - 2 * epaisseur) / 2
 
     edgesCadre = []
 
@@ -1588,12 +1590,14 @@ def add_cadre_tissu_long(difprops, productprops, usinageprops, arrayprops):
 
 def add_cadre_tissu_court(difprops, productprops, usinageprops, arrayprops):
     product_type = productprops.product_type
-    is_splitted = difprops.split
+    split = difprops.split
+    largeur_diffuseur = difprops.largeur_diffuseur
+    is_splitted = True if largeur_diffuseur > split and split != 0 else False
     epaisseur = difprops.epaisseur
     largeurAbsorbeur = (
         (difprops.largeur_diffuseur - 2 * epaisseur)
         if not is_splitted
-        else (difprops.largeur_diffuseur - epaisseur) / 2
+        else (difprops.largeur_diffuseur - 2 * epaisseur) / 2
     )
 
     edgesCadre = []

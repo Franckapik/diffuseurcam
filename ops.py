@@ -7,6 +7,8 @@ from .pack import place_selected_objects_no_overlap
 from bpy_extras.object_utils import AddObjectHelper
 from bpy.props import FloatVectorProperty, StringProperty, IntProperty
 import math
+import os
+import git
 
 
 class AddCadreMortaise(bpy.types.Operator, AddObjectHelper):
@@ -1337,6 +1339,28 @@ class PrepareToCam(bpy.types.Operator, AddObjectHelper):
                 )
 
         return {"FINISHED"}
+    
+class UpdateAddonOperator(bpy.types.Operator):
+    """Met à jour l'addon depuis le dépôt Git"""
+    bl_idname = "addon.update_git"
+    bl_label = "Mettre à jour l'addon"
+
+    def execute(self, context):
+        addon_path = os.path.dirname(os.path.abspath(__file__))
+        try:
+            # Ouvre le dépôt Git
+            repo = git.Repo(addon_path)
+            # Récupère les dernières modifications
+            repo.git.pull()
+            self.report({'INFO'}, "Addon mis à jour avec succès.")
+            
+            # Recharge l'addon
+            bpy.ops.script.reload()
+        except Exception as e:
+            self.report({'ERROR'}, f"Erreur lors de la mise à jour : {str(e)}")
+            return {'CANCELLED'}
+
+        return {'FINISHED'}
 
 
 classes = [
@@ -1367,7 +1391,8 @@ classes = [
     Add3DModel,
     SetArrayOffset,
     NoOverlap,
-    SetRecommendedArray
+    SetRecommendedArray,
+    UpdateAddonOperator
 ]
 
 
