@@ -943,6 +943,10 @@ class AddCadreTissuLong(bpy.types.Operator, AddObjectHelper):
             scene.dif_props, scene.product_props, scene.usinage_props, scene.array_props
         )
 
+        is_splitted = True if difprops.longueur_absorbeur > difprops.split and difprops.split != 0 else False
+        longueurAbsorbeur = (difprops.longueur_absorbeur - 2 * difprops.epaisseur) if not is_splitted else (difprops.longueur_absorbeur - 2 * difprops.epaisseur) / 2
+
+
         arrayprops = scene.array_props
 
         # create a bmesh
@@ -970,9 +974,9 @@ class AddCadreTissuLong(bpy.types.Operator, AddObjectHelper):
         bpy.types.Scene.dif_parts.append(mesh_obj.name)
 
         mesh_obj.location = (
+            posprops.cadre_tissu_long_position[0],
             posprops.cadre_tissu_long_position[1],
             posprops.cadre_tissu_long_position[2],
-            posprops.cadre_tissu_long_position[0],
         )
 
         difArray(
@@ -980,8 +984,8 @@ class AddCadreTissuLong(bpy.types.Operator, AddObjectHelper):
             arrayprops.array_offset,
             arrayprops.cadre_tissu_long_x,
             arrayprops.cadre_tissu_long_y,
-            (difprops.getLargeurPilier() + arrayprops.array_offset) * (difprops.type + 1),
-            difprops.longueur_diffuseur,  # calcul à faire sur l'addition des ratios
+            0.03,
+            longueurAbsorbeur,
         )
 
         if posprops.cadre_tissu_long_rotation:
@@ -1030,9 +1034,9 @@ class AddCadreTissuCourt(bpy.types.Operator, AddObjectHelper):
         bpy.types.Scene.dif_parts.append(mesh_obj.name)
 
         mesh_obj.location = (
+            posprops.cadre_tissu_court_position[0],
             posprops.cadre_tissu_court_position[1],
             posprops.cadre_tissu_court_position[2],
-            posprops.cadre_tissu_court_position[0],
         )
 
         difArray(
@@ -1040,8 +1044,8 @@ class AddCadreTissuCourt(bpy.types.Operator, AddObjectHelper):
             arrayprops.array_offset,
             arrayprops.cadre_tissu_court_x,
             arrayprops.cadre_tissu_court_y,
-            (difprops.getLargeurPilier() + arrayprops.array_offset) * (difprops.type + 1),
-            difprops.longueur_diffuseur,  # calcul à faire sur l'addition des ratios
+            0.03,
+            difprops.largeur_diffuseur,
         )
 
         if posprops.cadre_tissu_court_rotation:

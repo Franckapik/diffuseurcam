@@ -1622,4 +1622,4 @@ def add_cadre_tissu_court(difprops, productprops, usinageprops, arrayprops):
     verts = [*list(vertsCadre)]
     edges = [*list(edgesCadre)]
 
-    return verts, edges, "Cadre tissu long"
+    return verts, edges, "Cadre tissu court"

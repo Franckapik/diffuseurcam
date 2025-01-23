@@ -403,14 +403,14 @@ class DiffuseurProps(bpy.types.PropertyGroup):
     )
 
     split: FloatProperty(
-    name="Split",
-    description="Coupe une pièce en deux si depasse cette longueur de martyr",
-    min=0,
-    max=5,
-    default=0,
-    unit="LENGTH",
-    precision=4,
-)
+        name="Split",
+        description="Coupe une pièce en deux si depasse cette longueur de martyr",
+        min=0,
+        max=5,
+        default=0,
+        unit="LENGTH",
+        precision=4,
+    )
 
     def getOffsetPeigne(self):
         offset = float(self.offset_peigne / 100) * float(self.epaisseur)
@@ -468,7 +468,6 @@ class DiffuseurProps(bpy.types.PropertyGroup):
 
         amax = max(ratio)
 
-
         depth = []
         for k in range(0, self.type * round(self.type * self.longueur_diffuseur)):
             y = (ratio[k] * self.profondeur) / amax
@@ -518,7 +517,6 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "vis",
                     "type_tenon_peigne",
                     "type_tenon_cadre",
-                    
                 ]
             case "1":
                 return [
@@ -533,7 +531,6 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "vis",
                     "type_tenon_peigne",
                     "type_tenon_cadre",
-                    
                 ]
             case "2":
                 return [
@@ -551,7 +548,6 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "renfort_angle",
                     "type_tenon_cadre",
                     "puits_serrage",
-                    
                 ]
             case "3":
                 attributes = [
@@ -566,7 +562,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "socle_monopilier",
                 ]
 
-                if self.type_moule == "stable" or self.type_moule == "mono" :
+                if self.type_moule == "stable" or self.type_moule == "mono":
                     attributes.append("epaisseur_pilier")
 
                 return attributes
@@ -1105,9 +1101,12 @@ class PrepareProps(bpy.types.PropertyGroup):
             )
         ]
         return attributes
-    
+
+
 class PositionSelectedProps(bpy.types.PropertyGroup):
-    selection_position: EnumProperty(items=(("0", "Droite", ""), ("1", "Gauche", ""), ("2", "Haut", ""), ("3", "Bas", "")))
+    selection_position: EnumProperty(
+        items=(("0", "Droite", ""), ("1", "Gauche", ""), ("2", "Haut", ""), ("3", "Bas", ""))
+    )
 
 
 classes = [
@@ -1119,7 +1118,7 @@ classes = [
     Usinageprops,
     DevisProps,
     DevisList,
-    PositionSelectedProps
+    PositionSelectedProps,
 ]
 
 
