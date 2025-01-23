@@ -8,7 +8,6 @@ from bpy_extras.object_utils import AddObjectHelper
 from bpy.props import FloatVectorProperty, StringProperty, IntProperty
 import math
 import os
-import git
 
 
 class AddCadreMortaise(bpy.types.Operator, AddObjectHelper):
@@ -19,9 +18,7 @@ class AddCadreMortaise(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_cadre_mortaise(
-            scene.dif_props, scene.product_props, scene.usinage_props
-        )
+        vertex, edges, name = add_cadre_mortaise(scene.dif_props, scene.product_props, scene.usinage_props)
 
         arrayprops = scene.array_props
 
@@ -84,9 +81,7 @@ class AddCadreTenon(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_cadre_tenon(
-            scene.dif_props, scene.product_props, scene.usinage_props
-        )
+        vertex, edges, name = add_cadre_tenon(scene.dif_props, scene.product_props, scene.usinage_props)
 
         arrayprops = scene.array_props
 
@@ -144,9 +139,7 @@ class AddCarreau(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_carreau(
-            scene.dif_props, scene.product_props, scene.usinage_props
-        )
+        vertex, edges, name = add_carreau(scene.dif_props, scene.product_props, scene.usinage_props)
         arrayprops = scene.array_props
 
         # create a bmesh
@@ -207,9 +200,7 @@ class AddAccroche(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_accroche(
-            scene.dif_props, scene.product_props, scene.usinage_props, False
-        )
+        vertex, edges, name = add_accroche(scene.dif_props, scene.product_props, scene.usinage_props, False)
         arrayprops = scene.array_props
 
         # create a bmesh
@@ -266,9 +257,7 @@ class AddAccrocheInverse(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_accroche(
-            scene.dif_props, scene.product_props, scene.usinage_props, True
-        )
+        vertex, edges, name = add_accroche(scene.dif_props, scene.product_props, scene.usinage_props, True)
         arrayprops = scene.array_props
 
         # create a bmesh
@@ -325,9 +314,7 @@ class AddCadreAvant(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_renfort_angle(
-            scene.dif_props, scene.product_props, scene.usinage_props
-        )
+        vertex, edges, name = add_renfort_angle(scene.dif_props, scene.product_props, scene.usinage_props)
         arrayprops = scene.array_props
 
         # create a bmesh
@@ -383,9 +370,7 @@ class AddPeigneCourt(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_peigne_court(
-            scene.dif_props, scene.product_props, scene.usinage_props
-        )
+        vertex, edges, name = add_peigne_court(scene.dif_props, scene.product_props, scene.usinage_props)
 
         arrayprops = scene.array_props
 
@@ -442,9 +427,7 @@ class AddCadreCentral(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_renfort_central(
-            scene.dif_props, scene.product_props, scene.usinage_props
-        )
+        vertex, edges, name = add_renfort_central(scene.dif_props, scene.product_props, scene.usinage_props)
 
         arrayprops = scene.array_props
 
@@ -502,9 +485,7 @@ class AddPeigneLong(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_peigne_long(
-            scene.dif_props, scene.product_props, scene.usinage_props
-        )
+        vertex, edges, name = add_peigne_long(scene.dif_props, scene.product_props, scene.usinage_props)
 
         arrayprops = scene.array_props
 
@@ -561,9 +542,7 @@ class AddFondMoule(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_fond_moule(
-            scene.dif_props, scene.product_props, scene.usinage_props
-        )
+        vertex, edges, name = add_fond_moule(scene.dif_props, scene.product_props, scene.usinage_props)
 
         arrayprops = scene.array_props
 
@@ -620,9 +599,7 @@ class AddCadreMoule(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_cadre_moule(
-            scene.dif_props, scene.product_props, scene.usinage_props
-        )
+        vertex, edges, name = add_cadre_moule(scene.dif_props, scene.product_props, scene.usinage_props)
 
         arrayprops = scene.array_props
 
@@ -679,9 +656,7 @@ class AddCadreMouleLong(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_cadre_moule_long(
-            scene.dif_props, scene.product_props, scene.usinage_props
-        )
+        vertex, edges, name = add_cadre_moule_long(scene.dif_props, scene.product_props, scene.usinage_props)
 
         arrayprops = scene.array_props
 
@@ -738,10 +713,7 @@ class AddColle(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_colle(
-            scene.dif_props, scene.product_props, scene.usinage_props, scene.array_props
-        )
-
+        vertex, edges, name = add_colle(scene.dif_props, scene.product_props, scene.usinage_props, scene.array_props)
 
         gcode_lines = []
         gcode_lines.append("G21 ; Set units to millimeters")
@@ -809,9 +781,7 @@ class Add3DModel(bpy.types.Operator, AddObjectHelper):
                 index = i * difprops.type + k
                 x = k * difprops.getRang()
                 z = depth[index]
-                vertex, edges, name = add_carreau(
-                    scene.dif_props, scene.product_props, scene.usinage_props
-                )
+                vertex, edges, name = add_carreau(scene.dif_props, scene.product_props, scene.usinage_props)
 
                 # create a bmesh
                 bm = bmesh.new()
@@ -890,8 +860,7 @@ class AddPilierMoule(bpy.types.Operator, AddObjectHelper):
             arrayprops.array_offset,
             arrayprops.pilier_moule_x,
             arrayprops.pilier_moule_y,
-            (difprops.getLargeurPilier() + arrayprops.array_offset)
-            * (difprops.type + 1),
+            (difprops.getLargeurPilier() + arrayprops.array_offset) * (difprops.type + 1),
             difprops.longueur_diffuseur,  # calcul à faire sur l'addition des ratios
         )
 
@@ -899,7 +868,8 @@ class AddPilierMoule(bpy.types.Operator, AddObjectHelper):
             mesh_obj.rotation_euler = [0, 0, math.radians(90)]
 
         return {"FINISHED"}
-    
+
+
 class AddContrePilierMoule(bpy.types.Operator, AddObjectHelper):
     bl_idname = "mesh.contre_pilier_moule"
     bl_label = "Ajouter Contre Piliers Moule"
@@ -950,8 +920,7 @@ class AddContrePilierMoule(bpy.types.Operator, AddObjectHelper):
             arrayprops.array_offset,
             arrayprops.contre_pilier_moule_x,
             arrayprops.contre_pilier_moule_y,
-            (difprops.getLargeurPilier() + arrayprops.array_offset)
-            * (difprops.type + 1),
+            (difprops.getLargeurPilier() + arrayprops.array_offset) * (difprops.type + 1),
             difprops.longueur_diffuseur,  # calcul à faire sur l'addition des ratios
         )
 
@@ -959,7 +928,8 @@ class AddContrePilierMoule(bpy.types.Operator, AddObjectHelper):
             mesh_obj.rotation_euler = [0, 0, math.radians(90)]
 
         return {"FINISHED"}
-    
+
+
 class AddCadreTissuLong(bpy.types.Operator, AddObjectHelper):
     bl_idname = "mesh.cadre_tissu_long"
     bl_label = "Ajouter Cadre Tissu Long"
@@ -1010,8 +980,7 @@ class AddCadreTissuLong(bpy.types.Operator, AddObjectHelper):
             arrayprops.array_offset,
             arrayprops.cadre_tissu_long_x,
             arrayprops.cadre_tissu_long_y,
-            (difprops.getLargeurPilier() + arrayprops.array_offset)
-            * (difprops.type + 1),
+            (difprops.getLargeurPilier() + arrayprops.array_offset) * (difprops.type + 1),
             difprops.longueur_diffuseur,  # calcul à faire sur l'addition des ratios
         )
 
@@ -1019,7 +988,8 @@ class AddCadreTissuLong(bpy.types.Operator, AddObjectHelper):
             mesh_obj.rotation_euler = [0, 0, math.radians(90)]
 
         return {"FINISHED"}
-    
+
+
 class AddCadreTissuCourt(bpy.types.Operator, AddObjectHelper):
     bl_idname = "mesh.cadre_tissu_court"
     bl_label = "Ajouter Cadre Tissu Court"
@@ -1070,8 +1040,7 @@ class AddCadreTissuCourt(bpy.types.Operator, AddObjectHelper):
             arrayprops.array_offset,
             arrayprops.cadre_tissu_court_x,
             arrayprops.cadre_tissu_court_y,
-            (difprops.getLargeurPilier() + arrayprops.array_offset)
-            * (difprops.type + 1),
+            (difprops.getLargeurPilier() + arrayprops.array_offset) * (difprops.type + 1),
             difprops.longueur_diffuseur,  # calcul à faire sur l'addition des ratios
         )
 
@@ -1094,10 +1063,8 @@ class AddDiffuseur(bpy.types.Operator, AddObjectHelper):
         AddCarreau.execute(self, context)
         AddPeigneLong.execute(self, context)
         AddAccroche.execute(self, context)
-        if scene.product_props.product_type == "0" : 
+        if scene.product_props.product_type == "0":
             AddPeigneCourt.execute(self, context)
-
-
 
         return {"FINISHED"}
 
@@ -1217,7 +1184,7 @@ class SetRecommendedArray(bpy.types.Operator, AddObjectHelper):
         scene = context.scene
         arrayprops = scene.array_props
         difprops = scene.dif_props
-        if scene.product_props.product_type == "0" : 
+        if scene.product_props.product_type == "0":
             arrayprops.peigne_court_x = int(difprops.type * difprops.longueur_diffuseur - 1)
             arrayprops.peigne_court_y = 1
             arrayprops.peigne_long_x = difprops.type - 1
@@ -1226,25 +1193,26 @@ class SetRecommendedArray(bpy.types.Operator, AddObjectHelper):
             arrayprops.cadre_mortaise_y = 1
             arrayprops.cadre_tenon_x = 2
             arrayprops.cadre_tenon_y = 1
-            arrayprops.carreau_x = difprops.type 
+            arrayprops.carreau_x = difprops.type
             arrayprops.carreau_y = difprops.type
             arrayprops.accroche_x = 2
             arrayprops.accroche_y = 2
 
-        if scene.product_props.product_type == "1" : 
+        if scene.product_props.product_type == "1":
             arrayprops.peigne_long_x = difprops.type - 1
             arrayprops.peigne_long_y = 1
             arrayprops.cadre_mortaise_x = 2
             arrayprops.cadre_mortaise_y = 1
             arrayprops.cadre_tenon_x = 2
             arrayprops.cadre_tenon_y = 1
-            arrayprops.carreau_x = difprops.type 
+            arrayprops.carreau_x = difprops.type
             arrayprops.carreau_y = 1
             arrayprops.accroche_x = 2
             arrayprops.accroche_y = 2
 
         return {"FINISHED"}
-    
+
+
 class NoOverlap(bpy.types.Operator, AddObjectHelper):
     bl_idname = "mesh.no_overlap"
     bl_label = "Disperser la selection"
@@ -1334,33 +1302,54 @@ class PrepareToCam(bpy.types.Operator, AddObjectHelper):
             bpy.ops.object.join()
             bpy.context.object.name = difprops.getDifName()
             if prepprops.isConvertToCurve_prepare and prepprops.isOvercuts:
-                bpy.ops.object.curve_overcuts(
-                    diameter=usinageprops.fraise, threshold=1.569
-                )
+                bpy.ops.object.curve_overcuts(diameter=usinageprops.fraise, threshold=1.569)
 
         return {"FINISHED"}
-    
+
+
+class PositionSelected(bpy.types.Operator, AddObjectHelper):
+    bl_idname = "mesh.position_selected"
+    bl_label = "Positionner"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        scene = context.scene
+        prepprops = scene.prep_props
+        difprops = scene.dif_props
+        usinageprops = scene.usinage_props
+
+        # mesh selection
+
+        return {"FINISHED"}
+
+
 class UpdateAddonOperator(bpy.types.Operator):
     """Met à jour l'addon depuis le dépôt Git"""
+
     bl_idname = "addon.update_git"
     bl_label = "Mettre à jour l'addon"
 
     def execute(self, context):
         addon_path = os.path.dirname(os.path.abspath(__file__))
         try:
+            import git
+        except ImportError:
+            print("[ERREUR] Le module 'git' n'est pas installé. Assurez-vous que 'gitpython' est installé.")
+            return
+        try:
             # Ouvre le dépôt Git
             repo = git.Repo(addon_path)
             # Récupère les dernières modifications
             repo.git.pull()
-            self.report({'INFO'}, "Addon mis à jour avec succès.")
-            
+            self.report({"INFO"}, "Addon mis à jour avec succès.")
+
             # Recharge l'addon
             bpy.ops.script.reload()
         except Exception as e:
-            self.report({'ERROR'}, f"Erreur lors de la mise à jour : {str(e)}")
-            return {'CANCELLED'}
+            self.report({"ERROR"}, f"Erreur lors de la mise à jour : {str(e)}")
+            return {"CANCELLED"}
 
-        return {'FINISHED'}
+        return {"FINISHED"}
 
 
 classes = [
@@ -1392,7 +1381,8 @@ classes = [
     SetArrayOffset,
     NoOverlap,
     SetRecommendedArray,
-    UpdateAddonOperator
+    UpdateAddonOperator,
+    PositionSelected,
 ]
 
 

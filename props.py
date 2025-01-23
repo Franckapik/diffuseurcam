@@ -1105,6 +1105,9 @@ class PrepareProps(bpy.types.PropertyGroup):
             )
         ]
         return attributes
+    
+class PositionSelectedProps(bpy.types.PropertyGroup):
+    selection_position: EnumProperty(items=(("0", "Droite", ""), ("1", "Gauche", ""), ("2", "Haut", ""), ("3", "Bas", "")))
 
 
 classes = [
@@ -1116,6 +1119,7 @@ classes = [
     Usinageprops,
     DevisProps,
     DevisList,
+    PositionSelectedProps
 ]
 
 
@@ -1126,6 +1130,7 @@ def register():
     bpy.types.Scene.dif_props = bpy.props.PointerProperty(type=DiffuseurProps)
     bpy.types.Scene.array_props = bpy.props.PointerProperty(type=ArrayProps)
     bpy.types.Scene.pos_props = bpy.props.PointerProperty(type=PositionProps)
+    bpy.types.Scene.pos_sel_props = bpy.props.PointerProperty(type=PositionSelectedProps)
     bpy.types.Scene.prep_props = bpy.props.PointerProperty(type=PrepareProps)
     bpy.types.Scene.product_props = bpy.props.PointerProperty(type=UIProductProps)
     bpy.types.Scene.devis_props = bpy.props.PointerProperty(type=DevisProps)
@@ -1140,6 +1145,7 @@ def unregister():
     del bpy.types.Scene.dif_props
     del bpy.types.Scene.array_props
     del bpy.types.Scene.pos_props
+    del bpy.types.Scene.pos_sel_props
     del bpy.types.Scene.prep_props
     del bpy.types.Scene.dif_parts
     del bpy.types.Scene.product_props

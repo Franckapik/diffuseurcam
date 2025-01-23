@@ -52,6 +52,7 @@ class Diffuseur_SideBar(Panel):
         arrayprops = scene.array_props
         posprops = scene.pos_props
         prepprops = scene.prep_props
+        posselprops = scene.pos_sel_props
         productprops = scene.product_props
         usinageprops = scene.usinage_props
         devisprops = scene.devis_props
@@ -242,6 +243,15 @@ class Diffuseur_SideBar(Panel):
         box.prop(prepprops, "isJoin_prepare")
 
         box.operator("mesh.prepare_cam")
+
+        # Position selected
+        layout.separator()
+        box = layout.box()
+        box.label(text="Positionner la selection", icon="X")
+        row = box.row()
+        row.prop(posselprops, "selection_position", expand=True)
+
+        box.operator("mesh.position_selected")
 
         # Devis
         layout.separator()
