@@ -248,10 +248,20 @@ class Diffuseur_SideBar(Panel):
         layout.separator()
         box = layout.box()
         box.label(text="Positionner la selection", icon="X")
-        row = box.row()
-        row.prop(posselprops, "selection_position", expand=True)
+        col = layout.column()
+        col.label(text="Positionner la sélection")
 
-        box.operator("mesh.position_selected")
+        # Grille pour former une croix
+        grid = col.grid_flow(row_major=True, columns=3, even_columns=True, even_rows=True, align=True)
+        grid.label(text="")  # Espace vide
+        grid.operator("mesh.position_selected", text="Haut").direction = 'Y+'
+        grid.label(text="")  # Espace vide
+        grid.operator("mesh.position_selected", text="Gauche").direction = 'X-'
+        grid.label(text="")  # Espace vide
+        grid.operator("mesh.position_selected", text="Droite").direction = 'X+'
+        grid.label(text="")  # Espace vide
+        grid.operator("mesh.position_selected", text="Bas").direction = 'Y-'
+        grid.label(text="")  # Espace vide
 
         # Devis
         layout.separator()

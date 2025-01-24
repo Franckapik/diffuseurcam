@@ -8,6 +8,7 @@ from bpy_extras.object_utils import AddObjectHelper
 from bpy.props import FloatVectorProperty, StringProperty, IntProperty
 import math
 import os
+from mathutils import Vector
 
 
 class AddCadreMortaise(bpy.types.Operator, AddObjectHelper):
@@ -1311,21 +1312,98 @@ class PrepareToCam(bpy.types.Operator, AddObjectHelper):
         return {"FINISHED"}
 
 
-class PositionSelected(bpy.types.Operator, AddObjectHelper):
+class PositionSelected(bpy.types.Operator):
+    """Opérateur pour positionner une pièce par rapport à une autre avec des options configurables"""
     bl_idname = "mesh.position_selected"
-    bl_label = "Positionner"
-    bl_options = {"REGISTER", "UNDO"}
+    bl_label = "Positionner la selection"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    direction: bpy.props.EnumProperty(
+        name="Direction",
+        description="Direction de déplacement",
+        items=[
+            ('X+', "Droite", "Déplacer la pièce à droite selon X+ et aligner Y"),
+            ('X-', "Gauche", "Déplacer la pièce à gauche selon X- et aligner Y"),
+            ('Y+', "Haut", "Déplacer la pièce en haut selon Y+ et aligner X"),
+            ('Y-', "Bas", "Déplacer la pièce en bas selon Y- et aligner X")
+        ],
+        default='X+'
+    )
+
+    array_offset: bpy.props.FloatProperty(
+        name="Array Offset",
+        description="Distance de déplacement en mètres",
+        default=0.015
+    )
 
     def execute(self, context):
         scene = context.scene
-        prepprops = scene.prep_props
-        difprops = scene.dif_props
-        usinageprops = scene.usinage_props
+        arrayprops = scene.array_props
+        array_offset = arrayprops.array_offset
 
-        # mesh selection
+        # Vérifier si deux objets sont sélectionnés
+        if len(context.selected_objects) != 2:
+            self.report({'ERROR'}, "Veuillez sélectionner exactement deux objets.")
+            return {'CANCELLED'}
 
-        return {"FINISHED"}
+        # Obtenir les deux objets sélectionnés
+        obj1, obj2 = context.selected_objects
 
+        # Identifier l'ordre de sélection
+        if obj2.select_get():
+            obj1, obj2 = obj2, obj1
+
+        # Placer l'origine des objets au centre de leur géométrie
+        bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
+        bpy.context.view_layer.objects.active = obj1
+        bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='BOUNDS')
+        bpy.context.view_layer.objects.active = obj2
+        bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='BOUNDS')
+
+        # Calculer les dimensions des objets via le bounding box
+        bbox1 = [obj1.matrix_world @ Vector(corner) for corner in obj1.bound_box]
+        bbox2 = [obj2.matrix_world @ Vector(corner) for corner in obj2.bound_box]
+
+        min1 = tuple(min(bbox1, key=lambda v: v[i])[i] for i in range(3))
+        max1 = tuple(max(bbox1, key=lambda v: v[i])[i] for i in range(3))
+        min2 = tuple(min(bbox2, key=lambda v: v[i])[i] for i in range(3))
+        max2 = tuple(max(bbox2, key=lambda v: v[i])[i] for i in range(3))
+
+        # Appliquer le déplacement en fonction de la direction
+        if self.direction == 'X+':
+            obj1.location.x = max2[0] + array_offset + (max1[0] - min1[0]) / 2
+            obj1.location.y = (min2[1] + max2[1]) / 2  # Alignement sur Y
+        elif self.direction == 'X-':
+            obj1.location.x = min2[0] - array_offset - (max1[0] - min1[0]) / 2
+            obj1.location.y = (min2[1] + max2[1]) / 2  # Alignement sur Y
+        elif self.direction == 'Y+':
+            obj1.location.y = max2[1] + array_offset + (max1[1] - min1[1]) / 2
+            obj1.location.x = (min2[0] + max2[0]) / 2  # Alignement sur X
+        elif self.direction == 'Y-':
+            obj1.location.y = min2[1] - array_offset - (max1[1] - min1[1]) / 2
+            obj1.location.x = (min2[0] + max2[0]) / 2  # Alignement sur X
+
+        # Conserver la position Z
+        obj1.location.z = (min2[2] + max2[2]) / 2  # Centrer sur Z
+
+        self.report({'INFO'}, f"{obj1.name} positionné par rapport à {obj2.name} ({self.direction}).")
+        return {'FINISHED'}
+    
+addon_keymaps = []
+
+def register_keymaps():
+    wm = bpy.context.window_manager
+    km = wm.keyconfigs.addon.keymaps.new(name='Object Mode', space_type='EMPTY')
+
+    for direction, key in [('X+', 'RIGHT_ARROW'), ('X-', 'LEFT_ARROW'), ('Y+', 'UP_ARROW'), ('Y-', 'DOWN_ARROW')]:
+        kmi = km.keymap_items.new(PositionSelected.bl_idname, key, 'PRESS')
+        kmi.properties.direction = direction
+        addon_keymaps.append((km, kmi))
+
+def unregister_keymaps():
+    for km, kmi in addon_keymaps:
+        km.keymap_items.remove(kmi)
+        addon_keymaps.clear()
 
 class UpdateAddonOperator(bpy.types.Operator):
     """Met à jour l'addon depuis le dépôt Git"""
@@ -1393,8 +1471,10 @@ classes = [
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
+    register_keymaps()
 
 
 def unregister():
     for cls in classes:
         bpy.utils.unregister_class(cls)
+    unregister_keymaps()
