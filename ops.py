@@ -1349,11 +1349,8 @@ class PositionSelected(bpy.types.Operator):
         # Obtenir les deux objets sélectionnés
         obj1, obj2 = context.selected_objects
 
-        # Identifier l'ordre de sélection
-        if obj2.select_get():
-            obj1, obj2 = obj2, obj1
-
         # Placer l'origine des objets au centre de leur géométrie
+        bpy.ops.object.convert(target='MESH') #apply array
         bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
         bpy.context.view_layer.objects.active = obj1
         bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='BOUNDS')
@@ -1368,20 +1365,25 @@ class PositionSelected(bpy.types.Operator):
         max1 = tuple(max(bbox1, key=lambda v: v[i])[i] for i in range(3))
         min2 = tuple(min(bbox2, key=lambda v: v[i])[i] for i in range(3))
         max2 = tuple(max(bbox2, key=lambda v: v[i])[i] for i in range(3))
+        
 
         # Appliquer le déplacement en fonction de la direction
         if self.direction == 'X+':
             obj1.location.x = max2[0] + array_offset + (max1[0] - min1[0]) / 2
-            obj1.location.y = (min2[1] + max2[1]) / 2  # Alignement sur Y
+            bpy.ops.object.align(bb_quality=False, align_mode='OPT_1', relative_to='OPT_4', align_axis={'Y'})
+
         elif self.direction == 'X-':
             obj1.location.x = min2[0] - array_offset - (max1[0] - min1[0]) / 2
-            obj1.location.y = (min2[1] + max2[1]) / 2  # Alignement sur Y
+            bpy.ops.object.align(bb_quality=False, align_mode='OPT_1', relative_to='OPT_4', align_axis={'Y'})
+
         elif self.direction == 'Y+':
             obj1.location.y = max2[1] + array_offset + (max1[1] - min1[1]) / 2
-            obj1.location.x = (min2[0] + max2[0]) / 2  # Alignement sur X
+            bpy.ops.object.align(align_mode='OPT_1', align_axis={'X'})
+
         elif self.direction == 'Y-':
             obj1.location.y = min2[1] - array_offset - (max1[1] - min1[1]) / 2
-            obj1.location.x = (min2[0] + max2[0]) / 2  # Alignement sur X
+            bpy.ops.object.align(align_mode='OPT_1', align_axis={'X'})
+
 
         # Conserver la position Z
         obj1.location.z = (min2[2] + max2[2]) / 2  # Centrer sur Z

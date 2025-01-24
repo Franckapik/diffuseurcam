@@ -248,8 +248,8 @@ class Diffuseur_SideBar(Panel):
         layout.separator()
         box = layout.box()
         box.label(text="Positionner la selection", icon="X")
-        col = layout.column()
-        col.label(text="Positionner la sélection")
+        col = box.column()
+        col.label(text="Positionner deux pièces selectionnées")
 
         # Grille pour former une croix
         grid = col.grid_flow(row_major=True, columns=3, even_columns=True, even_rows=True, align=True)
