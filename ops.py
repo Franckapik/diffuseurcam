@@ -1347,11 +1347,22 @@ class PositionSelected(bpy.types.Operator):
             return {'CANCELLED'}
 
         # Obtenir les deux objets sélectionnés
-        obj1, obj2 = context.selected_objects
+        active_obj = context.view_layer.objects.active  # L'objet actif
+        selected_objs = [obj for obj in context.selected_objects if obj != active_obj]
+
+        if not active_obj or len(selected_objs) != 1:
+            self.report({'ERROR'}, "Veuillez sélectionner deux objets, avec un actif.")
+            return {'CANCELLED'}
+
+        obj1 = selected_objs[0]  # L'objet à déplacer
+        obj2 = active_obj         # L'objet actif, utilisé comme référence
 
         # Placer l'origine des objets au centre de leur géométrie
         bpy.ops.object.convert(target='MESH') #apply array
-        bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
+        
+        bpy.context.scene.tool_settings.transform_pivot_point = 'BOUNDING_BOX_CENTER'
+        bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
+
         bpy.context.view_layer.objects.active = obj1
         bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='BOUNDS')
         bpy.context.view_layer.objects.active = obj2
