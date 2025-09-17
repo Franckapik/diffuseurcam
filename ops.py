@@ -776,7 +776,10 @@ class Add3DModel(bpy.types.Operator, AddObjectHelper):
         depth = difprops.getMotif("depth")
         print(depth)
 
-        for i in range(1 if difprops.moule_type == "1d" else difprops.type):
+        # Calculer le nombre de lignes en tenant compte de la longueur du diffuseur
+        num_rows = 1 if difprops.moule_type == "1d" else round(difprops.type * difprops.longueur_diffuseur)
+        
+        for i in range(num_rows):
             y = i * difprops.getRang()
             for k in range(difprops.type):
                 index = i * difprops.type + k

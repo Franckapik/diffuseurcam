@@ -7,6 +7,9 @@ travailler les position array pour cadre tissu court et long dans ops car copier
 verifier que le rechargement du script s'effectue bien après update (bl info issue).
 ajouter une possibilité d'alignement positif/negatif selon la touche shift + fleche pressée pour position selected et de pouvoir selctionner pusieurs objets pour réaliser les dpclmts.
 
+Moule 1D sans les inserts de croix ?
+
+
 travailler sur les edges entres les mono piliers du 2D.
 faire coincider reduction des piliers avec la variable existante pour le 2d stable a la base.
 Pouvoir faire des cercles pour recconiatre les piliers de 1 à 13 par ex.
