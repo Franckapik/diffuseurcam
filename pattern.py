@@ -564,47 +564,125 @@ def monopilier_profondeurs(x, y, difprops, colonne, cross_monopilier_min):
     epaisseur = difprops.epaisseur
     epaisseur_pilier = difprops.epaisseur_pilier
     profondeur = difprops.profondeur
-    largeur_pilier = round(difprops.getLargeurPilier(), 4)
-    reduction = 0.2 * largeur_pilier
-
+    
+    # Calcul des dimensions respectant toutes les contraintes
+    largeur_diffuseur = difprops.largeur_diffuseur
+    reduction_ratio = float(difprops.pilier_reduction)
+    
+    # Dans le contexte du moule mono, la largeur disponible est largeur_monopilier
+    # largeur_monopilier = rang * type - epaisseur = (largeur_diffuseur - epaisseur) - epaisseur = largeur_diffuseur - 2*epaisseur
+    largeur_monopilier = largeur_diffuseur - 2 * epaisseur
+    # Zone utile pour les piliers : on laisse epaisseur de marge à droite
+    largeur_utile = largeur_monopilier - epaisseur
+    
+    # Calcul de l'espace théorique par pilier dans la zone utile
+    if difprops.type > 0:
+        espace_theorique_par_pilier = largeur_utile / difprops.type
+    else:
+        espace_theorique_par_pilier = largeur_utile
+    
+    # Calcul de la largeur réelle des piliers (sans réduction puis avec réduction)
+    largeur_pilier_base = espace_theorique_par_pilier - epaisseur  # Espace pour le pilier moins l'épaisseur de séparation
+    largeur_pilier_reduite = largeur_pilier_base * (1 - reduction_ratio)  # Application de la réduction
+    
+    # Pour centrer l'ensemble des piliers : approche simplifiée et directe
+    if difprops.type > 1:
+        # DEBUG: affichons les valeurs détaillées
+        print(f"DEBUG monopilier_profondeurs: largeur_diffuseur={largeur_diffuseur}, largeur_monopilier={largeur_monopilier}, largeur_utile={largeur_utile}")
+        print(f"DEBUG: type={difprops.type}, epaisseur={epaisseur}")
+        print(f"DEBUG: largeur_pilier_reduite={largeur_pilier_reduite}, reduction_ratio={reduction_ratio}")
+        
+        # Calcul de l'espace total occupé par tous les piliers
+        espace_total_piliers = difprops.type * largeur_pilier_reduite
+        # Espace restant à répartir entre les intervalles (type-1 intervalles)
+        espace_pour_intervalles = largeur_utile - espace_total_piliers
+        # Intervalle uniforme entre les piliers
+        intervalle_entre_piliers = espace_pour_intervalles / (difprops.type - 1)
+        # Espacement entre centres = largeur pilier + intervalle
+        espacement_entre_centres = largeur_pilier_reduite + intervalle_entre_piliers
+        
+        # Position du premier pilier : centré dans la largeur complète du moule
+        # Le moule va de (x - epaisseur) à (largeur_monopilier + epaisseur)
+        # Nous devons centrer l'ensemble des piliers dans cette largeur totale
+        largeur_totale_moule = largeur_monopilier + 2 * epaisseur  # = largeur_diffuseur
+        largeur_ensemble_total = (difprops.type - 1) * espacement_entre_centres + largeur_pilier_reduite
+        marge_centrage_moule = (largeur_totale_moule - largeur_ensemble_total) / 2
+        x_premier_pilier = (x - epaisseur) + marge_centrage_moule + largeur_pilier_reduite / 2
+        
+        print(f"DEBUG: espace_total_piliers={espace_total_piliers}, intervalle_entre_piliers={intervalle_entre_piliers}")
+        print(f"DEBUG: espacement_entre_centres={espacement_entre_centres}, marge_centrage_moule={marge_centrage_moule}")
+        print(f"DEBUG: largeur_ensemble_total={largeur_ensemble_total}, largeur_totale_moule={largeur_totale_moule}, x={x}, x_premier_pilier={x_premier_pilier}")
+        
+        # NOUVEAU DEBUG: calculons les positions réelles des piliers par rapport au moule complet
+        positions_piliers = []
+        for i in range(difprops.type):
+            centre_pilier = x_premier_pilier + i * espacement_entre_centres
+            debut_pilier = centre_pilier - largeur_pilier_reduite / 2
+            fin_pilier = centre_pilier + largeur_pilier_reduite / 2
+            positions_piliers.append((debut_pilier, fin_pilier))
+        
+        premier_debut = positions_piliers[0][0]
+        dernier_fin = positions_piliers[-1][1]
+        # Les marges sont calculées par rapport aux limites du moule
+        marge_gauche_moule = premier_debut - (x - epaisseur)  # Distance depuis le début du moule
+        marge_droite_moule = (largeur_monopilier + epaisseur) - dernier_fin  # Distance jusqu'à la fin du moule
+        # Les marges utiles (par rapport à la zone de piliers)
+        marge_gauche_utile = premier_debut - (x + epaisseur)
+        marge_droite_utile = (x + epaisseur + largeur_utile) - dernier_fin
+        
+        print(f"DEBUG: Premier pilier de {positions_piliers[0][0]} à {positions_piliers[0][1]}")
+        print(f"DEBUG: Dernier pilier de {positions_piliers[-1][0]} à {positions_piliers[-1][1]}")
+        print(f"DEBUG: Limites du moule: de {x - epaisseur} à {largeur_monopilier + epaisseur}")
+        print(f"DEBUG: Zone utile: de {x + epaisseur} à {x + epaisseur + largeur_utile}")
+        print(f"DEBUG: Marge gauche (moule)={marge_gauche_moule}, Marge droite (moule)={marge_droite_moule}")
+        print(f"DEBUG: Marge gauche (utile)={marge_gauche_utile}, Marge droite (utile)={marge_droite_utile}")
+    else:
+        # Un seul pilier, centré parfaitement dans le moule complet
+        espacement_entre_centres = 0
+        largeur_totale_moule = largeur_monopilier + 2 * epaisseur
+        x_premier_pilier = (x - epaisseur) + largeur_totale_moule / 2
+    
     x0, y0 = x, y  # Initialisation des coordonnées de départ
-    array_offset = 0  # Remplacez par la valeur appropriée pour l'offset
     result = []
 
     for i in range(difprops.type):
         index = colonne * difprops.type + i
         if(ratios[index]) : # if not pilier 0
+            # Position du centre de ce pilier
+            centre_pilier_x = x_premier_pilier + i * espacement_entre_centres
+            
+            # Calcul des positions du pilier
+            pilier_start = centre_pilier_x - largeur_pilier_reduite / 2
+            pilier_end = centre_pilier_x + largeur_pilier_reduite / 2
+            
             result.extend(
                 [
-                    (x0, y0, 0),
-                    (x0 + reduction, y0 + ratios[index], 0),
+                    (pilier_start, y0, 0),
+                    (pilier_start, y0 + ratios[index], 0),
                     (
-                        x0 + reduction + (largeur_pilier - reduction * 2 - epaisseur_pilier ) / 2,
+                        pilier_start + (largeur_pilier_reduite - epaisseur_pilier) / 2,
                         y0 + ratios[index],
                         0,
                     ),
                     (
-                        x0 + reduction + (largeur_pilier - reduction * 2 - epaisseur_pilier ) / 2,
+                        pilier_start + (largeur_pilier_reduite - epaisseur_pilier) / 2,
                         y0 + ratios[index] - cross_monopilier_min / 2 - epaisseur_pilier/2, # epaisseur_pilier/2 à confirmer selon overcuts ou non . Différence avec stable qui s'équilibre car il touche le fond
                         0,
                     ),
                     (
-                        x0 + reduction + (largeur_pilier - reduction * 2 + epaisseur_pilier ) / 2,
+                        pilier_start + (largeur_pilier_reduite + epaisseur_pilier) / 2,
                         y0 + ratios[index] - cross_monopilier_min / 2 - epaisseur_pilier/2,
                         0,
                     ),
                     (
-                        x0 + reduction + (largeur_pilier - reduction * 2 + epaisseur_pilier ) / 2,
+                        pilier_start + (largeur_pilier_reduite + epaisseur_pilier) / 2,
                         y0 + ratios[index],
                         0,
                     ),
-                    (x0 + largeur_pilier - reduction, y0 + ratios[index], 0),
-                    (x0 + largeur_pilier, y0, 0),
+                    (pilier_end, y0 + ratios[index], 0),
+                    (pilier_end, y0, 0),
                 ]
             )
-
-        x0 += largeur_pilier + epaisseur
-    print("|")
 
     return result
 
@@ -614,23 +692,69 @@ def contremonopilier_hauteurs(x, y, difprops):
     amax = max(ratios)
     epaisseur = difprops.epaisseur
     profondeur = difprops.profondeur
-    largeur_pilier = round(difprops.getLargeurPilier(), 4)
-    reduction = 0.008
+    
+    # Calcul des dimensions respectant toutes les contraintes (même logique que monopilier_profondeurs)
+    largeur_diffuseur = difprops.largeur_diffuseur
+    reduction_ratio = float(difprops.pilier_reduction)
+    
+    # Dans le contexte du moule mono, la largeur disponible est largeur_monopilier
+    # largeur_monopilier = rang * type - epaisseur = (largeur_diffuseur - epaisseur) - epaisseur = largeur_diffuseur - 2*epaisseur
+    largeur_monopilier = largeur_diffuseur - 2 * epaisseur
+    # Zone utile pour les piliers : on laisse epaisseur de marge à droite
+    largeur_utile = largeur_monopilier - epaisseur
+    
+    # Calcul de l'espace théorique par pilier dans la zone utile
+    if difprops.type > 0:
+        espace_theorique_par_pilier = largeur_utile / difprops.type
+    else:
+        espace_theorique_par_pilier = largeur_utile
+    
+    # Calcul de la largeur réelle des piliers (sans réduction puis avec réduction)
+    largeur_pilier_base = espace_theorique_par_pilier - epaisseur  # Espace pour le pilier moins l'épaisseur de séparation
+    largeur_pilier_reduite = largeur_pilier_base * (1 - reduction_ratio)  # Application de la réduction
+    
+    # Pour centrer l'ensemble des piliers : approche simplifiée et directe
+    # (même logique que monopilier_profondeurs)
+    if difprops.type > 1:
+        # Calcul de l'espace total occupé par tous les piliers
+        espace_total_piliers = difprops.type * largeur_pilier_reduite
+        # Espace restant à répartir entre les intervalles (type-1 intervalles)
+        espace_pour_intervalles = largeur_utile - espace_total_piliers
+        # Intervalle uniforme entre les piliers
+        intervalle_entre_piliers = espace_pour_intervalles / (difprops.type - 1)
+        # Espacement entre centres = largeur pilier + intervalle
+        espacement_entre_centres = largeur_pilier_reduite + intervalle_entre_piliers
+        
+        # Position du premier pilier : centré dans la largeur complète du moule
+        # (même logique que monopilier_profondeurs)
+        largeur_totale_moule = largeur_monopilier + 2 * epaisseur  # = largeur_diffuseur
+        largeur_ensemble_total = (difprops.type - 1) * espacement_entre_centres + largeur_pilier_reduite
+        marge_centrage_moule = (largeur_totale_moule - largeur_ensemble_total) / 2
+        x_premier_pilier = (x - epaisseur) + marge_centrage_moule + largeur_pilier_reduite / 2
+    else:
+        # Un seul pilier, centré parfaitement dans le moule complet
+        espacement_entre_centres = 0
+        largeur_totale_moule = largeur_monopilier + 2 * epaisseur
+        x_premier_pilier = (x - epaisseur) + largeur_totale_moule / 2
 
     x0, y0 = x, y  # Initialisation des coordonnées de départ
-    array_offset = 0  # Remplacez par la valeur appropriée pour l'offset
     result = []
 
     for i in range(difprops.type):
+        # Position du centre de ce pilier (même logique que monopilier_profondeurs)
+        centre_pilier_x = x_premier_pilier + i * espacement_entre_centres
+        
+        # Calcul des positions du pilier
+        pilier_start = centre_pilier_x - largeur_pilier_reduite / 2
+        pilier_end = centre_pilier_x + largeur_pilier_reduite / 2
+        
         result.extend(
             [
-                (x0, y0, 0),
-                (x0 + reduction, y0 + ratios[i] - epaisseur, 0),
-                (x0 + largeur_pilier - reduction, y0 + ratios[i] - epaisseur, 0),
-                (x0 + largeur_pilier, y0, 0),
+                (pilier_start, y0, 0),
+                (pilier_start, y0 + ratios[i] - epaisseur, 0),
+                (pilier_end, y0 + ratios[i] - epaisseur, 0),
+                (pilier_end, y0, 0),
             ]
         )
-
-        x0 += largeur_pilier + epaisseur
 
     return result

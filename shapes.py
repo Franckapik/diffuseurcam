@@ -1378,8 +1378,12 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
         if difprops.type_moule == "mono":
             y0 = 0
             largeur_monopilier = rang * type - epaisseur
+            rangee_end_indices = []  # Pour tracker les fins de rangées
+            
             for i in range(len(ratio)):
                 if (difprops.moule_type == "1d" and i < 1) or difprops.moule_type == "2d":
+                    start_idx = len(vertsCadre)  # Index de début de cette rangée
+                    
                     vertsCadre += [
                         (x0 - epaisseur, y0, 0),
                         (x0 - epaisseur, y0 + socle_monopilier, 0),
@@ -1396,17 +1400,23 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
                         (largeur_monopilier - 4 * largeur_monopilier / 5, y0, 0),
                         (x0 - epaisseur, y0, 0),
                     ]
+                    
+                    rangee_end_indices.append(len(vertsCadre) - 1)  # Marquer la fin de cette rangée
 
                     y0 += amax + array_offset + socle_monopilier
 
-            for k in range(0, len(vertsCadre) - 1):
-                edgesCadre += [
-                    (k, k + 1),
-                ]
-
-            edgesCadre += [
-                (len(vertsCadre) - 1, 0),
-            ]
+            # Génération des edges par rangée pour éviter les connexions inter-rangées
+            rangee_start = 0
+            for rangee_end in rangee_end_indices:
+                # Créer les edges pour cette rangée seulement
+                for k in range(rangee_start, rangee_end):
+                    edgesCadre += [(k, k + 1)]
+                
+                # Fermer le contour de cette rangée
+                edgesCadre += [(rangee_end, rangee_start)]
+                
+                # Préparer pour la rangée suivante
+                rangee_start = rangee_end + 1
 
     verts = [*list(vertsCadre)]
     edges = [*list(edgesCadre)]
@@ -1519,14 +1529,19 @@ def add_contre_pilier_moule(difprops, productprops, usinageprops, arrayprops):
                 (x0 + 0.05 + double_epaisseur + largeur_monopilier + double_epaisseur + 0.05, y0, 0),
             ]
 
+            # Pour les contre-piliers, il n'y a généralement qu'une seule rangée, 
+            # mais on applique la même logique de sécurité que pour les piliers
+            # Génération des edges en contour fermé (pas de connexion globale)
             for k in range(0, len(vertsCadre) - 1):
                 edgesCadre += [
                     (k, k + 1),
                 ]
 
-            edgesCadre += [
-                (len(vertsCadre) - 1, 0),
-            ]
+            # Fermer le contour uniquement pour cette géométrie
+            if len(vertsCadre) > 2:
+                edgesCadre += [
+                    (len(vertsCadre) - 1, 0),
+                ]
 
     verts = [*list(vertsCadre)]
     edges = [*list(edgesCadre)]
