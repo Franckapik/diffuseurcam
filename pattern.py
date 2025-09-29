@@ -639,31 +639,38 @@ def monopilier_profondeurs(x, y, difprops, colonne, cross_monopilier_min):
             pilier_start = centre_pilier_x - largeur_pilier_reduite / 2
             pilier_end = centre_pilier_x + largeur_pilier_reduite / 2
             
+            # Appliquer la même logique que pour les piliers stables et eco :
+            # soustraire l'épaisseur uniquement pour la hauteur maximale
+            if ratios[index] == amax:
+                hauteur_pilier = ratios[index] - epaisseur
+            else:
+                hauteur_pilier = ratios[index]
+            
             result.extend(
                 [
                     (pilier_start, y0, 0),
-                    (pilier_start, y0 + ratios[index], 0),
+                    (pilier_start, y0 + hauteur_pilier, 0),
                     (
                         pilier_start + (largeur_pilier_reduite - epaisseur_pilier) / 2,
-                        y0 + ratios[index],
+                        y0 + hauteur_pilier,
                         0,
                     ),
                     (
                         pilier_start + (largeur_pilier_reduite - epaisseur_pilier) / 2,
-                        y0 + ratios[index] - cross_monopilier_min / 2 - epaisseur_pilier/2, # epaisseur_pilier/2 à confirmer selon overcuts ou non . Différence avec stable qui s'équilibre car il touche le fond
+                        y0 + hauteur_pilier - cross_monopilier_min / 2 - epaisseur_pilier/2, # epaisseur_pilier/2 à confirmer selon overcuts ou non . Différence avec stable qui s'équilibre car il touche le fond
                         0,
                     ),
                     (
                         pilier_start + (largeur_pilier_reduite + epaisseur_pilier) / 2,
-                        y0 + ratios[index] - cross_monopilier_min / 2 - epaisseur_pilier/2,
+                        y0 + hauteur_pilier - cross_monopilier_min / 2 - epaisseur_pilier/2,
                         0,
                     ),
                     (
                         pilier_start + (largeur_pilier_reduite + epaisseur_pilier) / 2,
-                        y0 + ratios[index],
+                        y0 + hauteur_pilier,
                         0,
                     ),
-                    (pilier_end, y0 + ratios[index], 0),
+                    (pilier_end, y0 + hauteur_pilier, 0),
                     (pilier_end, y0, 0),
                 ]
             )
@@ -732,11 +739,18 @@ def contremonopilier_hauteurs(x, y, difprops):
         pilier_start = centre_pilier_x - largeur_pilier_reduite / 2
         pilier_end = centre_pilier_x + largeur_pilier_reduite / 2
         
+        # Appliquer la même logique que pour les piliers stables et eco :
+        # soustraire l'épaisseur uniquement pour la hauteur maximale
+        if ratios[i] == amax:
+            hauteur_pilier = ratios[i] - epaisseur
+        else:
+            hauteur_pilier = ratios[i]
+        
         result.extend(
             [
                 (pilier_start, y0, 0),
-                (pilier_start, y0 + ratios[i] - epaisseur, 0),
-                (pilier_end, y0 + ratios[i] - epaisseur, 0),
+                (pilier_start, y0 + hauteur_pilier, 0),
+                (pilier_end, y0 + hauteur_pilier, 0),
                 (pilier_end, y0, 0),
             ]
         )
