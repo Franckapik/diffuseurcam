@@ -387,9 +387,23 @@ class Diffuseur_SideBar(Panel):
         # Addon
         layout.separator()
         box = layout.box()
-        box.label(text="Addon", icon="X")
+        box.label(text="Addon", icon="BLENDER")
+        
+        # Affichage de la version
+        try:
+            from .version import __version__
+            version_text = f"Version: {__version__}"
+        except ImportError:
+            version_text = "Version: inconnue"
+        
+        row = box.row()
+        row.label(text=version_text, icon="INFO")
+        row.operator("addon.show_info", text="", icon="QUESTION")
+        
+        # Boutons de mise à jour
         row = box.row(align=True)
-        box.operator("addon.update_git", text="Mettre à jour l'addon")
+        row.operator("addon.check_update", text="Vérifier", icon="FILE_REFRESH")
+        row.operator("addon.update_git", text="Mettre à jour", icon="IMPORT")
 
 ui_classes = [DIF_MT_Presets, OT_AddMyPreset]
 

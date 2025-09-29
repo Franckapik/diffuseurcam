@@ -1,0 +1,57 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Get version from tag
+      id: get_version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+    
+    - name: Create Release Archive
+      run: |
+        # Crée une archive sans les fichiers Git et de développement
+        mkdir -p diffuseurcam-${{ steps.get_version.outputs.VERSION }}
+        cp -r *.py diffuseurcam-${{ steps.get_version.outputs.VERSION }}/
+        # Exclut les fichiers de développement
+        rm -f diffuseurcam-${{ steps.get_version.outputs.VERSION }}/release.py
+        zip -r diffuseurcam-${{ steps.get_version.outputs.VERSION }}.zip diffuseurcam-${{ steps.get_version.outputs.VERSION }}
+    
+    - name: Create GitHub Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Diffuseur CAM v${{ steps.get_version.outputs.VERSION }}
+        body: |
+          ## Diffuseur CAM v${{ steps.get_version.outputs.VERSION }}
+          
+          ### Installation
+          1. Téléchargez le fichier `diffuseurcam-${{ steps.get_version.outputs.VERSION }}.zip`
+          2. Dans Blender, allez dans Edit > Preferences > Add-ons
+          3. Cliquez sur "Install..." et sélectionnez le fichier zip
+          4. Activez l'addon "Diffuseur CAM"
+          
+          ### Mise à jour depuis Blender
+          Si vous avez déjà l'addon installé, vous pouvez utiliser le bouton "Mettre à jour" dans l'interface de l'addon.
+        draft: false
+        prerelease: false
+    
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./diffuseurcam-${{ steps.get_version.outputs.VERSION }}.zip
+        asset_name: diffuseurcam-${{ steps.get_version.outputs.VERSION }}.zip
+        asset_content_type: application/zip

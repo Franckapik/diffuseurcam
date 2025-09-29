@@ -1433,21 +1433,145 @@ class UpdateAddonOperator(bpy.types.Operator):
             import git
         except ImportError:
             print("[ERREUR] Le module 'git' n'est pas installé. Assurez-vous que 'gitpython' est installé.")
-            return
+            self.report({"ERROR"}, "Le module 'git' n'est pas installé.")
+            return {"CANCELLED"}
+        
         try:
             # Ouvre le dépôt Git
             repo = git.Repo(addon_path)
+            
+            # Récupère les informations avant la mise à jour
+            current_commit = repo.head.commit.hexsha[:7]
+            
             # Récupère les dernières modifications
+            origin = repo.remotes.origin
+            origin.fetch()
+            
+            # Vérifie s'il y a des mises à jour
+            commits_behind = list(repo.iter_commits('HEAD..origin/main'))
+            
+            if not commits_behind:
+                self.report({"INFO"}, "L'addon est déjà à jour.")
+                return {"FINISHED"}
+            
+            # Effectue la mise à jour
             repo.git.pull()
-            self.report({"INFO"}, "Addon mis à jour avec succès.")
+            new_commit = repo.head.commit.hexsha[:7]
+            
+            self.report({"INFO"}, f"Addon mis à jour avec succès. ({current_commit} → {new_commit})")
 
             # Recharge l'addon
             bpy.ops.script.reload()
+            
         except Exception as e:
             self.report({"ERROR"}, f"Erreur lors de la mise à jour : {str(e)}")
             return {"CANCELLED"}
 
         return {"FINISHED"}
+
+
+class CheckUpdateOperator(bpy.types.Operator):
+    """Vérifie s'il y a une nouvelle version disponible sur GitHub"""
+    
+    bl_idname = "addon.check_update"
+    bl_label = "Vérifier les mises à jour"
+    
+    def execute(self, context):
+        try:
+            import urllib.request
+            import json
+            from .version import __version__, UPDATE_CHECK_URL
+            
+            # Requête vers l'API GitHub
+            with urllib.request.urlopen(UPDATE_CHECK_URL) as response:
+                data = json.loads(response.read().decode())
+                
+            latest_version = data['tag_name'].lstrip('v')  # Enlève le 'v' du début si présent
+            current_version = __version__
+            
+            if self.compare_versions(latest_version, current_version) > 0:
+                self.report({"INFO"}, f"Nouvelle version disponible: {latest_version} (actuelle: {current_version})")
+            else:
+                self.report({"INFO"}, f"Vous avez la dernière version: {current_version}")
+                
+        except Exception as e:
+            self.report({"ERROR"}, f"Erreur lors de la vérification: {str(e)}")
+            return {"CANCELLED"}
+            
+        return {"FINISHED"}
+    
+    def compare_versions(self, version1, version2):
+        """Compare deux versions au format semver. Retourne 1 si v1 > v2, -1 si v1 < v2, 0 si égales"""
+        def version_tuple(v):
+            return tuple(map(int, v.split('.')))
+        
+        v1_tuple = version_tuple(version1)
+        v2_tuple = version_tuple(version2)
+        
+        if v1_tuple > v2_tuple:
+            return 1
+        elif v1_tuple < v2_tuple:
+            return -1
+        else:
+            return 0
+
+
+class AddonInfoOperator(bpy.types.Operator):
+    """Affiche les informations détaillées de l'addon"""
+    
+    bl_idname = "addon.show_info"
+    bl_label = "Informations de l'addon"
+    
+    def execute(self, context):
+        self.report({"INFO"}, "Informations affichées dans la console")
+        return {"FINISHED"}
+    
+    def invoke(self, context, event):
+        return context.window_manager.invoke_popup(self, width=400)
+    
+    def draw(self, context):
+        layout = self.layout
+        
+        # Informations de base
+        box = layout.box()
+        box.label(text="Diffuseur CAM", icon="BLENDER")
+        
+        try:
+            from .version import __version__
+            box.label(text=f"Version: {__version__}")
+        except ImportError:
+            box.label(text="Version: inconnue")
+        
+        box.label(text="Auteur: Franckapik")
+        
+        # Informations Git
+        try:
+            import git
+            addon_path = os.path.dirname(os.path.abspath(__file__))
+            repo = git.Repo(addon_path)
+            
+            box.separator()
+            box.label(text="Informations Git:")
+            
+            current_commit = repo.head.commit.hexsha[:7]
+            box.label(text=f"Commit: {current_commit}")
+            
+            branch = repo.active_branch.name
+            box.label(text=f"Branche: {branch}")
+            
+            # Vérifie s'il y a des modifications non commitées
+            if repo.is_dirty():
+                box.label(text="⚠ Modifications non sauvegardées", icon="ERROR")
+            else:
+                box.label(text="✓ Repository propre", icon="CHECKMARK")
+                
+        except Exception as e:
+            box.label(text=f"Git: {str(e)}")
+        
+        # Liens utiles
+        box.separator()
+        col = box.column()
+        col.operator("wm.url_open", text="GitHub Repository", icon="URL").url = "https://github.com/Franckapik/diffuseurcam"
 
 
 classes = [
@@ -1480,6 +1604,8 @@ classes = [
     NoOverlap,
     SetRecommendedArray,
     UpdateAddonOperator,
+    CheckUpdateOperator,
+    AddonInfoOperator,
     PositionSelected,
 ]
 
