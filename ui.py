@@ -408,6 +408,10 @@ class Diffuseur_SideBar(Panel):
         row = box.row(align=True)
         row.operator("addon.check_update", text="Vérifier", icon="FILE_REFRESH")
         row.operator("addon.update_git", text="Mettre à jour", icon="IMPORT")
+        
+        # Bouton de diagnostic (pour le débogage)
+        row = box.row()
+        row.operator("addon.git_diagnostic", text="Diagnostic Git", icon="CONSOLE")
 
 ui_classes = [DIF_MT_Presets, OT_AddMyPreset]
 

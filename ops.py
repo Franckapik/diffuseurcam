@@ -1464,29 +1464,70 @@ class UpdateAddonOperator(bpy.types.Operator):
             
             # Récupère les informations avant la mise à jour
             current_commit = repo.head.commit.hexsha[:7]
+            current_branch = repo.active_branch.name
             
-            # Récupère les dernières modifications
+            print(f"[UPDATE] Commit actuel: {current_commit}")
+            print(f"[UPDATE] Branche actuelle: {current_branch}")
+            
+            # Vérifie l'état du repository
+            if repo.is_dirty():
+                print("[UPDATE] Détection de modifications locales non commitées")
+                # Sauvegarde les modifications locales
+                try:
+                    repo.git.stash('push', '-m', 'Auto-stash before update')
+                    print("[UPDATE] Modifications locales sauvegardées")
+                except:
+                    print("[UPDATE] Pas de modifications à sauvegarder")
+            
+            # Récupère les dernières modifications depuis le serveur
             origin = repo.remotes.origin
+            print("[UPDATE] Récupération des mises à jour depuis GitHub...")
             origin.fetch()
             
             # Vérifie s'il y a des mises à jour
-            commits_behind = list(repo.iter_commits('HEAD..origin/main'))
+            try:
+                commits_behind = list(repo.iter_commits(f'HEAD..origin/{current_branch}'))
+            except:
+                # Si la branche n'existe pas sur origin, utiliser main
+                commits_behind = list(repo.iter_commits('HEAD..origin/main'))
+                current_branch = 'main'
             
             if not commits_behind:
                 self.report({"INFO"}, "L'addon est déjà à jour.")
                 return {"FINISHED"}
             
-            # Effectue la mise à jour
-            repo.git.pull()
+            print(f"[UPDATE] {len(commits_behind)} commits en retard")
+            
+            # Effectue une mise à jour forcée pour éviter les conflits
+            print("[UPDATE] Mise à jour forcée en cours...")
+            repo.git.reset('--hard', f'origin/{current_branch}')
+            
+            # Nettoie les fichiers non suivis qui pourraient causer des problèmes
+            repo.git.clean('-fd')
+            
             new_commit = repo.head.commit.hexsha[:7]
             
+            print(f"[UPDATE] Mise à jour terminée: {current_commit} → {new_commit}")
             self.report({"INFO"}, f"Addon mis à jour avec succès. ({current_commit} → {new_commit})")
 
             # Recharge l'addon
+            print("[UPDATE] Rechargement de l'addon...")
             bpy.ops.script.reload()
             
+        except git.exc.InvalidGitRepositoryError:
+            error_msg = "Ce dossier n'est pas un dépôt Git. Mise à jour impossible."
+            print(f"[ERREUR] {error_msg}")
+            self.report({"ERROR"}, error_msg)
+            return {"CANCELLED"}
+        except git.exc.GitCommandError as e:
+            error_msg = f"Erreur Git lors de la mise à jour : {str(e)}"
+            print(f"[ERREUR] {error_msg}")
+            self.report({"ERROR"}, error_msg)
+            return {"CANCELLED"}
         except Exception as e:
-            self.report({"ERROR"}, f"Erreur lors de la mise à jour : {str(e)}")
+            error_msg = f"Erreur inattendue lors de la mise à jour : {str(e)}"
+            print(f"[ERREUR] {error_msg}")
+            self.report({"ERROR"}, error_msg)
             return {"CANCELLED"}
 
         return {"FINISHED"}
@@ -1596,6 +1637,96 @@ class AddonInfoOperator(bpy.types.Operator):
         col.operator("wm.url_open", text="GitHub Repository", icon="URL").url = "https://github.com/Franckapik/diffuseurcam"
 
 
+class GitDiagnosticOperator(bpy.types.Operator):
+    """Diagnostique l'état du repository Git pour le débogage"""
+    
+    bl_idname = "addon.git_diagnostic"
+    bl_label = "Diagnostic Git"
+    
+    def execute(self, context):
+        addon_path = os.path.dirname(os.path.abspath(__file__))
+        
+        print("\n" + "="*50)
+        print("DIAGNOSTIC GIT - DIFFUSEUR CAM")
+        print("="*50)
+        
+        try:
+            import git
+        except ImportError:
+            error_msg = "Le module 'git' n'est pas installé"
+            print(f"[ERREUR] {error_msg}")
+            self.report({"ERROR"}, error_msg)
+            return {"CANCELLED"}
+        
+        try:
+            repo = git.Repo(addon_path)
+            
+            # Informations de base
+            print(f"Chemin du repository: {addon_path}")
+            print(f"Commit actuel: {repo.head.commit.hexsha}")
+            print(f"Commit court: {repo.head.commit.hexsha[:7]}")
+            print(f"Branche active: {repo.active_branch.name}")
+            print(f"Remote URL: {repo.remotes.origin.url}")
+            
+            # État du repository
+            print(f"\nÉtat du repository:")
+            print(f"  - Repository sale (modifications): {repo.is_dirty()}")
+            print(f"  - Fichiers non suivis: {len(repo.untracked_files)}")
+            
+            if repo.untracked_files:
+                print("  - Fichiers non suivis:", repo.untracked_files)
+            
+            # Vérifier les commits en retard
+            try:
+                origin = repo.remotes.origin
+                origin.fetch()
+                
+                current_branch = repo.active_branch.name
+                commits_behind = list(repo.iter_commits(f'HEAD..origin/{current_branch}'))
+                commits_ahead = list(repo.iter_commits(f'origin/{current_branch}..HEAD'))
+                
+                print(f"\nÉtat de synchronisation:")
+                print(f"  - Commits en retard: {len(commits_behind)}")
+                print(f"  - Commits en avance: {len(commits_ahead)}")
+                
+                if commits_behind:
+                    print("  - Derniers commits distants:")
+                    for commit in commits_behind[:3]:
+                        print(f"    {commit.hexsha[:7]}: {commit.summary}")
+                
+                if commits_ahead:
+                    print("  - Commits locaux non poussés:")
+                    for commit in commits_ahead[:3]:
+                        print(f"    {commit.hexsha[:7]}: {commit.summary}")
+                        
+            except Exception as e:
+                print(f"[ERREUR] Impossible de vérifier la synchronisation: {e}")
+            
+            # Informations sur la version
+            try:
+                from .version import __version__
+                print(f"\nVersion de l'addon: {__version__}")
+            except ImportError:
+                print("\n[ERREUR] Impossible de lire la version")
+            
+            print("="*50)
+            
+            self.report({"INFO"}, "Diagnostic affiché dans la console")
+            
+        except git.exc.InvalidGitRepositoryError:
+            error_msg = "Ce dossier n'est pas un dépôt Git"
+            print(f"[ERREUR] {error_msg}")
+            self.report({"ERROR"}, error_msg)
+            return {"CANCELLED"}
+        except Exception as e:
+            error_msg = f"Erreur lors du diagnostic: {str(e)}"
+            print(f"[ERREUR] {error_msg}")
+            self.report({"ERROR"}, error_msg)
+            return {"CANCELLED"}
+
+        return {"FINISHED"}
+
+
 classes = [
     AddCadreMortaise,
     AddCadreTenon,
@@ -1628,6 +1759,7 @@ classes = [
     UpdateAddonOperator,
     CheckUpdateOperator,
     AddonInfoOperator,
+    GitDiagnosticOperator,
     PositionSelected,
 ]
 
