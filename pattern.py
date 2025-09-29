@@ -587,11 +587,6 @@ def monopilier_profondeurs(x, y, difprops, colonne, cross_monopilier_min):
     
     # Pour centrer l'ensemble des piliers : approche simplifiée et directe
     if difprops.type > 1:
-        # DEBUG: affichons les valeurs détaillées
-        print(f"DEBUG monopilier_profondeurs: largeur_diffuseur={largeur_diffuseur}, largeur_monopilier={largeur_monopilier}, largeur_utile={largeur_utile}")
-        print(f"DEBUG: type={difprops.type}, epaisseur={epaisseur}")
-        print(f"DEBUG: largeur_pilier_reduite={largeur_pilier_reduite}, reduction_ratio={reduction_ratio}")
-        
         # Calcul de l'espace total occupé par tous les piliers
         espace_total_piliers = difprops.type * largeur_pilier_reduite
         # Espace restant à répartir entre les intervalles (type-1 intervalles)
@@ -609,11 +604,7 @@ def monopilier_profondeurs(x, y, difprops, colonne, cross_monopilier_min):
         marge_centrage_moule = (largeur_totale_moule - largeur_ensemble_total) / 2
         x_premier_pilier = (x - epaisseur) + marge_centrage_moule + largeur_pilier_reduite / 2
         
-        print(f"DEBUG: espace_total_piliers={espace_total_piliers}, intervalle_entre_piliers={intervalle_entre_piliers}")
-        print(f"DEBUG: espacement_entre_centres={espacement_entre_centres}, marge_centrage_moule={marge_centrage_moule}")
-        print(f"DEBUG: largeur_ensemble_total={largeur_ensemble_total}, largeur_totale_moule={largeur_totale_moule}, x={x}, x_premier_pilier={x_premier_pilier}")
-        
-        # NOUVEAU DEBUG: calculons les positions réelles des piliers par rapport au moule complet
+        # Calculons les positions réelles des piliers par rapport au moule complet
         positions_piliers = []
         for i in range(difprops.type):
             centre_pilier = x_premier_pilier + i * espacement_entre_centres
@@ -629,13 +620,6 @@ def monopilier_profondeurs(x, y, difprops, colonne, cross_monopilier_min):
         # Les marges utiles (par rapport à la zone de piliers)
         marge_gauche_utile = premier_debut - (x + epaisseur)
         marge_droite_utile = (x + epaisseur + largeur_utile) - dernier_fin
-        
-        print(f"DEBUG: Premier pilier de {positions_piliers[0][0]} à {positions_piliers[0][1]}")
-        print(f"DEBUG: Dernier pilier de {positions_piliers[-1][0]} à {positions_piliers[-1][1]}")
-        print(f"DEBUG: Limites du moule: de {x - epaisseur} à {largeur_monopilier + epaisseur}")
-        print(f"DEBUG: Zone utile: de {x + epaisseur} à {x + epaisseur + largeur_utile}")
-        print(f"DEBUG: Marge gauche (moule)={marge_gauche_moule}, Marge droite (moule)={marge_droite_moule}")
-        print(f"DEBUG: Marge gauche (utile)={marge_gauche_utile}, Marge droite (utile)={marge_droite_utile}")
     else:
         # Un seul pilier, centré parfaitement dans le moule complet
         espacement_entre_centres = 0

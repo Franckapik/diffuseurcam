@@ -188,7 +188,10 @@ class Diffuseur_SideBar(Panel):
             text=f"{'Mesh selectionné' if bpy.context.selected_objects else 'Cursor 3D'} : X{round(cursor[0], 2)}  Y{round(cursor[1], 2)}  Z{round(cursor[2], 2)}"
         )
 
-        for piece in posprops.listAttributes(productprops.product_type):
+        # Debug: afficher toutes les pièces pour le product_type (seulement une fois)
+        pieces_list = posprops.listAttributes(productprops.product_type)
+        
+        for piece in pieces_list:
             row = box.row()
             if "_position" in piece:
                 row.prop(posprops, piece)
@@ -201,9 +204,10 @@ class Diffuseur_SideBar(Panel):
                     icon="EVENT_R",
                     text="",
                 )
-                row.operator(
-                    f"mesh.{piece.replace('_position', '')}", text="", icon="ADD"
-                )
+                
+                # Création du bouton opérateur
+                operator_name = f"mesh.{piece.replace('_position', '')}"
+                row.operator(operator_name, text="", icon="ADD")
 
         match productprops.product_type:
             case "0":

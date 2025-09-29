@@ -883,9 +883,28 @@ class AddContrePilierMoule(bpy.types.Operator, AddObjectHelper):
         scene = context.scene
         difprops = scene.dif_props
         arrayprops = scene.array_props
-        vertex, edges, name = add_contre_pilier_moule(
-            scene.dif_props, scene.product_props, scene.usinage_props, scene.array_props
-        )
+        productprops = scene.product_props
+        usinageprops = scene.usinage_props
+        
+        # Vérifier que nous sommes bien dans le bon cas
+        if productprops.product_type != "3":
+            print(f"❌ [DEBUG] ERREUR: product_type doit être '3' (moule), reçu: '{productprops.product_type}'")
+            return {"CANCELLED"}
+            
+        try:
+            vertex, edges, name = add_contre_pilier_moule(
+                scene.dif_props, scene.product_props, scene.usinage_props, scene.array_props
+            )
+            
+            if len(vertex) == 0:
+                print("❌ [DEBUG] ERREUR: Aucun vertex généré pour les contre-piliers!")
+                return {"CANCELLED"}
+                
+        except Exception as e:
+            print(f"❌ [DEBUG] ERREUR dans add_contre_pilier_moule: {e}")
+            import traceback
+            traceback.print_exc()
+            return {"CANCELLED"}
 
         arrayprops = scene.array_props
 
@@ -1101,10 +1120,13 @@ class AddMoule(bpy.types.Operator, AddObjectHelper):
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
+        print("🔧 [DEBUG] Génération complète du moule...")
         AddCadreMoule.execute(self, context)
         AddFondMoule.execute(self, context)
         AddPilierMoule.execute(self, context)
+        AddContrePilierMoule.execute(self, context)  # AJOUT DES CONTRE-PILIERS
         AddCadreMouleLong.execute(self, context)
+        print("✅ [DEBUG] Génération complète du moule terminée!")
 
         return {"FINISHED"}
 
@@ -1611,8 +1633,14 @@ classes = [
 
 
 def register():
+    print("🔧 [DEBUG] Enregistrement des opérateurs...")
     for cls in classes:
-        bpy.utils.register_class(cls)
+        try:
+            bpy.utils.register_class(cls)
+            if "ContrePilier" in cls.__name__:
+                print(f"✅ [DEBUG] Opérateur contre-pilier enregistré: {cls.__name__} -> {cls.bl_idname}")
+        except Exception as e:
+            print(f"❌ [DEBUG] Erreur enregistrement {cls.__name__}: {e}")
     register_keymaps()
 
 

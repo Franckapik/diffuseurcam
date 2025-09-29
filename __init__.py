@@ -3,23 +3,23 @@ import sys
 import importlib
 import subprocess
 
-# Import de la version
-try:
-    from .version import __version__, __version_info__
-except ImportError:
-    __version__ = "1.0.0"
-    __version_info__ = (1, 0, 0)
-
 bl_info = {
     "name": "Diffuseur CAM",
     "description": "Génération de plans de diffuseurs",
     "author": "Franckapik",
-    "version": __version_info__,
+    "version": (1, 0, 0),
     "blender": (2, 80, 0),
     "location": "View3D",
     "support": "COMMUNITY",
     "category": "Generic",
 }
+
+# Import de la version après bl_info
+try:
+    from .version import __version__, __version_info__
+except ImportError:
+    __version__ = "1.0.0"
+    __version_info__ = (1, 0, 0)
 
 modulesNames = ["ops", "ui", "props"]
 
