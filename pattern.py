@@ -807,12 +807,16 @@ def contremonopilier_hauteurs(x, y, difprops):
             pilier_haut_start = pilier_base_start
             pilier_haut_end = pilier_base_end
         
-        # Appliquer la même logique que pour les piliers stables et eco :
-        # soustraire l'épaisseur uniquement pour la hauteur maximale
-        if ratios[i] == amax:
-            hauteur_pilier = ratios[i] - epaisseur
-        else:
-            hauteur_pilier = ratios[i]
+        # Pour les contre-piliers : soustraire l'épaisseur pour toutes les hauteurs non-nulles
+        # et ignorer les hauteurs nulles ou négatives afin d'éviter hmin < 0
+        h = ratios[i]
+        if h is None:
+            continue
+        if h <= 0:
+            # hmin=0 : pas de contre-pilier du tout
+            continue
+        # Soustraire l'épaisseur et empêcher toute valeur négative résiduelle
+        hauteur_pilier = max(0.0, h - epaisseur)
         
         if pyramidal:
             # Forme pyramidale pour les contrepiliers

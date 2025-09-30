@@ -1542,7 +1542,7 @@ def add_contre_pilier_moule(difprops, productprops, usinageprops, arrayprops):
         x0 = 0
 
         if difprops.type_moule in ["eco", "stable"]:
-            # Pour eco et stable, utiliser la fonction contremonopilier_hauteurs originale
+            # Pour eco et stable, utiliser la fonction contremonopilier_hauteurs
             for i in range(len(ratio)):
                 if ratio[i][0] != 0:  # delete hauteur = 0
                     for k in range(ratio[i][1]):
@@ -1551,6 +1551,7 @@ def add_contre_pilier_moule(difprops, productprops, usinageprops, arrayprops):
                         x0 += largeur_pilier + array_offset
 
                     x0 = 0
+                    # Logique standard : pas de correction d'épaisseur ici car elle se fait dans contremonopilier_hauteurs
                     if difprops.type_moule == "eco":
                         y0 += (ratio[i][0] * profondeur) / amax + array_offset + epaisseur_moule
                     else:  # stable
