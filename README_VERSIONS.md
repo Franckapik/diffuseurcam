@@ -2,9 +2,25 @@
 
 ## Processus de Release
 
-### 1. Méthode Manuelle
+### 1. Méthode Script Bash (Recommandée)
 
-Pour créer une nouvelle version :
+Le script interactif utilise `release.py` selon la documentation :
+
+```bash
+# Lance le script interactif
+./versionner.sh
+```
+
+Le script vous guide pour :
+- Détecter automatiquement la version actuelle
+- Choisir le type de version (major/minor/patch)
+- Committer les changements en cours
+- Créer la release avec release.py
+- Pousser vers GitHub avec les tags
+
+### 2. Méthode Python Directe
+
+Pour créer une nouvelle version manuellement :
 
 ```bash
 # Incrémente la version patch (1.0.0 → 1.0.1)
@@ -22,7 +38,7 @@ Puis poussez les modifications :
 git push origin main && git push origin v1.0.1
 ```
 
-### 2. Méthode GitHub Web
+### 3. Méthode GitHub Web
 
 1. Allez sur GitHub → Releases → "Create a new release"
 2. Choisissez un tag (ex: `v1.0.1`)
@@ -53,6 +69,7 @@ L'addon vérifie automatiquement les nouvelles versions via l'API GitHub :
 diffuseurcam/
 ├── version.py              # Contient la version actuelle
 ├── release.py              # Script de gestion des versions
+├── versionner.sh           # Script bash interactif (utilise release.py)
 ├── .github/workflows/
 │   └── release.yml         # Automatisation GitHub Actions
 └── README_VERSIONS.md      # Cette documentation
@@ -60,6 +77,13 @@ diffuseurcam/
 
 ## Workflow Complet
 
+### Méthode Recommandée (Script Bash)
+1. **Développement** → Modifier le code
+2. **Test** → Vérifier que tout fonctionne  
+3. **Version** → `./versionner.sh` (suit automatiquement la documentation)
+4. **Distribution** → GitHub Actions crée automatiquement la release
+
+### Méthode Alternative (Python Direct)
 1. **Développement** → Modifier le code
 2. **Test** → Vérifier que tout fonctionne
 3. **Version** → `python release.py patch`
