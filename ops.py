@@ -1332,7 +1332,20 @@ class PrepareToCam(bpy.types.Operator, AddObjectHelper):
             bpy.ops.object.join()
             bpy.context.object.name = difprops.getDifName()
             if prepprops.isConvertToCurve_prepare and prepprops.isOvercuts:
+                # Sauvegarder l'objet avant overcuts pour le supprimer après
+                old_object = bpy.context.object
+                old_object_name = old_object.name
+                
+                # Appliquer les overcuts
                 bpy.ops.object.curve_overcuts(diameter=usinageprops.fraise, threshold=1.569)
+                
+                # Supprimer l'ancien mesh si un nouveau a été créé
+                if bpy.context.object != old_object and old_object_name in bpy.data.objects:
+                    # Déselectionner tout
+                    bpy.ops.object.select_all(action='DESELECT')
+                    # Sélectionner et supprimer l'ancien objet
+                    old_object.select_set(True)
+                    bpy.data.objects.remove(old_object, do_unlink=True)
 
         return {"FINISHED"}
 
