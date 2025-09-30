@@ -338,6 +338,18 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         ),
     )
 
+    pilier_pyramidal: BoolProperty(
+        name="Réduction pyramidale",
+        description="Applique la réduction seulement sur le haut des piliers pour créer une forme pyramidale",
+        default=True,
+    )
+
+    pilier_encoches: BoolProperty(
+        name="Encoches sur piliers",
+        description="Active les encoches au sommet des piliers (recommandé pour les diffuseurs 2D)",
+        default=True,
+    )
+
     decalage_h: IntProperty(
         name="Horizontal",
         description="Décalage",
@@ -464,8 +476,26 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         return longueurTotale
 
     def getLargeurPilier(self):
-        largeur_pilier = self.getRang() - self.epaisseur - self.getRang() * float(self.pilier_reduction)
+        if (hasattr(self, 'pilier_pyramidal') and self.pilier_pyramidal and 
+            hasattr(self, 'type_moule') and self.type_moule == "mono"):
+            # Mode pyramidal uniquement pour mono : retourner la largeur de base (non réduite)
+            largeur_pilier = self.getRang() - self.epaisseur
+        else:
+            # Mode classique : appliquer la réduction uniformément
+            largeur_pilier = self.getRang() - self.epaisseur - self.getRang() * float(self.pilier_reduction)
         return round(largeur_pilier, 4)
+    
+    def getLargeurPilierHaut(self):
+        """Retourne la largeur du pilier au sommet (utile pour le mode pyramidal)"""
+        if (hasattr(self, 'pilier_pyramidal') and self.pilier_pyramidal and 
+            hasattr(self, 'type_moule') and self.type_moule == "mono"):
+            # Mode pyramidal uniquement pour mono : largeur réduite au sommet
+            largeur_base = self.getRang() - self.epaisseur
+            largeur_haut = largeur_base * (1 - float(self.pilier_reduction))
+            return round(largeur_haut, 4)
+        else:
+            # Mode classique : même largeur que la base
+            return self.getLargeurPilier()
 
     def _find_best_insertion_position(self, sequence, value, type_size):
         """Trouve la meilleure position pour insérer une valeur manquante"""
@@ -641,6 +671,15 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "socle_monopilier",
                 ]
 
+                # Réduction pyramidale uniquement pour mono-piliers
+                if self.type_moule == "mono":
+                    attributes.append("pilier_pyramidal")
+
+                # Encoches pour stable et mono seulement (pas eco)
+                if self.type_moule == "stable" or self.type_moule == "mono":
+                    attributes.append("pilier_encoches")
+
+                # Épaisseur pilier pour stable et mono
                 if self.type_moule == "stable" or self.type_moule == "mono":
                     attributes.append("epaisseur_pilier")
 

@@ -121,9 +121,25 @@ class Diffuseur_SideBar(Panel):
             row2.prop(difprops, "moule_type", expand=True)
         for att in (x for x in difprops.listAttributes(productprops.product_type)):
             box.prop(difprops, att)
+        
+        # Informations spécifiques aux moules
+        if productprops.product_type == "3":
+            # Message d'information pour les encoches
+            if difprops.moule_type == "2d":
+                if not (hasattr(difprops, 'pilier_encoches') and difprops.pilier_encoches):
+                    box.label(text="ℹ️ Encoches recommandées pour diffuseurs 2D", icon="INFO")
+            elif difprops.moule_type == "1d" and hasattr(difprops, 'pilier_encoches') and difprops.pilier_encoches:
+                box.label(text="⚠️ Encoches déconseillées pour diffuseurs 1D", icon="ERROR")
+        
         if productprops.product_type is not "2":
             box.label(text=f"Rang : {difprops.getRang() * 1000} mm")
-            box.label(text=f"Pilier : {round(difprops.getLargeurPilier() * 1000 , 3)} mm")
+            # Affichage différencié pour mode pyramidal (mono uniquement)
+            if (productprops.product_type == "3" and difprops.type_moule == "mono" and 
+                hasattr(difprops, 'pilier_pyramidal') and difprops.pilier_pyramidal):
+                box.label(text=f"Pilier base : {round(difprops.getLargeurPilier() * 1000 , 3)} mm")
+                box.label(text=f"Pilier haut : {round(difprops.getLargeurPilierHaut() * 1000 , 3)} mm")
+            else:
+                box.label(text=f"Pilier : {round(difprops.getLargeurPilier() * 1000 , 3)} mm")
         
         if productprops.product_type is "2" :
             is_splitted = True if difprops.longueur_absorbeur > difprops.split and difprops.split != 0 else False

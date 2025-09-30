@@ -1278,6 +1278,9 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
         y0 = 0
         x0 = 0
         if difprops.type_moule == "eco":
+            # Mode eco : logique classique sans pyramidal ni encoches
+            reduction_ratio = float(difprops.pilier_reduction)
+            
             for i in range(len(ratio)):
                 if ratio[i][0] != 0:  # delete hauteur = 0
                     if ratio[i][0] == amax:
@@ -1286,10 +1289,14 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
                         y = (ratio[i][0] * profondeur) / amax
 
                     for k in range(ratio[i][1]):
+                        # Mode classique avec réduction uniforme
+                        largeur_reduite = largeur_pilier * (1 - reduction_ratio)
+                        decalage_reduction = (largeur_pilier - largeur_reduite) / 2
+                        
                         vertsCadre += [
-                            (x0, y0 + y + epaisseur_moule, 0),
-                            (x0 + largeur_pilier, y0 + y + epaisseur_moule, 0),
-                            (x0 + largeur_pilier, y0 + epaisseur_moule, 0),
+                            (x0 + decalage_reduction, y0 + y + epaisseur_moule, 0),
+                            (x0 + decalage_reduction + largeur_reduite, y0 + y + epaisseur_moule, 0),
+                            (x0 + decalage_reduction + largeur_reduite, y0 + epaisseur_moule, 0),
                             (
                                 x0 + largeur_pilier / 2 + epaisseur_moule / 2,
                                 y0 + epaisseur_moule,
@@ -1310,15 +1317,81 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
                                 y0 + epaisseur_moule,
                                 0,
                             ),
-                            (x0, y0 + epaisseur_moule, 0),
+                            (x0 + decalage_reduction, y0 + epaisseur_moule, 0),
                         ]
                         x0 += largeur_pilier + array_offset
 
                     x0 = 0
                     y0 += y + array_offset + epaisseur_moule
 
-            for i in range(len(vertsCadre)):
-                if i % 8 == 0:
+            # Génération des edges (8 vertices par pilier en mode eco)
+            for i in range(0, len(vertsCadre), 8):
+                edgesCadre += [
+                    (i, i + 1),
+                    (i + 1, i + 2),
+                    (i + 2, i + 3),
+                    (i + 3, i + 4),
+                    (i + 4, i + 5),
+                    (i + 5, i + 6),
+                    (i + 6, i + 7),
+                    (i + 7, i),
+                ]
+
+        if difprops.type_moule == "stable":
+            # Mode stable : logique classique avec possibilité d'encoches
+            reduction_ratio = float(difprops.pilier_reduction)
+            encoches = difprops.pilier_encoches if hasattr(difprops, 'pilier_encoches') else True
+            
+            for i in range(len(ratio)):
+                if ratio[i][0] != 0:  # delete hauteur = 0
+                    if ratio[i][0] == amax:
+                        y = ((ratio[i][0] * profondeur) / amax) - epaisseur
+                    else:
+                        y = (ratio[i][0] * profondeur) / amax
+
+                    for k in range(ratio[i][1]):
+                        # Mode classique avec réduction uniforme
+                        largeur_reduite = largeur_pilier * (1 - reduction_ratio)
+                        decalage_reduction = (largeur_pilier - largeur_reduite) / 2
+                        
+                        if encoches:
+                            # Avec encoches (logique originale modifiée)
+                            vertsCadre += [
+                                (x0 + decalage_reduction, y0 + y, 0),
+                                (x0 + decalage_reduction + largeur_reduite, y0 + y, 0),
+                                (x0 + decalage_reduction + largeur_reduite, y0, 0),
+                                (x0 + largeur_pilier / 2 + epaisseur_pilier / 2, y0, 0),
+                                (
+                                    x0 + largeur_pilier / 2 + epaisseur_pilier / 2,
+                                    y0 + y / 2 + epaisseur_pilier / 2,
+                                    0,
+                                ),
+                                (
+                                    x0 + largeur_pilier / 2 - epaisseur_pilier / 2,
+                                    y0 + y / 2 + epaisseur_pilier / 2,
+                                    0,
+                                ),
+                                (x0 + largeur_pilier / 2 - epaisseur_pilier / 2, y0, 0),
+                                (x0 + decalage_reduction, y0, 0),
+                            ]
+                        else:
+                            # Sans encoches : forme rectangulaire simple
+                            vertsCadre += [
+                                (x0 + decalage_reduction, y0, 0),
+                                (x0 + decalage_reduction, y0 + y, 0),
+                                (x0 + decalage_reduction + largeur_reduite, y0 + y, 0),
+                                (x0 + decalage_reduction + largeur_reduite, y0, 0),
+                            ]
+                        x0 += largeur_pilier + array_offset
+
+                    x0 = 0
+                    y0 += y + array_offset
+
+            # Génération des edges selon le mode d'encoches
+            vertices_per_pillar = 8 if encoches else 4
+            for i in range(0, len(vertsCadre), vertices_per_pillar):
+                if encoches:
+                    # Mode avec encoches : 8 vertices par pilier
                     edgesCadre += [
                         (i, i + 1),
                         (i + 1, i + 2),
@@ -1329,50 +1402,13 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
                         (i + 6, i + 7),
                         (i + 7, i),
                     ]
-
-        if difprops.type_moule == "stable":
-            for i in range(len(ratio)):
-                if ratio[i][0] != 0:  # delete hauteur = 0
-                    if ratio[i][0] == amax:
-                        y = ((ratio[i][0] * profondeur) / amax) - epaisseur
-                    else:
-                        y = (ratio[i][0] * profondeur) / amax
-
-                    for k in range(ratio[i][1]):
-                        vertsCadre += [
-                            (x0, y0 + y, 0),
-                            (x0 + largeur_pilier, y0 + y, 0),
-                            (x0 + largeur_pilier, y0, 0),
-                            (x0 + largeur_pilier / 2 + epaisseur_pilier / 2, y0, 0),
-                            (
-                                x0 + largeur_pilier / 2 + epaisseur_pilier / 2,
-                                y0 + y / 2 + epaisseur_pilier / 2,
-                                0,
-                            ),
-                            (
-                                x0 + largeur_pilier / 2 - epaisseur_pilier / 2,
-                                y0 + y / 2 + epaisseur_pilier / 2,
-                                0,
-                            ),
-                            (x0 + largeur_pilier / 2 - epaisseur_pilier / 2, y0, 0),
-                            (x0, y0, 0),
-                        ]
-                        x0 += largeur_pilier + array_offset
-
-                    x0 = 0
-                    y0 += y + array_offset
-
-            for i in range(len(vertsCadre)):
-                if i % 8 == 0:
+                else:
+                    # Mode sans encoches : 4 vertices par pilier
                     edgesCadre += [
                         (i, i + 1),
                         (i + 1, i + 2),
                         (i + 2, i + 3),
-                        (i + 3, i + 4),
-                        (i + 4, i + 5),
-                        (i + 5, i + 6),
-                        (i + 6, i + 7),
-                        (i + 7, i),
+                        (i + 3, i),
                     ]
 
         if difprops.type_moule == "mono":
