@@ -261,6 +261,8 @@ class Diffuseur_SideBar(Panel):
                 box.prop(prepprops, "isOvercuts")
 
         box.prop(prepprops, "isJoin_prepare")
+        
+        box.prop(prepprops, "isOffsetCarreau_prepare")
 
         box.operator("mesh.prepare_cam")
 

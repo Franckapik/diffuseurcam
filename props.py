@@ -1202,6 +1202,12 @@ class PrepareProps(bpy.types.PropertyGroup):
         name="Hide old mesh",
         description="Hide old mesh",
     )
+    
+    isOffsetCarreau_prepare: BoolProperty(
+        name="Offset de ponçage des carreaux",
+        description="Applique un offset de 1mm aux pièces nommées 'Carreau' pour le ponçage",
+        default=False,
+    )
 
     def listAttributes(self):
         attributes = [
