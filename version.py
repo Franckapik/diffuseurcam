@@ -1,8 +1,8 @@
 # Version de l'addon Diffuseur CAM
-__version__ = "1.1.2"
+__version__ = "1.1.3"
 
 # Pour le développement, vous pouvez aussi ajouter:
-__version_info__ = (1, 1, 2)
+__version_info__ = (1, 1, 3)
 
 # Informations sur la release
 GITHUB_REPO = "Franckapik/diffuseurcam"
