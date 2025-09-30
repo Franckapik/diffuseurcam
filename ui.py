@@ -357,6 +357,10 @@ class Diffuseur_SideBar(Panel):
 
         box.prop(difprops, "decalage_h")
         box.prop(difprops, "decalage_v")
+        
+        # Paramètre d'optimisation QRD pour les diffuseurs 1D
+        if difprops.moule_type == "1d":
+            box.prop(difprops, "qrd_optimization")
              
         ratio = difprops.getMotif(productprops.motif_display)
         ratio_readable = [int(x * 1000) for x in ratio]

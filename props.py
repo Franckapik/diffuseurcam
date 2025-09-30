@@ -381,6 +381,17 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         ),
     )
 
+    qrd_optimization: EnumProperty(
+        name="Optimisation QRD 1D",
+        description="Mode d'optimisation pour la couverture des ratios en 1D",
+        items=(
+            ("none", "Aucune", "Utilise la logique initiale sans modification"),
+            ("strict", "QRD Strict (QRDude)", "Utilise la formule QRD standard sans modification"),
+            ("coverage", "Couverture Optimisée", "Optimise pour une couverture complète des ratios"),
+        ),
+        default="none"
+    )
+
     offset_peigne: IntProperty(
         name="Offset peigne %",
         description="Offset sur les peignes en %",
@@ -456,6 +467,48 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         largeur_pilier = self.getRang() - self.epaisseur - self.getRang() * float(self.pilier_reduction)
         return round(largeur_pilier, 4)
 
+    def _find_best_insertion_position(self, sequence, value, type_size):
+        """Trouve la meilleure position pour insérer une valeur manquante"""
+        if not sequence:
+            return 0
+        ideal_pos = int((value / type_size) * len(sequence))
+        return min(ideal_pos, len(sequence))
+    
+    def _optimize_1d_coverage(self, base_sequence, target_size):
+        """Optimise la couverture d'une séquence QRD 1D"""
+        from collections import Counter
+        
+        all_values = set(range(target_size))
+        present_values = set(base_sequence)
+        missing_values = sorted(list(all_values - present_values))
+        
+        if not missing_values:
+            return base_sequence
+        
+        optimized_sequence = base_sequence.copy()
+        counts = Counter(optimized_sequence)
+        duplicates = [val for val, count in counts.items() if count > 1]
+        
+        for missing_val in missing_values:
+            if duplicates:
+                for i, val in enumerate(optimized_sequence):
+                    if val in duplicates and counts[val] > 1:
+                        optimized_sequence[i] = missing_val
+                        counts[val] -= 1
+                        if counts[val] <= 1:
+                            duplicates.remove(val)
+                        break
+            else:
+                best_pos = self._find_best_insertion_position(
+                    optimized_sequence, missing_val, target_size
+                )
+                if len(optimized_sequence) < target_size:
+                    optimized_sequence.insert(best_pos, missing_val)
+                else:
+                    optimized_sequence[best_pos % len(optimized_sequence)] = missing_val
+        
+        return optimized_sequence[:target_size]
+
     def getMotif(self, display):
         ratio = []
         for k in range(0, self.type * round(self.type * self.longueur_diffuseur)):
@@ -466,10 +519,36 @@ class DiffuseurProps(bpy.types.PropertyGroup):
             )  # phase shifted = 1 on qrdude
             ratio.append(an / 1000)
 
-        amax = max(ratio)
+        # Gestion des trois modes d'optimisation pour les diffuseurs 1D
+        if self.moule_type == "1d" and hasattr(self, 'qrd_optimization'):
+            if self.qrd_optimization == "coverage":
+                # Mode optimisation complète - améliore la couverture
+                base_sequence_1d = [int(r * 1000) for r in ratio[:self.type]]
+                optimized_sequence = self._optimize_1d_coverage(base_sequence_1d, self.type)
+                ratio_1d_optimized = [x / 1000 for x in optimized_sequence]
+                
+                # Répéter la séquence optimisée si nécessaire
+                total_elements = self.type * round(self.type * self.longueur_diffuseur)
+                ratio = ratio_1d_optimized * round(self.type * self.longueur_diffuseur)
+                ratio = ratio[:total_elements]
+            elif self.qrd_optimization == "strict":
+                # Mode QRD strict - utilise la formule QRD standard sans modification
+                # C'est déjà le comportement par défaut, donc rien à changer
+                pass
+            elif self.qrd_optimization == "none":
+                # Mode aucune optimisation - utilise la logique initiale de base
+                # C'est déjà le comportement par défaut, donc rien à changer
+                pass
+
+        # Correction importante: amax doit être calculé uniquement sur les éléments utilisés
+        # Pour les diffuseurs 1D, seuls les self.type premiers éléments sont utilisés
+        if self.moule_type == "1d":
+            amax = max(ratio[0:self.type]) if len(ratio) >= self.type else max(ratio)
+        else:
+            amax = max(ratio)
 
         depth = []
-        for k in range(0, self.type * round(self.type * self.longueur_diffuseur)):
+        for k in range(0, len(ratio)):
             y = (ratio[k] * self.profondeur) / amax
             depth.append(round(y, 3))
 
