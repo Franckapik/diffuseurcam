@@ -664,6 +664,13 @@ def add_accroche(difprops, productprops, usinageprops, invert):
     split = difprops.split
     is_splitted = True if largeur_diffuseur > split and split != 0 else False
 
+    # Initialisation des listes d'edges pour tous les types de produits
+    edgesCadre = []
+    edgesAccroche = []
+    edgesAccroche2 = []
+    edgesPuits = []
+    vertsPuits = []
+
     if product_type == "0":
         vertsCadre = [
             (0, 0, 0),
@@ -777,8 +784,6 @@ def add_accroche(difprops, productprops, usinageprops, invert):
         if not is_splitted:
             vertsAccroche2 += miroir_sur_y_centre(vertsEndroit2) if invert else vertsEndroit2
 
-        vertsPuits = []
-
         if puitsSerrage:
             vertsPuits += [
                 *puits(epaisseur * 3, largeur_accroche / 6, 0.005, 0.008),
@@ -795,27 +800,23 @@ def add_accroche(difprops, productprops, usinageprops, invert):
                 ),
             ]
 
-        edgesCadre = []
-        edgesAccroche = []
-        edgesAccroche2 = []
-        edgesPuits = []
-
-        for k in range(0, len(vertsCadre) - 1):
-            edgesCadre += [
-                (k, k + 1),
-            ]
-
+    # Construction des edges pour tous les types de produits
+    for k in range(0, len(vertsCadre) - 1):
         edgesCadre += [
-            (len(vertsCadre) - 1, 0),
+            (k, k + 1),
         ]
 
-        for k in range(len(vertsCadre), len(vertsCadre) + len(vertsAccroche) - 1):
-            edgesAccroche += [
-                (k, k + 1),
-            ]
+    edgesCadre += [
+        (len(vertsCadre) - 1, 0),
+    ]
+
+    for k in range(len(vertsCadre), len(vertsCadre) + len(vertsAccroche) - 1):
         edgesAccroche += [
-            (len(vertsCadre), len(vertsCadre) + len(vertsAccroche) - 1),
+            (k, k + 1),
         ]
+    edgesAccroche += [
+        (len(vertsCadre), len(vertsCadre) + len(vertsAccroche) - 1),
+    ]
 
     if product_type == "1" or product_type == "2":
         if is_splitted is not True:

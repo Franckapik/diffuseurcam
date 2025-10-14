@@ -1312,153 +1312,65 @@ class PrepareToCam(bpy.types.Operator, AddObjectHelper):
                     obj.select_set(True)
                     bpy.ops.object.delete()
 
-            # Sélectionner tous les objets _cam en une fois pour éviter les conversions répétées
-            cam_objects = [o for o in bpy.data.objects if "_cam" in o.name]
-            if cam_objects:
+            # Sélectionner et convertir uniquement les objets _cam de type MESH
+            cam_mesh_objects = [o for o in bpy.data.objects if "_cam" in o.name and o.type == 'MESH']
+            if cam_mesh_objects:
                 bpy.ops.object.select_all(action="DESELECT")
-                for obj in cam_objects:
+                for obj in cam_mesh_objects:
                     obj.select_set(True)
-                if cam_objects:
-                    bpy.context.view_layer.objects.active = cam_objects[0]
-                
-                # apply modifier une seule fois pour tous les objets sélectionnés
-                bpy.ops.object.convert(target="CURVE")
-                bpy.ops.object.convert(target="MESH")
+                bpy.context.view_layer.objects.active = cam_mesh_objects[0]
+                # Vérification du contexte
+                if bpy.context.selected_objects and bpy.context.view_layer.objects.active and bpy.context.view_layer.objects.active.type == 'MESH':
+                    print(f"🔄 Conversion de {len(cam_mesh_objects)} objets _cam MESH en courbes")
+                    bpy.ops.object.convert(target="CURVE")
+                    # Optionnel : reconvertir en mesh si besoin
+                    # bpy.ops.object.convert(target="MESH")
+                else:
+                    print("⚠️ Impossible de convertir : contexte ou type incorrect")
+            else:
+                print("⚠️ Aucun objet _cam de type MESH à convertir")
 
         # convert to curve
         if prepprops.isConvertToCurve_prepare:
-            bpy.ops.object.convert(target="CURVE")
+            # Vérifier qu'il y a des objets sélectionnés et qu'ils sont des mesh
+            if bpy.context.selected_objects:
+                # Filtrer uniquement les objets de type MESH
+                mesh_objects = [obj for obj in bpy.context.selected_objects if obj.type == 'MESH']
+                
+                if mesh_objects:
+                    # S'assurer qu'un objet mesh est actif
+                    bpy.context.view_layer.objects.active = mesh_objects[0]
+                    print(f"🔄 Conversion de {len(mesh_objects)} objet(s) MESH en courbes")
+                    
+                    # Sélectionner seulement les mesh objects
+                    bpy.ops.object.select_all(action="DESELECT")
+                    for obj in mesh_objects:
+                        obj.select_set(True)
+                    
+                    bpy.ops.object.convert(target="CURVE")
 
-            # remove double if curve
-            if prepprops.isCRemove_prepare:
-                bpy.ops.object.curve_remove_doubles()
+                    # remove double if curve
+                    if prepprops.isCRemove_prepare:
+                        bpy.ops.object.curve_remove_doubles()
+                else:
+                    print("⚠️ Aucun objet MESH trouvé pour la conversion en courbe")
+            else:
+                print("⚠️ Aucun objet sélectionné pour la conversion en courbe")
 
-        # Offset de ponçage des carreaux (après conversion en courbes)
+        # Offset de ponçage des carreaux (simplifié au maximum)
         if prepprops.isOffsetCarreau_prepare and prepprops.isConvertToCurve_prepare:
-            # Sauvegarder la sélection actuelle
-            selected_objects = bpy.context.selected_objects.copy()
-            
-            # Sélectionner uniquement les objets dont le nom contient "Carreau"
-            carreau_objects = [obj for obj in selected_objects if "Carreau" in obj.name]
-            
-            if carreau_objects:
-                print(f"Offset de ponçage appliqué à {len(carreau_objects)} courbe(s) contenant 'Carreau':")
-                for obj in carreau_objects:
-                    print(f"  - {obj.name}")
-                
-                # Désélectionner tout d'abord
-                bpy.ops.object.select_all(action="DESELECT")
-                
-                for obj in carreau_objects:
+            for obj in bpy.context.selected_objects:
+                if "Carreau" in obj.name and obj.type == 'CURVE':
+                    bpy.ops.object.select_all(action="DESELECT")
                     obj.select_set(True)
                     bpy.context.view_layer.objects.active = obj
-                    
-                    # Vérifier que l'objet est bien une courbe avant d'appliquer l'offset
-                    if obj.type != 'CURVE':
-                        print(f"⚠️ {obj.name} n'est pas une courbe (type: {obj.type}), offset ignoré")
-                        obj.select_set(False)
-                        continue
-                    
-                    print(f"🔄 Application de l'offset sur la courbe {obj.name}")
-                    
-                    # Appliquer l'opération d'offset sur les courbes par scaling
                     try:
-                        # DIAGNOSTIC : Vérifier l'état de l'objet
-                        print(f"🔍 Diagnostic de {obj.name}:")
-                        print(f"   - Échelle de l'objet: {obj.scale.x:.4f}, {obj.scale.y:.4f}, {obj.scale.z:.4f}")
-                        print(f"   - Position: {obj.location.x:.2f}, {obj.location.y:.2f}, {obj.location.z:.2f}")
-                        print(f"   - Rotation: {obj.rotation_euler.x:.2f}, {obj.rotation_euler.y:.2f}, {obj.rotation_euler.z:.2f}")
-                        
-                        # Vérifier s'il y a des modificateurs (array, etc.)
-                        modifiers = [mod.name for mod in obj.modifiers]
-                        if modifiers:
-                            print(f"   - Modificateurs détectés: {', '.join(modifiers)}")
-                            print(f"🔧 Application des modificateurs pour obtenir les vraies dimensions...")
-                            
-                            # Appliquer tous les modificateurs pour obtenir les vraies dimensions
-                            bpy.ops.object.mode_set(mode='OBJECT')
-                            for modifier in obj.modifiers:
-                                bpy.ops.object.modifier_apply(modifier=modifier.name)
-                        
-                        # Appliquer toutes les transformations pour avoir les vraies dimensions
-                        bpy.ops.object.mode_set(mode='OBJECT')
-                        bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-                        
-                        # Mettre à jour et recalculer
-                        bpy.context.view_layer.update()
-                        
-                        # Utiliser les dimensions de l'objet directement (plus fiable)
-                        current_width = obj.dimensions.x
-                        current_height = obj.dimensions.y
-                        current_depth = obj.dimensions.z
-                        
-                        print(f"� Dimensions après application des modificateurs et transformations: {current_width*1000:.1f}mm × {current_height*1000:.1f}mm × {current_depth*1000:.1f}mm")
-                        
-                        # Vérifier que les dimensions sont valides
-                        if current_width <= 0 or current_height <= 0:
-                            print(f"⚠️ Dimensions invalides pour {obj.name}, scaling ignoré")
-                            continue
-                        
-                        # Vérifier si les dimensions semblent cohérentes (entre 10mm et 200mm pour un carreau)
-                        width_mm = current_width * 1000
-                        height_mm = current_height * 1000
-                        
-                        if width_mm < 10 or width_mm > 200 or height_mm < 10 or height_mm > 200:
-                            print(f"⚠️ Dimensions encore suspectes pour un carreau: {width_mm:.1f}mm × {height_mm:.1f}mm")
-                            print(f"   L'offset sera appliqué mais vérifiez les unités de votre objet")
-                        else:
-                            print(f"✅ Dimensions cohérentes pour un carreau: {width_mm:.1f}mm × {height_mm:.1f}mm")
-                        
-                        # Calculer les facteurs d'échelle pour ajouter exactement 2mm (1mm de chaque côté)
-                        target_width = current_width + 0.002  # +2mm
-                        target_height = current_height + 0.002  # +2mm
-                        
-                        scale_factor_x = target_width / current_width
-                        scale_factor_y = target_height / current_height
-                        
-                        print(f"🔧 Facteurs d'échelle calculés: X={scale_factor_x:.4f} (+{(scale_factor_x-1)*100:.2f}%), Y={scale_factor_y:.4f} (+{(scale_factor_y-1)*100:.2f}%)")
-                        
-                        # Appliquer le scaling
-                        bpy.ops.object.mode_set(mode='EDIT')
-                        bpy.ops.curve.select_all(action='SELECT')
-                        bpy.ops.transform.resize(value=(scale_factor_x, scale_factor_y, 1.0))
-                        bpy.ops.object.mode_set(mode='OBJECT')
-                        
-                        # Vérifier les nouvelles dimensions
-                        bpy.context.view_layer.update()
-                        new_width = obj.dimensions.x
-                        new_height = obj.dimensions.y
-                        new_depth = obj.dimensions.z
-                        
-                        print(f"✅ Offset scaling appliqué avec succès sur {obj.name}")
-                        print(f"📏 Nouvelles dimensions: {new_width*1000:.1f}mm × {new_height*1000:.1f}mm × {new_depth*1000:.1f}mm")
-                        print(f"➕ Agrandissement réel: +{(new_width-current_width)*1000:.1f}mm × +{(new_height-current_height)*1000:.1f}mm")
-                        
-                        # Diagnostic supplémentaire
-                        if abs((new_width-current_width)*1000 - 2.0) > 0.5:
-                            print(f"⚠️ Agrandissement X inattendu: attendu +2.0mm, obtenu +{(new_width-current_width)*1000:.1f}mm")
-                        if abs((new_height-current_height)*1000 - 2.0) > 0.5:
-                            print(f"⚠️ Agrandissement Y inattendu: attendu +2.0mm, obtenu +{(new_height-current_height)*1000:.1f}mm")
-                        
-                    except Exception as e:
-                        print(f"❌ Erreur lors de l'application du scaling sur {obj.name}: {e}")
-                        # S'assurer qu'on est en mode objet même en cas d'erreur
-                        try:
-                            if bpy.context.mode != 'OBJECT':
-                                bpy.ops.object.mode_set(mode='OBJECT')
-                        except:
-                            pass
-                    
-                    obj.select_set(False)
-                
-                # Restaurer la sélection originale
-                bpy.ops.object.select_all(action="DESELECT")
-                for obj in selected_objects:
-                    obj.select_set(True)
-                if selected_objects:
-                    bpy.context.view_layer.objects.active = selected_objects[0]
-            else:
-                print("Aucun objet contenant 'Carreau' trouvé dans la sélection")
+                        bpy.ops.object.silhouete_offset(offset=0.001, style='2')
+
+                        if bpy.context.active_object != obj:
+                            bpy.data.objects.remove(obj, do_unlink=True)
+                    except:
+                        pass
 
         # join selected object
         if prepprops.isJoin_prepare:
