@@ -1312,20 +1312,65 @@ class PrepareToCam(bpy.types.Operator, AddObjectHelper):
                     obj.select_set(True)
                     bpy.ops.object.delete()
 
-            for obj in [o for o in bpy.data.objects if "_cam" in o.name]:
-                bpy.context.view_layer.objects.active = obj
-                obj.select_set(True)
-                # apply modifier
-                bpy.ops.object.convert(target="CURVE")
-                bpy.ops.object.convert(target="MESH")
+            # Sélectionner et convertir uniquement les objets _cam de type MESH
+            cam_mesh_objects = [o for o in bpy.data.objects if "_cam" in o.name and o.type == 'MESH']
+            if cam_mesh_objects:
+                bpy.ops.object.select_all(action="DESELECT")
+                for obj in cam_mesh_objects:
+                    obj.select_set(True)
+                bpy.context.view_layer.objects.active = cam_mesh_objects[0]
+                # Vérification du contexte
+                if bpy.context.selected_objects and bpy.context.view_layer.objects.active and bpy.context.view_layer.objects.active.type == 'MESH':
+                    print(f"🔄 Conversion de {len(cam_mesh_objects)} objets _cam MESH en courbes")
+                    bpy.ops.object.convert(target="CURVE")
+                    # Optionnel : reconvertir en mesh si besoin
+                    # bpy.ops.object.convert(target="MESH")
+                else:
+                    print("⚠️ Impossible de convertir : contexte ou type incorrect")
+            else:
+                print("⚠️ Aucun objet _cam de type MESH à convertir")
 
         # convert to curve
         if prepprops.isConvertToCurve_prepare:
-            bpy.ops.object.convert(target="CURVE")
+            # Vérifier qu'il y a des objets sélectionnés et qu'ils sont des mesh
+            if bpy.context.selected_objects:
+                # Filtrer uniquement les objets de type MESH
+                mesh_objects = [obj for obj in bpy.context.selected_objects if obj.type == 'MESH']
+                
+                if mesh_objects:
+                    # S'assurer qu'un objet mesh est actif
+                    bpy.context.view_layer.objects.active = mesh_objects[0]
+                    print(f"🔄 Conversion de {len(mesh_objects)} objet(s) MESH en courbes")
+                    
+                    # Sélectionner seulement les mesh objects
+                    bpy.ops.object.select_all(action="DESELECT")
+                    for obj in mesh_objects:
+                        obj.select_set(True)
+                    
+                    bpy.ops.object.convert(target="CURVE")
 
-            # remove double if curve
-            if prepprops.isCRemove_prepare:
-                bpy.ops.object.curve_remove_doubles()
+                    # remove double if curve
+                    if prepprops.isCRemove_prepare:
+                        bpy.ops.object.curve_remove_doubles()
+                else:
+                    print("⚠️ Aucun objet MESH trouvé pour la conversion en courbe")
+            else:
+                print("⚠️ Aucun objet sélectionné pour la conversion en courbe")
+
+        # Offset de ponçage des carreaux (simplifié au maximum)
+        if prepprops.isOffsetCarreau_prepare and prepprops.isConvertToCurve_prepare:
+            for obj in bpy.context.selected_objects:
+                if "Carreau" in obj.name and obj.type == 'CURVE':
+                    bpy.ops.object.select_all(action="DESELECT")
+                    obj.select_set(True)
+                    bpy.context.view_layer.objects.active = obj
+                    try:
+                        bpy.ops.object.silhouete_offset(offset=0.001, style='2')
+
+                        if bpy.context.active_object != obj:
+                            bpy.data.objects.remove(obj, do_unlink=True)
+                    except:
+                        pass
 
         # join selected object
         if prepprops.isJoin_prepare:
