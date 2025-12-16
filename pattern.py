@@ -560,6 +560,7 @@ def mortaise_pilier_fond_moule_mono(x, y, difprops, distanceMortaises):
 
 def monopilier_profondeurs(x, y, difprops, colonne, cross_monopilier_min):
     ratios = difprops.getMotif("depth")
+    # getMotif() retourne déjà les profondeurs ajustées (épaisseur soustraite pour le max)
     amax = max(ratios)
     epaisseur = difprops.epaisseur
     epaisseur_pilier = difprops.epaisseur_pilier
@@ -662,12 +663,8 @@ def monopilier_profondeurs(x, y, difprops, colonne, cross_monopilier_min):
                 pilier_haut_start = pilier_base_start
                 pilier_haut_end = pilier_base_end
             
-            # Appliquer la même logique que pour les piliers stables et eco :
-            # soustraire l'épaisseur uniquement pour la hauteur maximale
-            if ratios[index] == amax:
-                hauteur_pilier = ratios[index] - epaisseur
-            else:
-                hauteur_pilier = ratios[index]
+            # getMotif() retourne déjà les hauteurs ajustées
+            hauteur_pilier = ratios[index]
             
             if encoches:
                 # Avec encoches (logique originale)
@@ -727,6 +724,7 @@ def monopilier_profondeurs(x, y, difprops, colonne, cross_monopilier_min):
 
 def contremonopilier_hauteurs(x, y, difprops):
     ratios = difprops.getMotif("height")
+    # getMotif() retourne déjà les hauteurs ajustées (épaisseur soustraite pour le max)
     amax = max(ratios)
     epaisseur = difprops.epaisseur
     profondeur = difprops.profondeur
@@ -807,16 +805,16 @@ def contremonopilier_hauteurs(x, y, difprops):
             pilier_haut_start = pilier_base_start
             pilier_haut_end = pilier_base_end
         
-        # Pour les contre-piliers : soustraire l'épaisseur pour toutes les hauteurs non-nulles
-        # et ignorer les hauteurs nulles ou négatives afin d'éviter hmin < 0
+        # getMotif() retourne déjà les hauteurs ajustées
         h = ratios[i]
         if h is None:
             continue
         if h <= 0:
             # hmin=0 : pas de contre-pilier du tout
             continue
-        # Soustraire l'épaisseur et empêcher toute valeur négative résiduelle
-        hauteur_pilier = max(0.0, h - epaisseur)
+        
+        # Utiliser directement la valeur de getMotif()
+        hauteur_pilier = max(0.0, h)
         
         if pyramidal:
             # Forme pyramidale pour les contrepiliers

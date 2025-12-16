@@ -1265,7 +1265,8 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
 
     ratios = difprops.getMotif("depth")
 
-    amax = max(ratios)
+    # getMotif() retourne déjà les profondeurs ajustées (épaisseur soustraite pour le max)
+    amax = max(ratios)  # Hauteur réelle du pilier le plus haut
     amin = min([x for x in ratios if x > 0])
     cross_monopilier_min = amin + socle_monopilier
     a = []
@@ -1284,10 +1285,8 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
             
             for i in range(len(ratio)):
                 if ratio[i][0] != 0:  # delete hauteur = 0
-                    if ratio[i][0] == amax:
-                        y = ((ratio[i][0] * profondeur) / amax) - epaisseur
-                    else:
-                        y = (ratio[i][0] * profondeur) / amax
+                    # getMotif() retourne déjà les hauteurs ajustées
+                    y = ratio[i][0]
 
                     for k in range(ratio[i][1]):
                         # Mode classique avec réduction uniforme
@@ -1323,7 +1322,8 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
                         x0 += largeur_pilier + array_offset
 
                     x0 = 0
-                    y0 += y + array_offset + epaisseur_moule
+                    # Utiliser amax pour un espacement uniforme entre toutes les rangées
+                    y0 += amax + array_offset + epaisseur_moule
 
             # Génération des edges (8 vertices par pilier en mode eco)
             for i in range(0, len(vertsCadre), 8):
@@ -1345,10 +1345,8 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
             
             for i in range(len(ratio)):
                 if ratio[i][0] != 0:  # delete hauteur = 0
-                    if ratio[i][0] == amax:
-                        y = ((ratio[i][0] * profondeur) / amax) - epaisseur
-                    else:
-                        y = (ratio[i][0] * profondeur) / amax
+                    # getMotif() retourne déjà les hauteurs ajustées
+                    y = ratio[i][0]
 
                     for k in range(ratio[i][1]):
                         # Mode classique avec réduction uniforme
@@ -1386,7 +1384,8 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
                         x0 += largeur_pilier + array_offset
 
                     x0 = 0
-                    y0 += y + array_offset
+                    # Utiliser amax pour un espacement uniforme entre toutes les rangées
+                    y0 += amax + array_offset
 
             # Génération des edges selon le mode d'encoches
             vertices_per_pillar = 8 if encoches else 4
@@ -1440,7 +1439,7 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
                     
                     rangee_end_indices.append(len(vertsCadre) - 1)  # Marquer la fin de cette rangée
 
-                    y0 += amax + array_offset + socle_monopilier
+                    y0 += amax + array_offset + socle_monopilier + 0.01  # +10mm pour mono-piliers
 
             # Génération des edges par rangée pour éviter les connexions inter-rangées
             rangee_start = 0
@@ -1529,7 +1528,8 @@ def add_contre_pilier_moule(difprops, productprops, usinageprops, arrayprops):
     # Utiliser les hauteurs (height) pour les contre-piliers au lieu des profondeurs (depth)
     ratios = difprops.getMotif("height")
 
-    amax = max(ratios)
+    # getMotif() retourne déjà les hauteurs ajustées (épaisseur soustraite pour le max)
+    amax = max(ratios)  # Hauteur réelle du contre-pilier le plus haut
     amin = min([x for x in ratios if x > 0])
     a = []
 
@@ -1552,11 +1552,11 @@ def add_contre_pilier_moule(difprops, productprops, usinageprops, arrayprops):
                         x0 += largeur_pilier + array_offset
 
                     x0 = 0
-                    # Logique standard : pas de correction d'épaisseur ici car elle se fait dans contremonopilier_hauteurs
+                    # Utiliser amax pour un espacement uniforme entre toutes les rangées
                     if difprops.type_moule == "eco":
-                        y0 += (ratio[i][0] * profondeur) / amax + array_offset + epaisseur_moule
+                        y0 += amax + array_offset + epaisseur_moule
                     else:  # stable
-                        y0 += (ratio[i][0] * profondeur) / amax + array_offset
+                        y0 += amax + array_offset
 
             # Génération des edges (4 vertices par contre-pilier avec la fonction originale)
             num_pillars_per_row = difprops.type  # Nombre de piliers par rangée
@@ -1603,7 +1603,7 @@ def add_contre_pilier_moule(difprops, productprops, usinageprops, arrayprops):
                     
                     rangee_end_indices.append(len(vertsCadre) - 1)  # Marquer la fin de cette rangée
 
-                    y0 += amax + array_offset + socle_contrepiliers
+                    y0 += amax + array_offset + socle_contrepiliers + 0.01  # +10mm pour contre-piliers mono
 
             # Génération des edges par rangée pour éviter les connexions inter-rangées
             rangee_start = 0

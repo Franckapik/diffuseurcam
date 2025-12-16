@@ -580,6 +580,10 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         depth = []
         for k in range(0, len(ratio)):
             y = (ratio[k] * self.profondeur) / amax
+            # Soustraire l'épaisseur pour le pilier ayant la hauteur max
+            # Cela permet d'éviter que le pilier ne dépasse du moule
+            if ratio[k] == amax:
+                y = y - self.epaisseur
             depth.append(round(y, 3))
 
         height = [self.profondeur - x for x in depth]
