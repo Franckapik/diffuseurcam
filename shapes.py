@@ -1034,13 +1034,17 @@ def add_fond_moule(difprops, productprops, usinageprops):
             y0 = rang2 / 2 + epaisseur + epaisseur_moule + debord_moule
             """ depart gauche/droite """
             x0 = epaisseur + epaisseur_moule + debord_moule
+            
+            # Espacement sans réduction pour le fond du moule
+            mortaise_spacing_base = largeur_monopilier / 5
 
             for k in range(0, round(N * longueur_diffuseur * 2)):
                 if k % (round(N * longueur_diffuseur)) == 0 and k != 0:
-                    x0 += largeur_monopilier / 5 * 2
+                    x0 += mortaise_spacing_base * 2
                     y0 = rang2 / 2 + epaisseur + epaisseur_moule + debord_moule
 
-                vertsMortaisesInt += [*mortaise_pilier_fond_moule_mono(x0, y0, difprops, largeur_monopilier / 5)]
+                # apply_reduction=False : mortaises pleines sans réduction
+                vertsMortaisesInt += [*mortaise_pilier_fond_moule_mono(x0, y0, difprops, mortaise_spacing_base, apply_reduction=False)]
 
                 y0 += rang2 + epaisseur
 
@@ -1420,20 +1424,31 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
                 if (difprops.moule_type == "1d" and i < 1) or difprops.moule_type == "2d":
                     start_idx = len(vertsCadre)  # Index de début de cette rangée
                     
+                    mortaise_spacing = difprops.getMonopilierMortaiseSpacing()
+                    mortaise_largeur = difprops.getMonopilierMortaiseLargeur()
+                    
+                    # Centre géométrique de la pièce
+                    centre_piece = largeur_monopilier / 2
+                    
+                    # Mortaises symétriques : centre ± spacing
+                    centre_mortaise_gauche = centre_piece - mortaise_spacing
+                    centre_mortaise_droite = centre_piece + mortaise_spacing
+                    
                     vertsCadre += [
                         (x0 - epaisseur, y0, 0),
                         (x0 - epaisseur, y0 + socle_monopilier, 0),
                         *monopilier_profondeurs(x0, y0 + socle_monopilier, difprops, i, cross_monopilier_min),
                         (largeur_monopilier + epaisseur, y0 + socle_monopilier, 0),
                         (largeur_monopilier + epaisseur, y0, 0),
-                        (largeur_monopilier - largeur_monopilier / 5, y0, 0),
-                        (largeur_monopilier - largeur_monopilier / 5, y0 - epaisseur_moule, 0),
-                        (largeur_monopilier - 2 * largeur_monopilier / 5, y0 - epaisseur_moule, 0),
-                        (largeur_monopilier - 2 * largeur_monopilier / 5, y0, 0),
-                        (largeur_monopilier - 3 * largeur_monopilier / 5, y0, 0),
-                        (largeur_monopilier - 3 * largeur_monopilier / 5, y0 - epaisseur_moule, 0),
-                        (largeur_monopilier - 4 * largeur_monopilier / 5, y0 - epaisseur_moule, 0),
-                        (largeur_monopilier - 4 * largeur_monopilier / 5, y0, 0),
+                        # Contour bas avec encoches des mortaises (de droite à gauche)
+                        (centre_mortaise_droite + mortaise_largeur / 2, y0, 0),
+                        (centre_mortaise_droite + mortaise_largeur / 2, y0 - epaisseur_moule, 0),
+                        (centre_mortaise_droite - mortaise_largeur / 2, y0 - epaisseur_moule, 0),
+                        (centre_mortaise_droite - mortaise_largeur / 2, y0, 0),
+                        (centre_mortaise_gauche + mortaise_largeur / 2, y0, 0),
+                        (centre_mortaise_gauche + mortaise_largeur / 2, y0 - epaisseur_moule, 0),
+                        (centre_mortaise_gauche - mortaise_largeur / 2, y0 - epaisseur_moule, 0),
+                        (centre_mortaise_gauche - mortaise_largeur / 2, y0, 0),
                         (x0 - epaisseur, y0, 0),
                     ]
                     

@@ -545,16 +545,26 @@ def mortaise_pilier_fond_moule_stable(x, y, difprops, usinageprops):
     ]
 
 
-def mortaise_pilier_fond_moule_mono(x, y, difprops, distanceMortaises):
+def mortaise_pilier_fond_moule_mono(x, y, difprops, distanceMortaises, apply_reduction=True):
     epaisseur_pilier = difprops.epaisseur_pilier
     largeur_pilier = difprops.getLargeurPilier()
     rang = difprops.getRang()
-
+    
+    # Obtenir la largeur de la mortaise (réduite ou non selon le paramètre)
+    if apply_reduction:
+        largeur_mortaise = difprops.getMonopilierMortaiseLargeur()
+    else:
+        # Sans réduction : la mortaise a la même largeur que l'espacement
+        largeur_mortaise = distanceMortaises
+    
+    # Calculer le décalage pour centrer la mortaise
+    decalage_centrage = (distanceMortaises - largeur_mortaise) / 2
+    
     return [
-        (x + distanceMortaises, y - epaisseur_pilier / 2, 0),
-        (x + distanceMortaises, y + epaisseur_pilier / 2, 0),
-        (x + 2 * distanceMortaises, y + epaisseur_pilier / 2, 0),
-        (x + 2 * distanceMortaises, y - epaisseur_pilier / 2, 0),
+        (x + distanceMortaises + decalage_centrage, y - epaisseur_pilier / 2, 0),
+        (x + distanceMortaises + decalage_centrage, y + epaisseur_pilier / 2, 0),
+        (x + distanceMortaises + decalage_centrage + largeur_mortaise, y + epaisseur_pilier / 2, 0),
+        (x + distanceMortaises + decalage_centrage + largeur_mortaise, y - epaisseur_pilier / 2, 0),
     ]
 
 

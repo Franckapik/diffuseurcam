@@ -350,6 +350,20 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         default=True,
     )
 
+    monopilier_mortaise_reduction: EnumProperty(
+        name="Réduction mortaises mono-pilier",
+        description="Réduit l'espacement des mortaises du moule mono-pilier",
+        items=(
+            ("0", "Aucune", ""),
+            ("0.05", "5%", ""),
+            ("0.10", "10%", ""),
+            ("0.20", "20%", ""),
+            ("0.30", "30%", ""),
+            ("0.50", "50%", ""),
+        ),
+        default="0",
+    )
+
     decalage_h: IntProperty(
         name="Horizontal",
         description="Décalage",
@@ -496,6 +510,26 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         else:
             # Mode classique : même largeur que la base
             return self.getLargeurPilier()
+    
+    def getMonopilierMortaiseSpacing(self):
+        """Retourne l'espacement entre les centres des mortaises du moule mono-pilier.
+        Cette valeur reste constante (largeur_monopilier / 5) pour conserver les positions.
+        """
+        rang = self.getRang()
+        type_count = self.type
+        epaisseur = self.epaisseur
+        largeur_monopilier = rang * type_count - epaisseur
+        
+        return largeur_monopilier / 5
+    
+    def getMonopilierMortaiseLargeur(self):
+        """Retourne la largeur des mortaises du moule mono-pilier,
+        réduite selon monopilier_mortaise_reduction.
+        """
+        espacement = self.getMonopilierMortaiseSpacing()
+        reduction = float(self.monopilier_mortaise_reduction)
+        
+        return espacement * (1 - reduction)
 
     def _find_best_insertion_position(self, sequence, value, type_size):
         """Trouve la meilleure position pour insérer une valeur manquante"""
@@ -682,6 +716,10 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                 # Encoches pour stable et mono seulement (pas eco)
                 if self.type_moule == "stable" or self.type_moule == "mono":
                     attributes.append("pilier_encoches")
+                
+                # Réduction mortaises pour mono-piliers uniquement
+                if self.type_moule == "mono":
+                    attributes.append("monopilier_mortaise_reduction")
 
                 # Épaisseur pilier pour stable et mono
                 if self.type_moule == "stable" or self.type_moule == "mono":
