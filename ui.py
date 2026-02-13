@@ -379,6 +379,10 @@ class Diffuseur_SideBar(Panel):
         # Paramètre d'optimisation QRD pour les diffuseurs 1D
         if difprops.moule_type == "1d":
             box.prop(difprops, "qrd_optimization")
+        
+        # Option pour le modèle 3D
+        if productprops.product_type in ("0", "1"):
+            box.prop(difprops, "invert_depth")
              
         ratio = difprops.getMotif(productprops.motif_display)
         ratio_readable = [int(x * 1000) for x in ratio]

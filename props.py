@@ -730,6 +730,13 @@ class DiffuseurProps(bpy.types.PropertyGroup):
             case _:
                 return
 
+    # Option pour le modèle 3D
+    invert_depth: BoolProperty(
+        name="Inverser profondeur",
+        description="Inverse la position Z des carreaux (pour/contre le mur) dans le modèle 3D",
+        default=False
+    )
+
 
 class ArrayProps(bpy.types.PropertyGroup):
     array_offset: FloatProperty(

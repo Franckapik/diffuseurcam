@@ -765,51 +765,242 @@ class AddColle(bpy.types.Operator, AddObjectHelper):
 
 
 class Add3DModel(bpy.types.Operator, AddObjectHelper):
+    """Génère un modèle 3D assemblé complet du diffuseur acoustique QRD (Schroeder)
+    avec cadres, peignes et carreaux extrudés à l'épaisseur du bois,
+    positionnés selon la séquence de profondeurs QRD."""
+
     bl_idname = "mesh.simulation"
     bl_label = "Ajouter Modele 3D"
     bl_options = {"REGISTER", "UNDO"}
 
+    def _create_box(self, bm, x, y, z, sx, sy, sz, mat_index=0):
+        """Crée un parallélépipède solide dans le bmesh.
+        Position (x, y, z) = coin inférieur-gauche-arrière.
+        Dimensions (sx, sy, sz) = taille selon X, Y, Z."""
+        verts = [
+            bm.verts.new((x, y, z)),
+            bm.verts.new((x + sx, y, z)),
+            bm.verts.new((x + sx, y + sy, z)),
+            bm.verts.new((x, y + sy, z)),
+            bm.verts.new((x, y, z + sz)),
+            bm.verts.new((x + sx, y, z + sz)),
+            bm.verts.new((x + sx, y + sy, z + sz)),
+            bm.verts.new((x, y + sy, z + sz)),
+        ]
+        faces_data = [
+            (verts[0], verts[3], verts[2], verts[1]),  # Dessous (Z-)
+            (verts[4], verts[5], verts[6], verts[7]),  # Dessus (Z+)
+            (verts[0], verts[1], verts[5], verts[4]),  # Avant (Y-)
+            (verts[2], verts[3], verts[7], verts[6]),  # Arrière (Y+)
+            (verts[0], verts[4], verts[7], verts[3]),  # Gauche (X-)
+            (verts[1], verts[2], verts[6], verts[5]),  # Droite (X+)
+        ]
+        for fd in faces_data:
+            f = bm.faces.new(fd)
+            f.material_index = mat_index
+
+    def _load_material_from_blend(self):
+        """Charge le matériau 'ctp' depuis le fichier materials.blend."""
+        import os
+        addon_dir = os.path.dirname(__file__)
+        blend_path = os.path.join(addon_dir, "materials.blend")
+        
+        if not os.path.exists(blend_path):
+            print(f"⚠️ Fichier {blend_path} introuvable, matériau par défaut créé")
+            return None
+        
+        try:
+            # Charger le matériau depuis le fichier .blend
+            with bpy.data.libraries.load(blend_path) as (data_from, data_to):
+                if "ctp" in data_from.materials:
+                    data_to.materials.append("ctp")
+            
+            # Récupérer le matériau chargé
+            mat = bpy.data.materials.get("ctp")
+            if mat:
+                print(f"✅ Matériau 'ctp' chargé depuis {blend_path}")
+                return mat
+            else:
+                print(f"⚠️ Matériau 'ctp' non trouvé après chargement")
+                return None
+                
+        except Exception as e:
+            print(f"⚠️ Erreur lors du chargement du matériau: {e}")
+            return None
+
+    def _get_or_create_material(self, name, color):
+        """Récupère ou crée un matériau PBR bois avec la couleur donnée."""
+        mat = bpy.data.materials.get(name)
+        if mat is None:
+            mat = bpy.data.materials.new(name=name)
+            mat.use_nodes = True
+            bsdf = mat.node_tree.nodes.get("Principled BSDF")
+            if bsdf:
+                bsdf.inputs["Base Color"].default_value = color
+                if "Roughness" in bsdf.inputs:
+                    bsdf.inputs["Roughness"].default_value = 0.75
+        return mat
+
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
+        product_type = scene.product_props.product_type
+        invert_depth = difprops.invert_depth
 
+        if product_type not in ("0", "1"):
+            self.report({"WARNING"}, "Le modèle 3D est disponible uniquement pour les diffuseurs 1D et 2D")
+            return {"CANCELLED"}
+
+        # ── Paramètres du diffuseur ──────────────────────────────────────
+        e = difprops.epaisseur              # Épaisseur du bois (ex: 3mm)
+        D = difprops.profondeur             # Profondeur totale (ex: 100mm)
+        W = difprops.largeur_diffuseur      # Largeur totale (ex: 500mm)
+        N = difprops.type                   # Ordre QRD (ex: 7)
+        rang = difprops.getRang()           # Pas de cellule = (W - e) / N
+        L = difprops.getLongueur()          # Longueur totale
+
+        # Séquence de profondeurs QRD (Schroeder)
         depth = difprops.getMotif("depth")
-        print(depth)
 
-        # Calculer le nombre de lignes en tenant compte de la longueur du diffuseur
-        num_rows = 1 if difprops.moule_type == "1d" else round(difprops.type * difprops.longueur_diffuseur)
+        # 1D ou 2D
+        is_1d = (difprops.moule_type == "1d") or (product_type == "1")
+        num_cols = N
+        num_rows = 1 if is_1d else round(N * difprops.longueur_diffuseur)
+
+        # ── Matériaux (3 teintes bois) ───────────────────────────────────
+        MAT_CADRE = 0       # Cadres (chêne foncé)
+        MAT_PEIGNE = 1      # Peignes (chêne moyen)
+        MAT_CARREAU = 2     # Carreaux (chêne clair)
+
+        # Essayer de charger le matériau depuis materials.blend
+        mat_ctp = self._load_material_from_blend()
         
-        for i in range(num_rows):
-            y = i * difprops.getRang()
-            for k in range(difprops.type):
-                index = i * difprops.type + k
-                x = k * difprops.getRang()
-                z = depth[index]
-                vertex, edges, name = add_carreau(scene.dif_props, scene.product_props, scene.usinage_props)
+        if mat_ctp:
+            # Utiliser le matériau chargé pour tous les éléments
+            mat_cadre = mat_ctp
+            mat_peigne = mat_ctp
+            mat_carreau = mat_ctp
+        else:
+            # Créer les matériaux par défaut si le chargement échoue
+            mat_cadre = self._get_or_create_material(
+                "DIF_Cadre", (0.40, 0.24, 0.10, 1.0))
+            mat_peigne = self._get_or_create_material(
+                "DIF_Peigne", (0.58, 0.40, 0.20, 1.0))
+            mat_carreau = self._get_or_create_material(
+                "DIF_Carreau", (0.76, 0.56, 0.35, 1.0))
 
-                # create a bmesh
-                bm = bmesh.new()
+        bm = bmesh.new()
 
-                # Create new mesh data.
-                mesh = bpy.data.meshes.new(name)
-                mesh.from_pydata(vertex, edges, [])
+        # ── CADRES (rectangle extérieur) ─────────────────────────────────
+        # Convention: X = largeur, Y = longueur, Z = profondeur (face à la pièce)
+        #
+        #  Cadre mortaise gauche   │  cellules  │   Cadre mortaise droit
+        #        (e × L × D)       │            │      (e × L × D)
+        #  ────────────────────────┼────────────┼───────────────────────
+        #  Cadre tenon bas (W-2e × e × D)       Cadre tenon haut
 
-                mesh.update(calc_edges=True)
+        # Cadre mortaise gauche (côté long)
+        self._create_box(bm, 0, 0, 0, e, L, D, MAT_CADRE)
+        # Cadre mortaise droit
+        self._create_box(bm, W - e, 0, 0, e, L, D, MAT_CADRE)
+        # Cadre tenon bas (côté court, entre les mortaises)
+        self._create_box(bm, e, 0, 0, W - 2 * e, e, D, MAT_CADRE)
+        # Cadre tenon haut
+        self._create_box(bm, e, L - e, 0, W - 2 * e, e, D, MAT_CADRE)
 
-                # Load BMesh with mesh data
-                bm.from_mesh(mesh)
+        # ── PEIGNES LONGS (divisent la largeur en N colonnes) ────────────
+        # Orientés selon Y, de épaisseur e, entre les cadres tenon
+        # Pleine hauteur D pour tous les cas
+        for k in range(1, num_cols):
+            px = k * rang
+            self._create_box(bm, px, e, 0, e, L - 2 * e, D, MAT_PEIGNE)
 
-                # Convert BMesh to mesh data, then release BMesh.
-                bm.to_mesh(mesh)
-                bm.free()
+        # ── PEIGNES COURTS (2D uniquement, divisent la longueur) ─────────
+        # Orientés selon X, pleine hauteur D
+        if not is_1d:
+            for k in range(1, num_rows):
+                py = k * rang
+                self._create_box(bm, e, py, 0, W - 2 * e, e, D, MAT_PEIGNE)
 
-                # Add Object to the default collection from mesh
-                mesh_obj = bpy.data.objects.new(mesh.name, mesh)
-                bpy.context.collection.objects.link(mesh_obj)
-                bpy.types.Scene.dif_parts.append(mesh_obj.name)
+        # ── CARREAUX (tuiles de fond aux profondeurs QRD) ────────────────
+        # Chaque carreau est un rectangle extrudé de l'épaisseur du bois,
+        # positionné en Z selon la séquence quadratique de Schroeder :
+        #   depth=0 → fond du puits (contre le mur)
+        #   depth≈D → surface (face à la pièce)
+        tile_w = rang - e   # largeur claire d'une cellule
 
-                # Positionning according to position props
-                mesh_obj.location = (x, y, z)
+        if is_1d:
+            # 1D : carreaux allongés sur toute la longueur
+            tile_l = L - 2 * e
+            for col in range(num_cols):
+                if col < len(depth):
+                    z = depth[col]
+                    # Inverser Z si demandé
+                    if invert_depth:
+                        z = D - z - e
+                    tx = col * rang + e
+                    self._create_box(bm, tx, e, z, tile_w, tile_l, e, MAT_CARREAU)
+        else:
+            # 2D : carreaux carrés dans chaque cellule de la grille
+            tile_l = rang - e
+            for row in range(num_rows):
+                for col in range(num_cols):
+                    idx = row * num_cols + col
+                    if idx < len(depth):
+                        z = depth[idx]
+                        # Inverser Z si demandé
+                        if invert_depth:
+                            z = D - z - e
+                        tx = col * rang + e
+                        ty = row * rang + e
+                        self._create_box(bm, tx, ty, z, tile_w, tile_l, e, MAT_CARREAU)
+
+        # ── Création du mesh et de l'objet Blender ───────────────────────
+        mesh_name = "3D_" + difprops.getDifName()
+        mesh = bpy.data.meshes.new(mesh_name)
+        bm.to_mesh(mesh)
+        bm.free()
+        mesh.update()
+
+        obj = bpy.data.objects.new(mesh.name, mesh)
+        obj.data.materials.append(mat_cadre)
+        obj.data.materials.append(mat_peigne)
+        obj.data.materials.append(mat_carreau)
+
+        bpy.context.collection.objects.link(obj)
+        bpy.types.Scene.dif_parts.append(obj.name)
+
+        # Sélectionner et centrer l'origine
+        bpy.ops.object.select_all(action="DESELECT")
+        obj.select_set(True)
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
+
+        # Unwrap automatique pour les UV (nécessaire pour les textures)
+        bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.mesh.select_all(action='SELECT')
+        bpy.ops.uv.smart_project(margin_method='SCALED')
+        
+        # Mettre à l'échelle les UVs pour améliorer la résolution de la texture
+        # Évite le flou en augmentant la densité de texture sur chaque pièce
+        mesh = obj.data
+        bm = bmesh.from_edit_mesh(mesh)
+        uv_layer = bm.loops.layers.uv.active
+        if uv_layer:
+            for face in bm.faces:
+                for loop in face.loops:
+                    loop[uv_layer].uv *= 3
+        bmesh.update_edit_mesh(mesh)
+        
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        print(f"✅ Modèle 3D généré: {mesh_name}")
+        print(f"   Type: {'1D' if is_1d else '2D'} QRD N={N} | Grille {num_cols}×{num_rows}")
+        print(f"   Dimensions: {W*1000:.0f} × {L*1000:.0f} × {D*1000:.0f} mm")
+        print(f"   Pièces: 4 cadres + {num_cols - 1} peignes longs"
+              + (f" + {num_rows - 1} peignes courts" if not is_1d else "")
+              + f" + {min(num_cols * num_rows, len(depth))} carreaux")
+        print(f"   ✅ Smart UV project appliqué (scale ×3) - textures optimisées")
 
         return {"FINISHED"}
 
