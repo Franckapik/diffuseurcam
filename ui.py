@@ -36,6 +36,18 @@ class OT_AddMyPreset(AddPresetBase, Operator):
     preset_subdir = "object/display"
 
 
+class DIF_UL_BatchPresets(bpy.types.UIList):
+    """Liste des presets batch 3D"""
+    bl_idname = "DIF_UL_batch_presets"
+
+    def draw_item(self, context, layout, data, item, icon, active_data, active_property, index):
+        if self.layout_type in {'DEFAULT', 'COMPACT'}:
+            layout.prop(item, "name", text="", emboss=False, icon="PRESET")
+        elif self.layout_type in {'GRID'}:
+            layout.alignment = 'CENTER'
+            layout.label(text=item.name, icon="PRESET")
+
+
 class Diffuseur_SideBar(Panel):
     """Diffuseur options panel"""
 
@@ -385,10 +397,6 @@ class Diffuseur_SideBar(Panel):
         if difprops.moule_type == "1d":
             box.prop(difprops, "qrd_optimization")
         
-        # Option pour le modèle 3D
-        if productprops.product_type in ("0", "1"):
-            box.prop(difprops, "invert_depth")
-             
         ratio = difprops.getMotif(productprops.motif_display)
         ratio_readable = [int(x * 1000) for x in ratio]
         compteur = Counter(ratio_readable)
@@ -417,7 +425,59 @@ class Diffuseur_SideBar(Panel):
                     col.label(text=str(int(ratio[i * difprops.type + k] * 1000)))
 
         box.operator("mesh.colle")
-        box.operator("mesh.simulation")
+
+        # Modèle 3D
+        layout.separator()
+        box = layout.box()
+        box.label(text="Modèle 3D", icon="MESH_CUBE")
+
+        if productprops.product_type in ("0", "1"):
+            box.prop(difprops, "invert_depth")
+            box.operator("mesh.simulation")
+        else:
+            box.label(text="Disponible pour Diffuseur 1D/2D", icon="INFO")
+
+        # Batch 3D
+        box.separator()
+        sub = box.box()
+        sub.label(text="Batch 3D", icon="DUPLICATE")
+
+        batchprops = scene.batch_3d_props
+        sub.prop(batchprops, "batch_product_type", text="Produit")
+        sub.prop(batchprops, "batch_types")
+        sub.prop(batchprops, "batch_profondeurs")
+        sub.prop(batchprops, "batch_longueurs")
+        sub.prop(batchprops, "batch_grid_gap")
+
+        # Nombre de combinaisons
+        try:
+            types_list = [x.strip() for x in batchprops.batch_types.split(",") if x.strip()]
+            prof_list = [x.strip() for x in batchprops.batch_profondeurs.split(",") if x.strip()]
+            long_list = [x.strip() for x in batchprops.batch_longueurs.split(",") if x.strip()]
+            nb_combi = len(types_list) * len(prof_list) * len(long_list)
+            sub.label(text=f"{nb_combi} combinaisons à générer", icon="INFO")
+        except Exception:
+            sub.label(text="Format invalide", icon="ERROR")
+
+        row = sub.row(align=True)
+        row.scale_y = 1.5
+        row.operator("mesh.batch_3d", icon="PLAY")
+        row.operator("mesh.clear_batch_3d", text="", icon="TRASH")
+
+        # Presets Batch
+        sub.separator()
+        sub.label(text="Presets", icon="PRESET")
+        row = sub.row()
+        row.template_list("DIF_UL_batch_presets", "", scene, "batch_presets", batchprops, "active_preset_index", rows=3)
+
+        col = row.column(align=True)
+        col.operator("mesh.add_batch_preset", text="", icon="ADD")
+        col.operator("mesh.remove_batch_preset", text="", icon="REMOVE")
+
+        sub.prop(batchprops, "preset_name")
+        row = sub.row(align=True)
+        row.operator("mesh.load_batch_preset", text="Charger", icon="IMPORT")
+        row.operator("mesh.save_batch_preset", text="Sauvegarder", icon="EXPORT")
 
         # Addon
         layout.separator()
@@ -444,7 +504,7 @@ class Diffuseur_SideBar(Panel):
         row = box.row()
         row.operator("addon.git_diagnostic", text="Diagnostic Git", icon="CONSOLE")
 
-ui_classes = [DIF_MT_Presets, OT_AddMyPreset]
+ui_classes = [DIF_MT_Presets, OT_AddMyPreset, DIF_UL_BatchPresets]
 
 
 def menu_func(self, context):

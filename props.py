@@ -459,20 +459,38 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         offset = float(self.offset_peigne / 100) * float(self.epaisseur)
         return round(offset, 4)
 
-    def getDifName(self):
+    @staticmethod
+    def generate_dif_name(type_val, largeur_diffuseur, profondeur, longueur_diffuseur, epaisseur):
+        """Génère un nom normalisé pour un diffuseur avec les paramètres donnés.
+        
+        Format: N{type}W{largeur_cm}P{profondeur_cm}L{longueur}E{epaisseur_microns}
+        Exemple: N7W50P10L1E3
+        
+        Cette fonction est réutilisable pour la nomenclature dans les batches et autres contextes.
+        """
         dif_name = (
             "N"
-            + str(self.type)
+            + str(type_val)
             + "W"
-            + str(round(self.largeur_diffuseur * 100))
+            + str(round(largeur_diffuseur * 100))
             + "P"
-            + str(round(self.profondeur * 100))
+            + str(round(profondeur * 100))
             + "L"
-            + str(round(self.longueur_diffuseur))
+            + str(round(longueur_diffuseur))
             + "E"
-            + str(round(self.epaisseur * 1000))
+            + str(round(epaisseur * 1000))
         )
         return dif_name
+
+    def getDifName(self):
+        """Retourne le nom normalisé basé sur les propriétés actuelles."""
+        return self.generate_dif_name(
+            self.type,
+            self.largeur_diffuseur,
+            self.profondeur,
+            self.longueur_diffuseur,
+            self.epaisseur
+        )
 
     def getRang(self):
         rang = (self.largeur_diffuseur - self.epaisseur) / self.type
@@ -1341,6 +1359,54 @@ class PositionSelectedProps(bpy.types.PropertyGroup):
     )
 
 
+class BatchPresetItem(bpy.types.PropertyGroup):
+    """Un preset de configuration batch 3D"""
+    name: StringProperty(name="Nom", default="Preset")
+    types: StringProperty(name="Types", default="7,11,13")
+    profondeurs: StringProperty(name="Profondeurs (mm)", default="50,100,150,200")
+    longueurs: StringProperty(name="Longueurs", default="1,2")
+
+
+class Batch3DProps(bpy.types.PropertyGroup):
+    """Propriétés pour la génération batch de modèles 3D"""
+    batch_types: StringProperty(
+        name="Types",
+        description="Types de diffuseur séparés par des virgules (ex: 7,11,13)",
+        default="7,11,13",
+    )
+    batch_profondeurs: StringProperty(
+        name="Profondeurs (mm)",
+        description="Profondeurs en mm séparées par des virgules (ex: 50,100,150,200)",
+        default="50,100,150,200",
+    )
+    batch_longueurs: StringProperty(
+        name="Longueurs",
+        description="Facteurs de longueur séparés par des virgules (ex: 1,2)",
+        default="1,2",
+    )
+    batch_grid_gap: FloatProperty(
+        name="Espacement grille",
+        description="Espacement entre les modèles dans le quadrillage",
+        default=0.1,
+        min=0.01,
+        max=1.0,
+        unit="LENGTH",
+        precision=3,
+    )
+    batch_product_type: EnumProperty(
+        name="Type de produit",
+        description="Type de diffuseur pour le batch",
+        items=[("0", "Diffuseur 2D", ""), ("1", "Diffuseur 1D", "")],
+        default="0",
+    )
+    preset_name: StringProperty(
+        name="Nom du preset",
+        description="Nom pour sauvegarder le preset actuel",
+        default="Mon Preset",
+    )
+    active_preset_index: IntProperty(default=0)
+
+
 classes = [
     DiffuseurProps,
     ArrayProps,
@@ -1351,6 +1417,8 @@ classes = [
     DevisProps,
     DevisList,
     PositionSelectedProps,
+    BatchPresetItem,
+    Batch3DProps,
 ]
 
 
@@ -1366,6 +1434,8 @@ def register():
     bpy.types.Scene.product_props = bpy.props.PointerProperty(type=UIProductProps)
     bpy.types.Scene.devis_props = bpy.props.PointerProperty(type=DevisProps)
     bpy.types.Scene.devis_list = bpy.props.CollectionProperty(type=DevisList)
+    bpy.types.Scene.batch_3d_props = bpy.props.PointerProperty(type=Batch3DProps)
+    bpy.types.Scene.batch_presets = bpy.props.CollectionProperty(type=BatchPresetItem)
     bpy.types.Scene.dif_parts = []
 
 
@@ -1382,3 +1452,5 @@ def unregister():
     del bpy.types.Scene.product_props
     del bpy.types.Scene.devis_props
     del bpy.types.Scene.devis_list
+    del bpy.types.Scene.batch_3d_props
+    del bpy.types.Scene.batch_presets

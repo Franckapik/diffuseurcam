@@ -1692,6 +1692,242 @@ def unregister_keymaps():
         km.keymap_items.remove(kmi)
         addon_keymaps.clear()
 
+
+class Batch3DGenerate(bpy.types.Operator):
+    """Génère un batch de modèles 3D avec toutes les combinaisons de type, profondeur et longueur,
+    disposés en quadrillage pour une vue d'ensemble"""
+    bl_idname = "mesh.batch_3d"
+    bl_label = "Générer Batch 3D"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        from itertools import product as iterproduct
+
+        scene = context.scene
+        batch_props = scene.batch_3d_props
+        difprops = scene.dif_props
+
+        # Parse des valeurs depuis les champs texte
+        try:
+            types = [int(x.strip()) for x in batch_props.batch_types.split(",") if x.strip()]
+            profondeurs = [float(x.strip()) / 1000 for x in batch_props.batch_profondeurs.split(",") if x.strip()]
+            longueurs = [float(x.strip()) for x in batch_props.batch_longueurs.split(",") if x.strip()]
+        except ValueError:
+            self.report({"ERROR"}, "Format invalide. Utilisez des nombres séparés par des virgules.")
+            return {"CANCELLED"}
+
+        if not types or not profondeurs or not longueurs:
+            self.report({"ERROR"}, "Spécifiez au moins une valeur pour chaque variable.")
+            return {"CANCELLED"}
+
+        # Validation des plages
+        for t in types:
+            if t < 6 or t > 13:
+                self.report({"ERROR"}, f"Type {t} invalide (doit être entre 6 et 13).")
+                return {"CANCELLED"}
+        for p in profondeurs:
+            if p < 0.05 or p > 0.5:
+                self.report({"ERROR"}, f"Profondeur {p*1000:.0f}mm invalide (50-500mm).")
+                return {"CANCELLED"}
+        for l in longueurs:
+            if l < 0.5 or l > 2:
+                self.report({"ERROR"}, f"Longueur {l} invalide (0.5-2).")
+                return {"CANCELLED"}
+
+        # Sauvegarder les valeurs originales
+        orig_type = difprops.type
+        orig_profondeur = difprops.profondeur
+        orig_longueur = difprops.longueur_diffuseur
+        orig_product_type = scene.product_props.product_type
+        orig_moule_type = difprops.moule_type
+
+        # Configurer le type de produit pour la génération 3D
+        scene.product_props.product_type = batch_props.batch_product_type
+        difprops.moule_type = "1d" if batch_props.batch_product_type == "1" else "2d"
+
+        # Toutes les combinaisons
+        combinations = list(iterproduct(types, profondeurs, longueurs))
+        total = len(combinations)
+
+        # Créer une collection dédiée au batch
+        batch_name = f"Batch_3D_{total}x"
+        batch_collection = bpy.data.collections.new(batch_name)
+        bpy.context.scene.collection.children.link(batch_collection)
+
+        num_cols = math.ceil(math.sqrt(total))
+        gap = batch_props.batch_grid_gap
+        generated_objects = []
+
+        print(f"\n{'='*50}")
+        print(f"BATCH 3D : {total} modèles à générer")
+        print(f"Types: {types} | Profondeurs(mm): {[p*1000 for p in profondeurs]} | Longueurs: {longueurs}")
+        print(f"{'='*50}")
+
+        for i, (t, p, l) in enumerate(combinations):
+            # Appliquer les paramètres de cette combinaison
+            difprops.type = t
+            difprops.profondeur = p
+            difprops.longueur_diffuseur = l
+
+            # Générer le modèle 3D
+            bpy.ops.mesh.simulation()
+
+            obj = context.active_object
+            if obj:
+                # Utiliser la nomenclature centralisée
+                obj.name = difprops.getDifName()
+
+                # Déplacer dans la collection batch
+                for coll in list(obj.users_collection):
+                    coll.objects.unlink(obj)
+                batch_collection.objects.link(obj)
+
+                generated_objects.append(obj)
+                print(f"  [{i+1}/{total}] {obj.name} — {obj.dimensions.x*1000:.0f}×{obj.dimensions.y*1000:.0f}×{obj.dimensions.z*1000:.0f}mm")
+
+        # Positionner en quadrillage
+        if generated_objects:
+            col_widths = {}
+            row_heights = {}
+
+            for i, obj in enumerate(generated_objects):
+                row_idx = i // num_cols
+                col_idx = i % num_cols
+                dims = obj.dimensions
+                col_widths[col_idx] = max(col_widths.get(col_idx, 0), dims.x)
+                row_heights[row_idx] = max(row_heights.get(row_idx, 0), dims.y)
+
+            for i, obj in enumerate(generated_objects):
+                row_idx = i // num_cols
+                col_idx = i % num_cols
+                x = sum(col_widths.get(c, 0) + gap for c in range(col_idx))
+                y = -sum(row_heights.get(r, 0) + gap for r in range(row_idx))
+                obj.location = (x, y, 0)
+
+        # Restaurer les valeurs originales
+        difprops.type = orig_type
+        difprops.profondeur = orig_profondeur
+        difprops.longueur_diffuseur = orig_longueur
+        scene.product_props.product_type = orig_product_type
+        difprops.moule_type = orig_moule_type
+
+        # Sélectionner tous les objets générés
+        bpy.ops.object.select_all(action="DESELECT")
+        for obj in generated_objects:
+            obj.select_set(True)
+
+        print(f"\n✅ Batch terminé : {len(generated_objects)} modèles dans '{batch_name}'")
+        self.report({"INFO"}, f"{len(generated_objects)} modèles 3D générés dans '{batch_name}'")
+        return {"FINISHED"}
+
+
+class ClearBatch3D(bpy.types.Operator):
+    """Supprime tous les modèles et collections du batch 3D"""
+    bl_idname = "mesh.clear_batch_3d"
+    bl_label = "Supprimer Batch 3D"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        collections_removed = 0
+        objects_removed = 0
+        for coll in list(bpy.data.collections):
+            if coll.name.startswith("Batch_3D"):
+                for obj in list(coll.objects):
+                    bpy.data.objects.remove(obj, do_unlink=True)
+                    objects_removed += 1
+                bpy.data.collections.remove(coll)
+                collections_removed += 1
+
+        if collections_removed == 0:
+            self.report({"WARNING"}, "Aucun batch 3D trouvé")
+        else:
+            self.report({"INFO"}, f"Batch supprimé : {objects_removed} objets, {collections_removed} collections")
+        return {"FINISHED"}
+
+
+class AddBatchPreset(bpy.types.Operator):
+    """Sauvegarde la configuration batch actuelle comme nouveau preset"""
+    bl_idname = "mesh.add_batch_preset"
+    bl_label = "Ajouter Preset Batch"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        batch_props = context.scene.batch_3d_props
+        preset = context.scene.batch_presets.add()
+        preset.name = batch_props.preset_name
+        preset.types = batch_props.batch_types
+        preset.profondeurs = batch_props.batch_profondeurs
+        preset.longueurs = batch_props.batch_longueurs
+        batch_props.active_preset_index = len(context.scene.batch_presets) - 1
+        self.report({"INFO"}, f"Preset '{preset.name}' ajouté")
+        return {"FINISHED"}
+
+
+class RemoveBatchPreset(bpy.types.Operator):
+    """Supprime le preset batch sélectionné de la liste"""
+    bl_idname = "mesh.remove_batch_preset"
+    bl_label = "Supprimer Preset Batch"
+    bl_options = {"REGISTER", "UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        return len(context.scene.batch_presets) > 0
+
+    def execute(self, context):
+        batch_props = context.scene.batch_3d_props
+        index = batch_props.active_preset_index
+        if 0 <= index < len(context.scene.batch_presets):
+            name = context.scene.batch_presets[index].name
+            context.scene.batch_presets.remove(index)
+            batch_props.active_preset_index = min(index, max(0, len(context.scene.batch_presets) - 1))
+            self.report({"INFO"}, f"Preset '{name}' supprimé")
+        return {"FINISHED"}
+
+
+class LoadBatchPreset(bpy.types.Operator):
+    """Charge le preset sélectionné dans les champs de configuration batch"""
+    bl_idname = "mesh.load_batch_preset"
+    bl_label = "Charger Preset"
+    bl_options = {"REGISTER", "UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        return len(context.scene.batch_presets) > 0
+
+    def execute(self, context):
+        batch_props = context.scene.batch_3d_props
+        index = batch_props.active_preset_index
+        if 0 <= index < len(context.scene.batch_presets):
+            preset = context.scene.batch_presets[index]
+            batch_props.batch_types = preset.types
+            batch_props.batch_profondeurs = preset.profondeurs
+            batch_props.batch_longueurs = preset.longueurs
+            self.report({"INFO"}, f"Preset '{preset.name}' chargé")
+        return {"FINISHED"}
+
+
+class SaveBatchPreset(bpy.types.Operator):
+    """Met à jour le preset sélectionné avec la configuration batch actuelle"""
+    bl_idname = "mesh.save_batch_preset"
+    bl_label = "Sauvegarder Preset"
+    bl_options = {"REGISTER", "UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        return len(context.scene.batch_presets) > 0
+
+    def execute(self, context):
+        batch_props = context.scene.batch_3d_props
+        index = batch_props.active_preset_index
+        if 0 <= index < len(context.scene.batch_presets):
+            preset = context.scene.batch_presets[index]
+            preset.types = batch_props.batch_types
+            preset.profondeurs = batch_props.batch_profondeurs
+            preset.longueurs = batch_props.batch_longueurs
+            self.report({"INFO"}, f"Preset '{preset.name}' mis à jour")
+        return {"FINISHED"}
+
+
 class UpdateAddonOperator(bpy.types.Operator):
     """Met à jour l'addon depuis le dépôt Git"""
 
@@ -2010,6 +2246,12 @@ classes = [
     AddonInfoOperator,
     GitDiagnosticOperator,
     PositionSelected,
+    Batch3DGenerate,
+    ClearBatch3D,
+    AddBatchPreset,
+    RemoveBatchPreset,
+    LoadBatchPreset,
+    SaveBatchPreset,
 ]
 
 
