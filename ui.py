@@ -479,6 +479,140 @@ class Diffuseur_SideBar(Panel):
         row.operator("mesh.load_batch_preset", text="Charger", icon="IMPORT")
         row.operator("mesh.save_batch_preset", text="Sauvegarder", icon="EXPORT")
 
+        # ── Batch Render ─────────────────────────────────────────────────
+        sub.separator()
+        render_box = sub.box()
+        render_box.label(text="Batch Render", icon="RENDER_STILL")
+
+        render_props = scene.batch_render_props
+
+        # ── Progression en cours ─────────────────────────────────────────
+        if render_props.is_running:
+            prog_box = render_box.box()
+            total = render_props.progress_total
+            current = render_props.progress_current
+            pct = (current / total * 100) if total > 0 else 0
+
+            prog_box.label(text=f"Rendu en cours : {current}/{total}  ({pct:.0f}%)", icon="SORTTIME")
+            if render_props.current_object_name:
+                prog_box.label(text=f"Objet : {render_props.current_object_name}")
+
+            # Barre de progression visuelle
+            prog_box.separator()
+            prog_box.prop(
+                render_props, "progress_current",
+                text=f"{current}/{total}",
+                slider=True,
+            )
+
+            prog_box.separator()
+            prog_box.label(text="Appuyez sur ESC pour annuler", icon="CANCEL")
+
+            render_box.separator()
+        else:
+            # ── Paramètres (visibles seulement quand pas en cours) ───────
+
+            # Chemin de sortie
+            render_box.prop(render_props, "output_path")
+
+            # Paramètres caméra
+            render_box.separator()
+            render_box.label(text="Caméra", icon="CAMERA_DATA")
+            render_box.prop(render_props, "camera_focal_length")
+            render_box.prop(render_props, "camera_distance")
+            row = render_box.row(align=True)
+            row.prop(render_props, "camera_elevation")
+            row.prop(render_props, "camera_azimuth")
+
+            # Paramètres rendu
+            render_box.separator()
+            render_box.label(text="Rendu Cycles", icon="SCENE")
+            render_box.prop(render_props, "output_format")
+            if render_props.output_format in ('PNG', 'OPEN_EXR'):
+                render_box.prop(render_props, "transparent_background")
+            row = render_box.row(align=True)
+            row.prop(render_props, "render_resolution_x", text="X")
+            row.prop(render_props, "render_resolution_y", text="Y")
+            row.prop(render_props, "render_resolution_keep_ratio", text="", icon='LINKED')
+            row = render_box.row(align=True)
+            row.prop(render_props, "render_samples")
+            row.prop(render_props, "use_denoising", text="", icon="SHADERFX")
+
+            # Éclairage
+            render_box.separator()
+            render_box.label(text="Éclairage", icon="LIGHT_SUN")
+            render_box.prop(render_props, "light_energy")
+            render_box.prop(render_props, "use_three_point")
+            render_box.prop(render_props, "use_shadow_catcher")
+            if render_props.use_shadow_catcher:
+                row = render_box.row(align=True)
+                row.prop(render_props, "shadow_plane_size")
+                row.prop(render_props, "shadow_plane_offset")
+            render_box.prop(render_props, "use_hdri")
+            if render_props.use_hdri:
+                render_box.prop(render_props, "hdri_path")
+                render_box.prop(render_props, "hdri_strength")
+
+            # Multi-angles caméra (rotation autour d'un axe)
+            render_box.separator()
+            render_box.label(text="Multi-angles (rotation d'axe)", icon="ORIENTATION_GIMBAL")
+            
+            # Choix de l'axe (boutons radio)
+            render_box.prop(render_props, "orbit_rotation_axis", expand=True)
+            
+            # Angles en deux colonnes équilibrées
+            row = render_box.row(align=True)
+            col_left = row.column(align=True)
+            col_right = row.column(align=True)
+
+            # Colonne gauche : angles négatifs
+            col_left.prop(render_props, "orbit_angle_neg90", toggle=True)
+            col_left.prop(render_props, "orbit_angle_neg60", toggle=True)
+            col_left.prop(render_props, "orbit_angle_neg45", toggle=True)
+            col_left.prop(render_props, "orbit_angle_neg30", toggle=True)
+
+            # Colonne droite : 0 et angles positifs
+            col_right.prop(render_props, "orbit_angle_0", toggle=True)
+            col_right.prop(render_props, "orbit_angle_30", toggle=True)
+            col_right.prop(render_props, "orbit_angle_45", toggle=True)
+            col_right.prop(render_props, "orbit_angle_60", toggle=True)
+            col_right.prop(render_props, "orbit_angle_90", toggle=True)
+            
+            # Compteur d'images
+            nb_batch = sum(1 for c in bpy.data.collections if c.name.startswith("Batch_3D_")
+                           for o in c.objects if o.type == 'MESH')
+            nb_angles = sum([
+                render_props.orbit_angle_neg90, render_props.orbit_angle_neg60,
+                render_props.orbit_angle_neg45, render_props.orbit_angle_neg30,
+                render_props.orbit_angle_0,
+                render_props.orbit_angle_30, render_props.orbit_angle_45,
+                render_props.orbit_angle_60, render_props.orbit_angle_90,
+            ])
+            if nb_angles == 0:
+                nb_angles = 1  # Au moins 0° par défaut
+            total_imgs = nb_batch * nb_angles
+            render_box.label(text=f"{total_imgs} images ({nb_batch} × {nb_angles} angles)", icon="INFO")
+
+            # Bouton de preview + slider angle preview
+            render_box.separator()
+            row = render_box.row(align=True)
+            row.prop(render_props, "preview_orbit_angle", slider=True)
+            row.operator("render.batch_render_preview_reset_angle", text="Reset", icon="LOOP_BACK")
+
+            row = render_box.row(align=True)
+            row.scale_y = 1.5
+            if render_props.is_preview_active:
+                row.operator("render.batch_render_preview", text="Rafraîchir Preview", icon="FILE_REFRESH")
+                row.operator("render.batch_render_clean_preview", text="", icon="CANCEL")
+            else:
+                row.operator("render.batch_render_preview", text="Preview cadrage", icon="HIDE_OFF")
+
+            # Bouton de lancement
+            render_box.separator()
+            row = render_box.row()
+            row.scale_y = 2.0
+            row.operator("render.batch_render", text="Lancer le Batch Render", icon="RENDER_ANIMATION")
+
         # Addon
         layout.separator()
         box = layout.box()

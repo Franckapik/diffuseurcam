@@ -910,17 +910,62 @@ class Add3DModel(bpy.types.Operator, AddObjectHelper):
 
         # ── PEIGNES LONGS (divisent la largeur en N colonnes) ────────────
         # Orientés selon Y, de épaisseur e, entre les cadres tenon
-        # Pleine hauteur D pour tous les cas
+        # En 2D : rainures (mi-profondeur) aux croisements avec les peignes courts
+        half_D = D / 2
+
         for k in range(1, num_cols):
             px = k * rang
-            self._create_box(bm, px, e, 0, e, L - 2 * e, D, MAT_PEIGNE)
+
+            if is_1d:
+                # 1D : pas de croisement, peigne pleine hauteur
+                self._create_box(bm, px, e, 0, e, L - 2 * e, D, MAT_PEIGNE)
+            else:
+                # 2D : le peigne long a des rainures dans la moitié HAUTE (Z >= half_D)
+                # aux positions Y des peignes courts.
+                # Partie basse (0 → half_D) : continue sur toute la longueur
+                self._create_box(bm, px, e, 0, e, L - 2 * e, half_D, MAT_PEIGNE)
+
+                # Partie haute (half_D → D) : découpée aux croisements
+                y_start = e  # début après le cadre tenon bas
+                for j in range(1, num_rows):
+                    cross_y = j * rang
+                    # Segment avant la rainure
+                    seg_len = cross_y - y_start
+                    if seg_len > 0.0001:
+                        self._create_box(bm, px, y_start, half_D, e, seg_len, half_D, MAT_PEIGNE)
+                    # Sauter la rainure (largeur = e)
+                    y_start = cross_y + e
+
+                # Dernier segment après la dernière rainure
+                seg_len = (L - e) - y_start
+                if seg_len > 0.0001:
+                    self._create_box(bm, px, y_start, half_D, e, seg_len, half_D, MAT_PEIGNE)
 
         # ── PEIGNES COURTS (2D uniquement, divisent la longueur) ─────────
-        # Orientés selon X, pleine hauteur D
+        # Orientés selon X, entre les cadres mortaises
+        # Rainures dans la moitié BASSE (Z < half_D) aux croisements avec les peignes longs
         if not is_1d:
             for k in range(1, num_rows):
                 py = k * rang
-                self._create_box(bm, e, py, 0, W - 2 * e, e, D, MAT_PEIGNE)
+
+                # Partie haute (half_D → D) : continue sur toute la largeur
+                self._create_box(bm, e, py, half_D, W - 2 * e, e, half_D, MAT_PEIGNE)
+
+                # Partie basse (0 → half_D) : découpée aux croisements
+                x_start = e  # début après le cadre mortaise gauche
+                for j in range(1, num_cols):
+                    cross_x = j * rang
+                    # Segment avant la rainure
+                    seg_len = cross_x - x_start
+                    if seg_len > 0.0001:
+                        self._create_box(bm, x_start, py, 0, seg_len, e, half_D, MAT_PEIGNE)
+                    # Sauter la rainure (largeur = e)
+                    x_start = cross_x + e
+
+                # Dernier segment après la dernière rainure
+                seg_len = (W - e) - x_start
+                if seg_len > 0.0001:
+                    self._create_box(bm, x_start, py, 0, seg_len, e, half_D, MAT_PEIGNE)
 
         # ── CARREAUX (tuiles de fond aux profondeurs QRD) ────────────────
         # Chaque carreau est un rectangle extrudé de l'épaisseur du bois,
@@ -2212,6 +2257,834 @@ class GitDiagnosticOperator(bpy.types.Operator):
         return {"FINISHED"}
 
 
+class BatchRender(bpy.types.Operator):
+    """Génère automatiquement un rendu Cycles pour chaque modèle 3D du batch,
+    avec caméra et éclairage positionnés automatiquement.
+    Opérateur modal : affiche la progression et supporte l'annulation (ESC)."""
+    bl_idname = "render.batch_render"
+    bl_label = "Batch Render"
+    bl_options = {"REGISTER"}
+
+    # ── Constantes ──────────────────────────────────────────────────────
+    _FORMAT_EXT = {'PNG': '.png', 'JPEG': '.jpg', 'OPEN_EXR': '.exr'}
+
+    # ── État interne (par instance d'opérateur) ─────────────────────────
+    _timer = None
+    _batch_objects = []
+    _current_index = 0
+    _current_orbit_step = 0
+    _orbit_angles = []
+    _rendered = 0
+    _output_dir = ""
+    _cam_obj = None
+    _cam_data = None
+    _orig_rotations = {}  # Sauvegarde des rotations originales {obj.name: Euler}
+    _orig_shadow_rotation = None  # Rotation originale du shadow plane
+    _lights = []
+    _shadow_plane = None
+    _shadow_plane_data = None
+    _orig = None
+    _orig_world = None
+    _orig_hide_render = {}
+
+    # ── Poll ────────────────────────────────────────────────────────────
+    @classmethod
+    def poll(cls, context):
+        rp = context.scene.batch_render_props
+        if rp.is_running:
+            return False
+        return any(c.name.startswith("Batch_3D_") for c in bpy.data.collections)
+
+    # ── Invoke → prépare puis lance le modal ────────────────────────────
+    def invoke(self, context, event):
+        scene = context.scene
+        rp = scene.batch_render_props
+
+        # Nettoyer un éventuel preview pour repartir des rotations d'origine
+        BatchRenderPreview._cleanup_preview(context)
+
+        # Validation du chemin de sortie
+        self._output_dir = bpy.path.abspath(rp.output_path)
+        if not self._output_dir:
+            self.report({"ERROR"}, "Spécifiez un dossier de sortie")
+            return {"CANCELLED"}
+        os.makedirs(self._output_dir, exist_ok=True)
+
+        # Collecter les objets mesh dans les collections Batch_3D_*
+        self._batch_objects = []
+        for collection in bpy.data.collections:
+            if collection.name.startswith("Batch_3D_"):
+                for obj in collection.objects:
+                    if obj.type == 'MESH':
+                        self._batch_objects.append(obj)
+
+        if not self._batch_objects:
+            self.report({"WARNING"}, "Aucun objet trouvé dans les collections Batch_3D_*")
+            return {"CANCELLED"}
+
+        total = len(self._batch_objects)
+        self._current_index = 0
+        self._rendered = 0
+
+        # Nettoyage du preview si actif
+        BatchRenderPreview._cleanup_preview(context)
+
+        print(f"\n{'='*60}")
+        print(f"BATCH RENDER : {total} objets à rendre")
+        print(f"Dossier : {self._output_dir}")
+        print(f"{'='*60}")
+
+        # ── Sauvegarder l'état original ──────────────────────────────────
+        self._orig = self._save_render_state(scene)
+
+        # ── Configurer Cycles ────────────────────────────────────────────
+        scene.render.engine = 'CYCLES'
+        scene.cycles.samples = rp.render_samples
+        scene.cycles.use_denoising = rp.use_denoising
+        scene.render.resolution_x = rp.render_resolution_x
+        scene.render.resolution_y = rp.render_resolution_y
+        scene.render.image_settings.file_format = rp.output_format
+        if rp.output_format == 'PNG':
+            scene.render.image_settings.color_mode = 'RGBA'
+        if rp.transparent_background and rp.output_format in ('PNG', 'OPEN_EXR'):
+            scene.render.film_transparent = True
+
+        # ── Créer caméra temporaire ──────────────────────────────────────
+        self._cam_data = bpy.data.cameras.new("_BatchRender_Cam")
+        self._cam_data.lens = rp.camera_focal_length
+        self._cam_obj = bpy.data.objects.new("_BatchRender_Cam", self._cam_data)
+        scene.collection.objects.link(self._cam_obj)
+        scene.camera = self._cam_obj
+
+        # ── Créer l'éclairage temporaire ─────────────────────────────────
+        self._lights = self._create_lights(scene, rp)
+
+        # ── Configurer HDRI si demandé ───────────────────────────────────
+        self._orig_world = scene.world
+        if rp.use_hdri and rp.hdri_path:
+            self._setup_hdri(scene, rp.hdri_path, rp.hdri_strength)
+
+        # ── Créer le shadow catcher si demandé ─────────────────────────
+        self._shadow_plane = None
+        self._shadow_plane_data = None
+        if rp.use_shadow_catcher:
+            self._shadow_plane_data = bpy.data.meshes.new("_BatchRender_ShadowPlane")
+            import bmesh as _bm
+            tmp = _bm.new()
+            _bm.ops.create_grid(tmp, x_segments=1, y_segments=1, size=1.0)
+            tmp.to_mesh(self._shadow_plane_data)
+            tmp.free()
+            self._shadow_plane = bpy.data.objects.new("_BatchRender_ShadowPlane", self._shadow_plane_data)
+            scene.collection.objects.link(self._shadow_plane)
+            self._shadow_plane.is_shadow_catcher = True
+            # Rendre le plan invisible au viewport mais visible au rendu
+            self._shadow_plane.display_type = 'WIRE'
+
+        # ── Sauvegarder la visibilité originale ──────────────────────────
+        self._orig_hide_render = {obj.name: obj.hide_render for obj in self._batch_objects}
+
+        # ── Sauvegarder les rotations originales des modèles ──────────────
+        self._orig_rotations = {obj.name: obj.rotation_euler.copy() for obj in self._batch_objects}
+        if self._shadow_plane:
+            self._orig_shadow_rotation = self._shadow_plane.rotation_euler.copy()
+
+        # ── Calcul des angles d'orbite (rotation des modèles) ────────────
+        self._orbit_angles = []
+        if rp.orbit_angle_neg90:
+            self._orbit_angles.append(math.radians(-90))
+        if rp.orbit_angle_neg60:
+            self._orbit_angles.append(math.radians(-60))
+        if rp.orbit_angle_neg45:
+            self._orbit_angles.append(math.radians(-45))
+        if rp.orbit_angle_neg30:
+            self._orbit_angles.append(math.radians(-30))
+        if rp.orbit_angle_0:
+            self._orbit_angles.append(0.0)
+        if rp.orbit_angle_30:
+            self._orbit_angles.append(math.radians(30))
+        if rp.orbit_angle_45:
+            self._orbit_angles.append(math.radians(45))
+        if rp.orbit_angle_60:
+            self._orbit_angles.append(math.radians(60))
+        if rp.orbit_angle_90:
+            self._orbit_angles.append(math.radians(90))
+        
+        # Si aucun angle n'est coché, inclure 0° par défaut
+        if not self._orbit_angles:
+            self._orbit_angles = [0.0]
+        
+        self._current_orbit_step = 0
+        total_renders = total * len(self._orbit_angles)
+
+        # ── Mettre à jour les propriétés de progression ──────────────────
+        rp.is_running = True
+        rp.progress_current = 0
+        rp.progress_total = total_renders
+        rp.current_object_name = ""
+
+        # ── Lancer le modal avec un timer ────────────────────────────────
+        wm = context.window_manager
+        self._timer = wm.event_timer_add(0.1, window=context.window)
+        wm.modal_handler_add(self)
+        return {"RUNNING_MODAL"}
+
+    # ── Modal → traite un objet par tick, gère ESC ─────────────────────
+    def modal(self, context, event):
+        scene = context.scene
+        rp = scene.batch_render_props
+
+        # ── Annulation par ESC ───────────────────────────────────────────
+        if event.type == 'ESC':
+            self._finish(context, cancelled=True)
+            return {"CANCELLED"}
+
+        # ── Timer tick → rendre le prochain objet/angle ──────────────────
+        if event.type == 'TIMER':
+            if self._current_index >= len(self._batch_objects):
+                self._finish(context, cancelled=False)
+                return {"FINISHED"}
+
+            obj = self._batch_objects[self._current_index]
+            total_objs = len(self._batch_objects)
+            obj_i = self._current_index + 1
+            orbit_step = self._current_orbit_step
+            num_angles = len(self._orbit_angles)
+            render_num = self._current_index * num_angles + orbit_step + 1
+            total_renders = rp.progress_total
+
+            # Mettre à jour la progression dans les props (pour l'UI)
+            rp.progress_current = render_num
+            if num_angles > 1:
+                angle_deg = int(math.degrees(self._orbit_angles[orbit_step]))
+                rp.current_object_name = f"{obj.name} ({angle_deg}°)"
+            else:
+                rp.current_object_name = obj.name
+
+            # Mettre à jour le header de la fenêtre
+            context.area.header_text_set(
+                f"Batch Render [{render_num}/{total_renders}] — « {rp.current_object_name} »  |  ESC pour annuler"
+            )
+
+            print(f"\n[{render_num}/{total_renders}] Rendu de « {rp.current_object_name} »...")
+
+            # Isoler : cacher tous les autres objets du batch
+            for other in self._batch_objects:
+                other.hide_render = (other is not obj)
+
+            # ── Appliquer la rotation d'orbite au modèle ───────────────────
+            orbit_angle = self._orbit_angles[orbit_step]
+            # Toujours repartir de la rotation originale
+            orig_rot = self._orig_rotations[obj.name]
+            new_rot = orig_rot.copy()
+            if orbit_angle != 0.0:
+                # Appliquer la rotation selon l'axe choisi
+                if rp.orbit_rotation_axis == 'X':
+                    new_rot.x += orbit_angle
+                elif rp.orbit_rotation_axis == 'Y':
+                    new_rot.y += orbit_angle
+                elif rp.orbit_rotation_axis == 'Z':
+                    new_rot.z += orbit_angle
+            obj.rotation_euler = new_rot
+
+            # ── Positionner caméra et lumières (sans orbite) ────────────────
+            bbox_center, bbox_size = self._get_bbox_info(obj)
+
+            # La caméra ne bouge plus — elle est fixe
+            self._position_camera(self._cam_obj, bbox_center, bbox_size, rp, orbit_angle=0.0)
+            self._position_lights(self._lights, bbox_center, bbox_size, rp, orbit_angle=0.0)
+
+            # Positionner le shadow catcher plane si actif
+            if self._shadow_plane:
+                max_dim = max(bbox_size.x, bbox_size.y, bbox_size.z)
+                plane_scale = max_dim * rp.shadow_plane_size
+                self._shadow_plane.location = Vector((
+                    bbox_center.x,
+                    bbox_center.y,
+                    bbox_center.z - bbox_size.z / 2 + rp.shadow_plane_offset,
+                ))
+                self._shadow_plane.scale = (plane_scale, plane_scale, 1.0)
+                
+                # Le shadow plane tourne aussi avec le modèle
+                orbit_angle = self._orbit_angles[orbit_step]
+                if orbit_angle != 0.0:
+                    orig_shadow_rot = self._orig_shadow_rotation
+                    new_shadow_rot = orig_shadow_rot.copy()
+                    
+                    if rp.orbit_rotation_axis == 'X':
+                        new_shadow_rot.x += orbit_angle
+                    elif rp.orbit_rotation_axis == 'Y':
+                        new_shadow_rot.y += orbit_angle
+                    elif rp.orbit_rotation_axis == 'Z':
+                        new_shadow_rot.z += orbit_angle
+                    
+                    self._shadow_plane.rotation_euler = new_shadow_rot
+                else:
+                    self._shadow_plane.rotation_euler = self._orig_shadow_rotation
+
+            # Chemin de sortie
+            ext = self._FORMAT_EXT.get(rp.output_format, '.png')
+            safe_name = obj.name.replace("/", "_").replace("\\", "_")
+            if num_angles > 1:
+                angle_deg = int(math.degrees(self._orbit_angles[orbit_step]))
+                sign = "n" if angle_deg < 0 else "p" if angle_deg > 0 else ""
+                scene.render.filepath = os.path.join(
+                    self._output_dir, f"{safe_name}_{sign}{abs(angle_deg)}deg{ext}"
+                )
+            else:
+                scene.render.filepath = os.path.join(self._output_dir, f"{safe_name}{ext}")
+
+            # Rendu
+            try:
+                bpy.ops.render.render(write_still=True)
+                print(f"  ✅ Sauvegardé : {scene.render.filepath}")
+                self._rendered += 1
+            except Exception as e:
+                print(f"  ❌ Erreur : {e}")
+                self.report({"WARNING"}, f"Échec du rendu pour {obj.name}: {e}")
+
+            # Avancer : prochain angle d'orbite ou prochain objet
+            self._current_orbit_step += 1
+            if self._current_orbit_step >= len(self._orbit_angles):
+                self._current_orbit_step = 0
+                self._current_index += 1
+
+            # Forcer le rafraîchissement de l'interface
+            for area in context.screen.areas:
+                area.tag_redraw()
+
+        return {"RUNNING_MODAL"}
+
+    # ── Fin (normale ou annulation) ─────────────────────────────────────
+    def _finish(self, context, cancelled=False):
+        scene = context.scene
+        rp = scene.batch_render_props
+
+        # Arrêter le timer
+        if self._timer:
+            context.window_manager.event_timer_remove(self._timer)
+            self._timer = None
+
+        # Restaurer la visibilité
+        for obj in self._batch_objects:
+            if obj.name in self._orig_hide_render:
+                obj.hide_render = self._orig_hide_render[obj.name]
+
+        # Restaurer les rotations des modèles
+        if self._orig_rotations:
+            for obj in self._batch_objects:
+                orig_rot = self._orig_rotations.get(obj.name)
+                if orig_rot:
+                    obj.rotation_euler = orig_rot
+        if self._shadow_plane and self._orig_shadow_rotation:
+            self._shadow_plane.rotation_euler = self._orig_shadow_rotation
+
+        # Supprimer caméra et lumières temporaires
+        if self._cam_obj:
+            bpy.data.objects.remove(self._cam_obj, do_unlink=True)
+        if self._cam_data:
+            bpy.data.cameras.remove(self._cam_data)
+        for lobj, ldata in self._lights:
+            bpy.data.objects.remove(lobj, do_unlink=True)
+            bpy.data.lights.remove(ldata)
+
+        # Supprimer le shadow catcher plane
+        if self._shadow_plane:
+            bpy.data.objects.remove(self._shadow_plane, do_unlink=True)
+        if self._shadow_plane_data:
+            bpy.data.meshes.remove(self._shadow_plane_data)
+
+        # Restaurer le world si modifié
+        if rp.use_hdri and rp.hdri_path and self._orig_world:
+            scene.world = self._orig_world
+
+        # Restaurer l'état de rendu original
+        if self._orig:
+            self._restore_render_state(scene, self._orig)
+
+        # Restaurer le header
+        context.area.header_text_set(None)
+
+        # Remettre l'état de progression
+        rp.is_running = False
+        rp.current_object_name = ""
+
+        total = len(self._batch_objects)
+        if cancelled:
+            print(f"\n{'='*60}")
+            print(f"⛔ Batch Render annulé après {self._rendered}/{total} images")
+            print(f"{'='*60}\n")
+            self.report({"WARNING"}, f"Batch Render annulé — {self._rendered}/{total} images rendues dans {self._output_dir}")
+        else:
+            print(f"\n{'='*60}")
+            print(f"✅ Batch Render terminé : {self._rendered}/{total} images générées")
+            print(f"{'='*60}\n")
+            self.report({"INFO"}, f"Batch Render terminé : {self._rendered} images dans {self._output_dir}")
+
+        # Forcer le rafraîchissement de l'UI
+        for area in context.screen.areas:
+            area.tag_redraw()
+
+    # ── Helpers privés ──────────────────────────────────────────────────
+
+    def _save_render_state(self, scene):
+        """Sauvegarde les paramètres de rendu actuels"""
+        return {
+            'engine': scene.render.engine,
+            'samples': scene.cycles.samples if hasattr(scene.cycles, 'samples') else 128,
+            'use_denoising': scene.cycles.use_denoising if hasattr(scene.cycles, 'use_denoising') else True,
+            'resolution_x': scene.render.resolution_x,
+            'resolution_y': scene.render.resolution_y,
+            'file_format': scene.render.image_settings.file_format,
+            'color_mode': scene.render.image_settings.color_mode,
+            'filepath': scene.render.filepath,
+            'camera': scene.camera,
+            'film_transparent': scene.render.film_transparent,
+        }
+
+    def _restore_render_state(self, scene, orig):
+        """Restaure les paramètres de rendu originaux"""
+        scene.render.engine = orig['engine']
+        if orig['engine'] == 'CYCLES' or scene.render.engine == 'CYCLES':
+            scene.cycles.samples = orig['samples']
+            scene.cycles.use_denoising = orig['use_denoising']
+        scene.render.resolution_x = orig['resolution_x']
+        scene.render.resolution_y = orig['resolution_y']
+        scene.render.image_settings.file_format = orig['file_format']
+        scene.render.image_settings.color_mode = orig['color_mode']
+        scene.render.filepath = orig['filepath']
+        scene.camera = orig['camera']
+        scene.render.film_transparent = orig['film_transparent']
+
+    def _get_bbox_info(self, obj):
+        """Retourne le centre et la taille de la bounding box en coordonnées monde"""
+        bbox_corners = [obj.matrix_world @ Vector(corner) for corner in obj.bound_box]
+        xs = [v.x for v in bbox_corners]
+        ys = [v.y for v in bbox_corners]
+        zs = [v.z for v in bbox_corners]
+        min_corner = Vector((min(xs), min(ys), min(zs)))
+        max_corner = Vector((max(xs), max(ys), max(zs)))
+        center = (min_corner + max_corner) / 2
+        size = max_corner - min_corner
+        return center, size
+
+    def _position_camera(self, cam_obj, target_center, target_size, rp, orbit_angle=0.0):
+        """Positionne la caméra en coordonnées sphériques autour de l'objet,
+        puis applique une rotation autour de l'axe choisi pour les vues multi-angles.
+
+        orbit_angle : angle en radians de rotation
+        rp.orbit_rotation_axis : 'X', 'Y' ou 'Z' (axe de rotation)
+        """
+        max_dim = max(target_size.x, target_size.y, target_size.z)
+        fov = cam_obj.data.angle
+        frame_distance = (max_dim / 2) / math.tan(fov / 2) if fov > 0 else max_dim * 2
+        distance = frame_distance * 1.4 + rp.camera_distance
+
+        elev = rp.camera_elevation
+        azim = rp.camera_azimuth
+
+        # Position de base (coordonnées sphériques)
+        offset_x = distance * math.cos(elev) * math.cos(azim)
+        offset_y = distance * math.cos(elev) * math.sin(azim)
+        offset_z = distance * math.sin(elev)
+
+        # Rotation de l'offset autour de l'axe choisi
+        if orbit_angle != 0.0:
+            cos_a = math.cos(orbit_angle)
+            sin_a = math.sin(orbit_angle)
+
+            if rp.orbit_rotation_axis == 'X':
+                # Rotation autour de X : new_y = y·cos(θ) - z·sin(θ)
+                #                        new_z = y·sin(θ) + z·cos(θ)
+                new_y = offset_y * cos_a - offset_z * sin_a
+                new_z = offset_y * sin_a + offset_z * cos_a
+                offset_y = new_y
+                offset_z = new_z
+            elif rp.orbit_rotation_axis == 'Y':
+                # Rotation autour de Y : new_x = x·cos(θ) + z·sin(θ)
+                #                        new_z = -x·sin(θ) + z·cos(θ)
+                new_x = offset_x * cos_a + offset_z * sin_a
+                new_z = -offset_x * sin_a + offset_z * cos_a
+                offset_x = new_x
+                offset_z = new_z
+            elif rp.orbit_rotation_axis == 'Z':
+                # Rotation autour de Z : new_x = x·cos(θ) - y·sin(θ)
+                #                        new_y = x·sin(θ) + y·cos(θ)
+                new_x = offset_x * cos_a - offset_y * sin_a
+                new_y = offset_x * sin_a + offset_y * cos_a
+                offset_x = new_x
+                offset_y = new_y
+
+        cam_obj.location = Vector((
+            target_center.x + offset_x,
+            target_center.y + offset_y,
+            target_center.z + offset_z,
+        ))
+
+        direction = target_center - cam_obj.location
+        rot_quat = direction.to_track_quat('-Z', 'Y')
+        cam_obj.rotation_euler = rot_quat.to_euler()
+
+    def _create_lights(self, scene, rp):
+        """Crée les lumières temporaires et retourne une liste de (object, data)"""
+        lights = []
+
+        key_data = bpy.data.lights.new("_BatchRender_Key", 'AREA')
+        key_data.energy = rp.light_energy
+        key_data.size = 2.0
+        key_obj = bpy.data.objects.new("_BatchRender_Key", key_data)
+        scene.collection.objects.link(key_obj)
+        lights.append((key_obj, key_data))
+
+        if rp.use_three_point:
+            fill_data = bpy.data.lights.new("_BatchRender_Fill", 'AREA')
+            fill_data.energy = rp.light_energy * 0.3
+            fill_data.size = 3.0
+            fill_obj = bpy.data.objects.new("_BatchRender_Fill", fill_data)
+            scene.collection.objects.link(fill_obj)
+            lights.append((fill_obj, fill_data))
+
+            rim_data = bpy.data.lights.new("_BatchRender_Rim", 'AREA')
+            rim_data.energy = rp.light_energy * 0.6
+            rim_data.size = 1.5
+            rim_obj = bpy.data.objects.new("_BatchRender_Rim", rim_data)
+            scene.collection.objects.link(rim_obj)
+            lights.append((rim_obj, rim_data))
+
+        return lights
+
+    def _position_lights(self, lights, bbox_center, bbox_size, rp, orbit_angle=0.0):
+        """Positionne les lumières autour de l'objet, avec rotation si multi-angles"""
+        max_dim = max(bbox_size.x, bbox_size.y, bbox_size.z)
+        dist = max_dim * 2.5
+        azim = rp.camera_azimuth
+
+        cos_a = math.cos(orbit_angle) if orbit_angle != 0.0 else 1.0
+        sin_a = math.sin(orbit_angle) if orbit_angle != 0.0 else 0.0
+
+        for idx, (lobj, _) in enumerate(lights):
+            if idx == 0:
+                key_azim = azim + math.radians(30)
+                offset_x = dist * math.cos(key_azim)
+                offset_y = dist * math.sin(key_azim)
+                offset_z = dist * 0.8
+            elif idx == 1:
+                fill_azim = azim - math.radians(60)
+                offset_x = dist * 0.8 * math.cos(fill_azim)
+                offset_y = dist * 0.8 * math.sin(fill_azim)
+                offset_z = dist * 0.3
+            elif idx == 2:
+                rim_azim = azim + math.radians(180)
+                offset_x = dist * 0.6 * math.cos(rim_azim)
+                offset_y = dist * 0.6 * math.sin(rim_azim)
+                offset_z = dist * 0.6
+            else:
+                continue
+
+            # Rotation autour de l'axe choisi
+            if orbit_angle != 0.0:
+                if rp.orbit_rotation_axis == 'X':
+                    new_y = offset_y * cos_a - offset_z * sin_a
+                    new_z = offset_y * sin_a + offset_z * cos_a
+                    offset_y = new_y
+                    offset_z = new_z
+                elif rp.orbit_rotation_axis == 'Y':
+                    new_x = offset_x * cos_a + offset_z * sin_a
+                    new_z = -offset_x * sin_a + offset_z * cos_a
+                    offset_x = new_x
+                    offset_z = new_z
+                elif rp.orbit_rotation_axis == 'Z':
+                    new_x = offset_x * cos_a - offset_y * sin_a
+                    new_y = offset_x * sin_a + offset_y * cos_a
+                    offset_x = new_x
+                    offset_y = new_y
+
+            lobj.location = Vector((
+                bbox_center.x + offset_x,
+                bbox_center.y + offset_y,
+                bbox_center.z + offset_z,
+            ))
+
+            direction = bbox_center - lobj.location
+            rot_quat = direction.to_track_quat('-Z', 'Y')
+            lobj.rotation_euler = rot_quat.to_euler()
+
+    def _setup_hdri(self, scene, hdri_path, strength):
+        """Configure un éclairage HDRI dans un nouveau World temporaire"""
+        hdri_full_path = bpy.path.abspath(hdri_path)
+        if not os.path.exists(hdri_full_path):
+            print(f"  ⚠️ HDRI introuvable : {hdri_full_path}")
+            return
+
+        world = bpy.data.worlds.new("_BatchRender_World")
+        scene.world = world
+        world.use_nodes = True
+
+        nodes = world.node_tree.nodes
+        links = world.node_tree.links
+        nodes.clear()
+
+        node_output = nodes.new(type='ShaderNodeOutputWorld')
+        node_output.location = (400, 0)
+
+        node_bg = nodes.new(type='ShaderNodeBackground')
+        node_bg.location = (200, 0)
+        node_bg.inputs['Strength'].default_value = strength
+
+        node_env = nodes.new(type='ShaderNodeTexEnvironment')
+        node_env.location = (0, 0)
+        node_env.image = bpy.data.images.load(hdri_full_path)
+
+        links.new(node_env.outputs['Color'], node_bg.inputs['Color'])
+        links.new(node_bg.outputs['Background'], node_output.inputs['Surface'])
+        print(f"  ✅ HDRI chargé : {hdri_path}")
+
+
+class BatchRenderPreview(bpy.types.Operator):
+    """Place une caméra et des lumières de preview sur le premier objet du batch,
+    puis bascule en vue caméra avec le shading Material Preview pour
+    visualiser le cadrage et l'éclairage sans lancer de rendu complet"""
+    bl_idname = "render.batch_render_preview"
+    bl_label = "Preview Batch Render"
+    bl_options = {"REGISTER", "UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        rp = context.scene.batch_render_props
+        if rp.is_running:
+            return False
+        return any(c.name.startswith("Batch_3D_") for c in bpy.data.collections)
+
+    def execute(self, context):
+        scene = context.scene
+        rp = scene.batch_render_props
+
+        # Nettoyer un éventuel preview précédent
+        self._cleanup_preview(context)
+        # Assurer une base saine (aucune rotation résiduelle)
+        if hasattr(rp, "_preview_rotations"):
+            del rp._preview_rotations
+        if hasattr(rp, "_preview_shadow_rot"):
+            del rp._preview_shadow_rot
+
+        # Trouver le premier objet mesh du batch
+        batch_objs = []
+        for collection in bpy.data.collections:
+            if collection.name.startswith("Batch_3D_"):
+                for obj in collection.objects:
+                    if obj.type == 'MESH':
+                        batch_objs.append(obj)
+
+        first_obj = batch_objs[0] if batch_objs else None
+
+        if not first_obj:
+            self.report({"WARNING"}, "Aucun objet trouvé dans les collections Batch_3D_*")
+            return {"CANCELLED"}
+
+        # ── Sauvegarder les rotations originales et appliquer l'angle de preview ─
+        orbit_angle = math.radians(rp.preview_orbit_angle)
+        rp._preview_rotations = {obj.name: obj.rotation_euler.copy() for obj in batch_objs}
+        if orbit_angle != 0.0:
+            for obj in batch_objs:
+                orig_rot = rp._preview_rotations[obj.name]
+                new_rot = orig_rot.copy()
+                if rp.orbit_rotation_axis == 'X':
+                    new_rot.x += orbit_angle
+                elif rp.orbit_rotation_axis == 'Y':
+                    new_rot.y += orbit_angle
+                elif rp.orbit_rotation_axis == 'Z':
+                    new_rot.z += orbit_angle
+                obj.rotation_euler = new_rot
+
+        # ── Créer la caméra preview ──────────────────────────────────────
+        cam_data = bpy.data.cameras.new("_BatchPreview_Cam")
+        cam_data.lens = rp.camera_focal_length
+        cam_data.display_size = 0.5
+        cam_data.show_limits = True
+        cam_obj = bpy.data.objects.new("_BatchPreview_Cam", cam_data)
+        scene.collection.objects.link(cam_obj)
+        scene.camera = cam_obj
+
+        # ── Positionner la caméra (fixe, les modèles tournent) ───────────
+        bbox_center, bbox_size = BatchRender._get_bbox_info(None, first_obj)
+        BatchRender._position_camera(None, cam_obj, bbox_center, bbox_size, rp, orbit_angle=0.0)
+
+        # ── Créer les lumières preview ───────────────────────────────────
+        lights_created = []
+
+        key_data = bpy.data.lights.new("_BatchPreview_Key", 'AREA')
+        key_data.energy = rp.light_energy
+        key_data.size = 2.0
+        key_obj = bpy.data.objects.new("_BatchPreview_Key", key_data)
+        scene.collection.objects.link(key_obj)
+        lights_created.append((key_obj, key_data))
+
+        if rp.use_three_point:
+            fill_data = bpy.data.lights.new("_BatchPreview_Fill", 'AREA')
+            fill_data.energy = rp.light_energy * 0.3
+            fill_data.size = 3.0
+            fill_obj = bpy.data.objects.new("_BatchPreview_Fill", fill_data)
+            scene.collection.objects.link(fill_obj)
+            lights_created.append((fill_obj, fill_data))
+
+            rim_data = bpy.data.lights.new("_BatchPreview_Rim", 'AREA')
+            rim_data.energy = rp.light_energy * 0.6
+            rim_data.size = 1.5
+            rim_obj = bpy.data.objects.new("_BatchPreview_Rim", rim_data)
+            scene.collection.objects.link(rim_obj)
+            lights_created.append((rim_obj, rim_data))
+
+        # Positionner les lumières (fixes, les modèles tournent)
+        BatchRender._position_lights(None, lights_created, bbox_center, bbox_size, rp, orbit_angle=0.0)
+
+        # ── Créer le shadow catcher plane si activé ──────────────────────
+        if rp.use_shadow_catcher:
+            import bmesh as _bm
+            plane_data = bpy.data.meshes.new("_BatchPreview_ShadowPlane")
+            tmp = _bm.new()
+            _bm.ops.create_grid(tmp, x_segments=1, y_segments=1, size=1.0)
+            tmp.to_mesh(plane_data)
+            tmp.free()
+            plane_obj = bpy.data.objects.new("_BatchPreview_ShadowPlane", plane_data)
+            scene.collection.objects.link(plane_obj)
+            plane_obj.is_shadow_catcher = True
+            plane_obj.display_type = 'WIRE'
+            max_dim = max(bbox_size.x, bbox_size.y, bbox_size.z)
+            plane_scale = max_dim * rp.shadow_plane_size
+            plane_obj.location = Vector((
+                bbox_center.x,
+                bbox_center.y,
+                bbox_center.z - bbox_size.z / 2 + rp.shadow_plane_offset,
+            ))
+            plane_obj.scale = (plane_scale, plane_scale, 1.0)
+            # Sauvegarder et appliquer la rotation au shadow plane
+            rp._preview_shadow_rot = plane_obj.rotation_euler.copy()
+            if orbit_angle != 0.0:
+                new_rot = rp._preview_shadow_rot.copy()
+                if rp.orbit_rotation_axis == 'X':
+                    new_rot.x += orbit_angle
+                elif rp.orbit_rotation_axis == 'Y':
+                    new_rot.y += orbit_angle
+                elif rp.orbit_rotation_axis == 'Z':
+                    new_rot.z += orbit_angle
+                plane_obj.rotation_euler = new_rot
+
+        # ── Basculer en vue caméra + Material Preview ────────────────────
+        for area in context.screen.areas:
+            if area.type == 'VIEW_3D':
+                for space in area.spaces:
+                    if space.type == 'VIEW_3D':
+                        space.region_3d.view_perspective = 'CAMERA'
+                        space.shading.type = 'MATERIAL'
+                        break
+                break
+
+        rp.is_preview_active = True
+        self.report({"INFO"}, f"Preview sur « {first_obj.name} » — Ajustez les paramètres puis lancez le rendu")
+        return {"FINISHED"}
+
+    @staticmethod
+    def _cleanup_preview(context):
+        """Supprime tous les objets de preview _BatchPreview_*"""
+        scene = context.scene
+        rp = scene.batch_render_props
+
+        # Restaurer les rotations des modèles si elles ont été modifiées pour le preview
+        if hasattr(rp, "_preview_rotations"):
+            for name, rot in rp._preview_rotations.items():
+                obj = bpy.data.objects.get(name)
+                if obj:
+                    obj.rotation_euler = rot
+            del rp._preview_rotations
+        if hasattr(rp, "_preview_shadow_rot"):
+            plane = bpy.data.objects.get("_BatchPreview_ShadowPlane")
+            if plane:
+                plane.rotation_euler = rp._preview_shadow_rot
+            del rp._preview_shadow_rot
+
+        # Supprimer les objets preview
+        to_remove = [obj for obj in bpy.data.objects if obj.name.startswith("_BatchPreview_")]
+        for obj in to_remove:
+            data = obj.data
+            bpy.data.objects.remove(obj, do_unlink=True)
+            # Supprimer la donnée associée (caméra, lumière ou mesh)
+            if data:
+                if isinstance(data, bpy.types.Camera):
+                    bpy.data.cameras.remove(data)
+                elif isinstance(data, bpy.types.Light):
+                    bpy.data.lights.remove(data)
+                elif isinstance(data, bpy.types.Mesh):
+                    bpy.data.meshes.remove(data)
+
+        rp.is_preview_active = False
+
+
+class BatchRenderCleanPreview(bpy.types.Operator):
+    """Supprime la caméra et les lumières de preview du batch render"""
+    bl_idname = "render.batch_render_clean_preview"
+    bl_label = "Supprimer Preview"
+    bl_options = {"REGISTER", "UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.batch_render_props.is_preview_active
+
+    def execute(self, context):
+        BatchRenderPreview._cleanup_preview(context)
+
+        # Remettre l'angle de preview à 0 pour repartir de la rotation initiale
+        context.scene.batch_render_props.preview_orbit_angle = 0
+
+        # Revenir en vue perspective
+        for area in context.screen.areas:
+            if area.type == 'VIEW_3D':
+                for space in area.spaces:
+                    if space.type == 'VIEW_3D':
+                        space.region_3d.view_perspective = 'PERSP'
+                        space.shading.type = 'SOLID'
+                        break
+                break
+
+        self.report({"INFO"}, "Preview nettoyé")
+        return {"FINISHED"}
+
+
+class BatchRenderPreviewResetAngle(bpy.types.Operator):
+    """Réinitialise l'angle de preview à 0° et restaure la rotation d'origine"""
+    bl_idname = "render.batch_render_preview_reset_angle"
+    bl_label = "Reset angle preview"
+    bl_options = {"REGISTER", "UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        # Bouton actif même hors preview pour remettre le slider à 0
+        return True
+
+    def execute(self, context):
+        scene = context.scene
+        rp = scene.batch_render_props
+
+        # Remettre le slider à 0
+        rp.preview_orbit_angle = 0
+
+        # Si un preview est actif et qu'on a sauvegardé les rotations, les restaurer
+        if hasattr(rp, "_preview_rotations"):
+            for name, rot in rp._preview_rotations.items():
+                obj = bpy.data.objects.get(name)
+                if obj:
+                    obj.rotation_euler = rot
+        if hasattr(rp, "_preview_shadow_rot"):
+            plane = bpy.data.objects.get("_BatchPreview_ShadowPlane")
+            if plane:
+                plane.rotation_euler = rp._preview_shadow_rot
+
+        # Rafraîchir la vue 3D
+        for area in context.screen.areas:
+            area.tag_redraw()
+
+        self.report({"INFO"}, "Angle preview remis à 0°")
+        return {"FINISHED"}
+
+
 classes = [
     AddCadreMortaise,
     AddCadreTenon,
@@ -2252,6 +3125,10 @@ classes = [
     RemoveBatchPreset,
     LoadBatchPreset,
     SaveBatchPreset,
+    BatchRender,
+    BatchRenderPreview,
+    BatchRenderCleanPreview,
+    BatchRenderPreviewResetAngle,
 ]
 
 

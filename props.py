@@ -1,6 +1,9 @@
 import bpy
 import math
 
+# Garde globale pour éviter la récursion sur le verrou de ratio
+_RES_LOCK = set()
+
 
 from bpy.props import (
     FloatProperty,
@@ -1407,6 +1410,301 @@ class Batch3DProps(bpy.types.PropertyGroup):
     active_preset_index: IntProperty(default=0)
 
 
+class BatchRenderProps(bpy.types.PropertyGroup):
+    """Configuration pour le rendu batch automatisé Cycles"""
+
+    # Gestion du ratio largeur/hauteur de la résolution
+    def _store_resolution_ratio(self):
+        y = max(1, self.render_resolution_y)
+        self.render_resolution_aspect = self.render_resolution_x / y
+
+    def _sync_resolution(self, source):
+        # Empêcher la récursion : un seul ajustement à la fois pour cette instance
+        if id(self) in _RES_LOCK:
+            return
+
+        # Sortir si le verrou est désactivé
+        if not self.render_resolution_keep_ratio:
+            self._store_resolution_ratio()
+            return
+
+        ratio = self.render_resolution_aspect if self.render_resolution_aspect > 0 else 1.0
+        _RES_LOCK.add(id(self))
+        try:
+            if source == 'X':
+                # Ajuster Y en fonction de X
+                new_y = max(1, int(round(self.render_resolution_x / ratio)))
+                if new_y != self.render_resolution_y:
+                    self.render_resolution_y = new_y
+            else:
+                # Ajuster X en fonction de Y
+                new_x = max(1, int(round(self.render_resolution_y * ratio)))
+                if new_x != self.render_resolution_x:
+                    self.render_resolution_x = new_x
+        finally:
+            _RES_LOCK.discard(id(self))
+
+    def _update_resolution_x(self, context):
+        self._sync_resolution('X')
+
+    def _update_resolution_y(self, context):
+        self._sync_resolution('Y')
+
+    def _update_keep_ratio(self, context):
+        # Quand on active/désactive, on mémorise le ratio courant
+        self._store_resolution_ratio()
+
+    # Chemin de sortie
+    output_path: StringProperty(
+        name="Dossier de sortie",
+        description="Chemin où sauvegarder les rendus",
+        default="/home/fanch/Images/",
+        subtype='DIR_PATH',
+    )
+
+    # --- Caméra ---
+    camera_distance: FloatProperty(
+        name="Distance caméra",
+        description="Distance supplémentaire entre la caméra et l'objet",
+        default=0.8,
+        min=0.0,
+        max=100.0,
+        unit='LENGTH',
+        precision=2,
+    )
+    camera_elevation: FloatProperty(
+        name="Élévation",
+        description="Angle d'élévation de la caméra (0° = horizon, 90° = dessus)",
+        default=math.radians(90),
+        min=math.radians(0),
+        max=math.radians(90),
+        subtype='ANGLE',
+    )
+    camera_azimuth: FloatProperty(
+        name="Azimut",
+        description="Angle de rotation horizontale de la caméra autour de l'objet",
+        default=math.radians(0),
+        min=math.radians(-180),
+        max=math.radians(180),
+        subtype='ANGLE',
+    )
+    camera_focal_length: FloatProperty(
+        name="Focale (mm)",
+        description="Longueur focale de la caméra en mm",
+        default=50.0,
+        min=15.0,
+        max=200.0,
+    )
+
+    # --- Format de sortie ---
+    output_format: EnumProperty(
+        name="Format",
+        description="Format d'image de sortie",
+        items=[
+            ('PNG', "PNG", "Format PNG avec transparence"),
+            ('JPEG', "JPEG", "Format JPEG compressé"),
+            ('OPEN_EXR', "OpenEXR", "Format HDR OpenEXR"),
+        ],
+        default='PNG',
+    )
+    transparent_background: BoolProperty(
+        name="Fond transparent",
+        description="Rendre le fond transparent (PNG/EXR uniquement)",
+        default=True,
+    )
+
+    # --- Résolution ---
+    render_resolution_keep_ratio: BoolProperty(
+        name="Conserver le ratio",
+        description="Maintenir le ratio largeur/hauteur quand X ou Y change",
+        default=True,
+        update=_update_keep_ratio,
+    )
+    render_resolution_aspect: FloatProperty(
+        name="Ratio interne",
+        description="Ratio largeur/hauteur stocké (interne)",
+        default=1920 / 1080,
+        min=0.01,
+        options={'HIDDEN'},
+    )
+    render_resolution_x: IntProperty(
+        name="Résolution X",
+        description="Largeur de l'image en pixels",
+        default=1920,
+        min=256,
+        max=8192,
+        update=_update_resolution_x,
+    )
+    render_resolution_y: IntProperty(
+        name="Résolution Y",
+        description="Hauteur de l'image en pixels",
+        default=1080,
+        min=256,
+        max=8192,
+        update=_update_resolution_y,
+    )
+
+    # --- Cycles ---
+    render_samples: IntProperty(
+        name="Samples",
+        description="Nombre de samples Cycles pour le rendu",
+        default=20,
+        min=1,
+        max=4096,
+    )
+    use_denoising: BoolProperty(
+        name="Denoising",
+        description="Activer le denoising Cycles pour réduire le bruit",
+        default=True,
+    )
+
+    # --- Éclairage ---
+    light_energy: FloatProperty(
+        name="Intensité lumière",
+        description="Intensité de la lumière principale (Watts)",
+        default=35.0,
+        min=0.0,
+        max=10000.0,
+    )
+    use_three_point: BoolProperty(
+        name="Éclairage 3 points",
+        description="Utiliser un éclairage cinématographique 3 points (key + fill + rim)",
+        default=True,
+    )
+
+    # --- HDRI ---
+    use_hdri: BoolProperty(
+        name="Utiliser HDRI",
+        description="Utiliser un éclairage HDRI environnement",
+        default=False,
+    )
+    hdri_path: StringProperty(
+        name="Chemin HDRI",
+        description="Chemin vers le fichier HDRI (.hdr ou .exr)",
+        default="",
+        subtype='FILE_PATH',
+    )
+    hdri_strength: FloatProperty(
+        name="Force HDRI",
+        description="Intensité de l'éclairage HDRI",
+        default=1.0,
+        min=0.0,
+        max=10.0,
+    )
+
+    # --- Shadow catcher (ombres au sol) ---
+    use_shadow_catcher: BoolProperty(
+        name="Ombres au sol",
+        description="Ajouter un plan au sol qui capture les ombres (invisible en PNG transparent, seules les ombres restent)",
+        default=False,
+    )
+    shadow_plane_size: FloatProperty(
+        name="Taille du plan",
+        description="Facteur de taille du plan par rapport à l'objet",
+        default=3.0,
+        min=1.5,
+        max=10.0,
+    )
+    shadow_plane_offset: FloatProperty(
+        name="Décalage Z",
+        description="Décalage vertical du plan sous l'objet",
+        default=-0.005,
+        min=-1.0,
+        max=1.0,
+        unit='LENGTH',
+        precision=3,
+    )
+
+    # --- Multi-angles caméra (rotation autour d'un axe) ---
+    orbit_rotation_axis: EnumProperty(
+        name="Axe de rotation",
+        description="Axe autour duquel tourne la caméra pour les multi-angles",
+        items=[
+            ('X', "Axe X", "Rotation autour de X (haut/bas de la caméra)"),
+            ('Y', "Axe Y", "Rotation autour de Y (gauche/droite de la caméra)"),
+            ('Z', "Axe Z", "Rotation autour de Z (horizontal, vue de côté)"),
+        ],
+        default='Y',
+    )
+    orbit_angle_neg90: BoolProperty(
+        name="-90°",
+        description="Vue latérale gauche",
+        default=False,
+    )
+    orbit_angle_neg60: BoolProperty(
+        name="-60°",
+        description="Vue 2/3 gauche",
+        default=False,
+    )
+    orbit_angle_neg45: BoolProperty(
+        name="-45°",
+        description="Vue 3/4 gauche",
+        default=False,
+    )
+    orbit_angle_neg30: BoolProperty(
+        name="-30°",
+        description="Vue légèrement de gauche",
+        default=False,
+    )
+    orbit_angle_0: BoolProperty(
+        name="0°",
+        description="Vue de face (position de base)",
+        default=True,
+    )
+    orbit_angle_30: BoolProperty(
+        name="30°",
+        description="Vue légèrement de droite",
+        default=False,
+    )
+    orbit_angle_45: BoolProperty(
+        name="45°",
+        description="Vue 3/4 droite",
+        default=False,
+    )
+    orbit_angle_60: BoolProperty(
+        name="60°",
+        description="Vue 2/3 droite",
+        default=False,
+    )
+    orbit_angle_90: BoolProperty(
+        name="90°",
+        description="Vue latérale droite",
+        default=False,
+    )
+    preview_orbit_angle: IntProperty(
+        name="Angle preview",
+        description="Angle de rotation Y pour la preview (-90° à +90°)",
+        default=0,
+        min=-90,
+        max=90,
+        subtype='NONE',
+    )
+
+    # --- État interne (non affiché directement) ---
+    is_running: BoolProperty(
+        name="En cours",
+        description="Le batch render est en cours d'exécution",
+        default=False,
+    )
+    progress_current: IntProperty(
+        name="Progression actuelle",
+        default=0,
+    )
+    progress_total: IntProperty(
+        name="Total",
+        default=0,
+    )
+    current_object_name: StringProperty(
+        name="Objet en cours",
+        default="",
+    )
+    is_preview_active: BoolProperty(
+        name="Preview active",
+        description="Un preview de cadrage est actuellement affiché",
+        default=False,
+    )
+
+
 classes = [
     DiffuseurProps,
     ArrayProps,
@@ -1419,6 +1717,7 @@ classes = [
     PositionSelectedProps,
     BatchPresetItem,
     Batch3DProps,
+    BatchRenderProps,
 ]
 
 
@@ -1436,6 +1735,7 @@ def register():
     bpy.types.Scene.devis_list = bpy.props.CollectionProperty(type=DevisList)
     bpy.types.Scene.batch_3d_props = bpy.props.PointerProperty(type=Batch3DProps)
     bpy.types.Scene.batch_presets = bpy.props.CollectionProperty(type=BatchPresetItem)
+    bpy.types.Scene.batch_render_props = bpy.props.PointerProperty(type=BatchRenderProps)
     bpy.types.Scene.dif_parts = []
 
 
@@ -1454,3 +1754,4 @@ def unregister():
     del bpy.types.Scene.devis_list
     del bpy.types.Scene.batch_3d_props
     del bpy.types.Scene.batch_presets
+    del bpy.types.Scene.batch_render_props
