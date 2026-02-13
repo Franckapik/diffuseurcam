@@ -373,8 +373,13 @@ class Diffuseur_SideBar(Panel):
         row = box.row(align=True)
         row.prop(productprops, "motif_display", expand=True)
 
-        box.prop(difprops, "decalage_h")
-        box.prop(difprops, "decalage_v")
+        box.prop(difprops, "center_pattern")
+        
+        # Afficher les décalages comme désactivés si l'auto-centrage est actif
+        row = box.row()
+        row.enabled = not difprops.center_pattern
+        row.prop(difprops, "decalage_h")
+        row.prop(difprops, "decalage_v")
         
         # Paramètre d'optimisation QRD pour les diffuseurs 1D
         if difprops.moule_type == "1d":

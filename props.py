@@ -418,6 +418,12 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         default="none"
     )
 
+    center_pattern: BoolProperty(
+        name="Centrer le motif",
+        description="Centre automatiquement le motif QRD pour que les 4 coins aient la même valeur",
+        default=True
+    )
+
     offset_peigne: IntProperty(
         name="Offset peigne %",
         description="Offset sur les peignes en %",
@@ -573,13 +579,66 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         
         return optimized_sequence[:target_size]
 
+    def _calculate_centered_offsets(self):
+        """Calcule les décalages h et v pour centrer le motif QRD.
+        
+        Pour centrer le motif, les 4 coins doivent avoir la même valeur :
+        - Coin haut-gauche: (0, 0)
+        - Coin haut-droit: (type-1, 0)
+        - Coin bas-gauche: (0, max_m)
+        - Coin bas-droit: (type-1, max_m)
+        
+        La formule QRD est: an = ((n + h)² + (m + v)²) mod type
+        
+        Pour que les 4 coins soient identiques, nous cherchons h et v tels que
+        la distribution soit symétrique.
+        """
+        N = self.type
+        max_m = round(self.type * self.longueur_diffuseur) - 1
+        
+        best_offset_h = 0
+        best_offset_v = 0
+        best_symmetry = float('inf')
+        
+        # Tester différentes valeurs de décalage
+        for test_h in range(N):
+            for test_v in range(N):
+                # Calculer les valeurs des 4 coins
+                corner_tl = int((math.pow(0 + test_h, 2) + math.pow(0 + test_v, 2)) % N)
+                corner_tr = int((math.pow(N - 1 + test_h, 2) + math.pow(0 + test_v, 2)) % N)
+                corner_bl = int((math.pow(0 + test_h, 2) + math.pow(max_m + test_v, 2)) % N)
+                corner_br = int((math.pow(N - 1 + test_h, 2) + math.pow(max_m + test_v, 2)) % N)
+                
+                # Mesurer la symétrie (distance entre les coins)
+                # Nous voulons que tous les coins aient la même valeur
+                symmetry = abs(corner_tl - corner_tr) + abs(corner_tl - corner_bl) + abs(corner_tl - corner_br)
+                
+                if symmetry < best_symmetry:
+                    best_symmetry = symmetry
+                    best_offset_h = test_h
+                    best_offset_v = test_v
+                    
+                    # Si parfaitement symétrique, on peut arrêter
+                    if symmetry == 0:
+                        return best_offset_h, best_offset_v
+        
+        return best_offset_h, best_offset_v
+
     def getMotif(self, display):
+        # Déterminer les offsets à utiliser
+        offset_h = self.decalage_h
+        offset_v = self.decalage_v
+        
+        # Appliquer le centrage automatique si activé
+        if self.center_pattern:
+            offset_h, offset_v = self._calculate_centered_offsets()
+        
         ratio = []
         for k in range(0, self.type * round(self.type * self.longueur_diffuseur)):
             n = k % self.type
             m = math.floor(k / self.type)
             an = int(
-                (math.pow(n + self.decalage_h, 2) + math.pow(m + self.decalage_v, 2)) % self.type
+                (math.pow(n + offset_h, 2) + math.pow(m + offset_v, 2)) % self.type
             )  # phase shifted = 1 on qrdude
             ratio.append(an / 1000)
 
