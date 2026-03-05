@@ -1475,6 +1475,66 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
     return verts, edges, "Piliers"
 
 
+def get_codage_monopilier_circles(difprops, arrayprops):
+    """
+    Calcule les positions des trous de codage pour les mono-piliers.
+    Retourne une liste de (cx, cy, radius).
+
+    Principe :
+      - Les pièces sont disposées le long de Y dans l'ordre de la boucle.
+      - La pièce la plus proche de y0 reçoit l'ID 1, la suivante l'ID 2, etc.
+      - La hauteur des piliers est sans rapport avec la numérotation.
+      - N_slots = n_pieces + 1  (dernier slot réservé au trou REF)
+      - step   = largeur_monopilier / N_slots
+      - x_code = step * (id - 0.5)  → distance croissante et linéaire sur X
+      - x_ref  = step * (n_pieces + 0.5)  → toujours dans le dernier slot
+    """
+    rang = difprops.getRang()
+    type_n = difprops.type
+    epaisseur = difprops.epaisseur
+    socle_monopilier = difprops.socle_monopilier
+    array_offset = arrayprops.array_offset
+    radius = difprops.hole_diam_codage / 2
+
+    largeur_monopilier = rang * type_n - epaisseur
+
+    ratios = difprops.getMotif("depth")
+    amax = max(ratios)
+
+    a = []
+    for k in ratios:
+        a.append((k, ratios.count(k)))
+    ratio = list(dict.fromkeys(a))
+
+    # Nombre de pièces effectivement générées sur l'axe Y
+    n_pieces = 1 if difprops.moule_type == "1d" else len(ratio)
+
+    N_slots = n_pieces + 1
+    step = largeur_monopilier / N_slots
+
+    # Trou REF : position fixe à gauche (premier slot)
+    x_ref = step * 0.5
+
+    circles = []
+    y0 = 0
+    piece_id = 0  # compteur 0-based → ID = piece_id + 1
+
+    for i in range(len(ratio)):
+        if (difprops.moule_type == "1d" and i < 1) or difprops.moule_type == "2d":
+            piece_id += 1
+            y_holes = y0 + socle_monopilier / 2
+
+            # Trou CODE : distance X décroissante en partant de la droite
+            x_code = largeur_monopilier - step * (piece_id - 0.5)
+
+            circles.append((x_ref, y_holes, radius))    # trou REF (à gauche, fixe)
+            circles.append((x_code, y_holes, radius))   # trou CODE (décroissant vers la gauche)
+
+            y0 += amax + array_offset + socle_monopilier + 0.01
+
+    return circles
+
+
 # creer des cercles pour reconnaitre les monopiliers. Chatgpt proposition pour le dessin d'un cercle.
 
 """ def create_circle(name, diameter, segments): 

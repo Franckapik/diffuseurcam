@@ -319,6 +319,22 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         precision=3,
     )
 
+    pilier_codage: BoolProperty(
+        name="Codage par trous",
+        description="Ajoute des cercles de codage (REF + CODE) sur les mono-piliers pour identification CNC sans gravure",
+        default=False,
+    )
+
+    hole_diam_codage: FloatProperty(
+        name="Diamètre trou codage",
+        description="Diamètre des trous traversants REF et CODE",
+        default=0.005,
+        min=0.003,
+        max=0.015,
+        unit="LENGTH",
+        precision=4,
+    )
+
     epaisseur_pilier: FloatProperty(
         name="Epaisseur_pilier",
         description="Epaisseur des piliers",
@@ -804,6 +820,12 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                 # Épaisseur pilier pour stable et mono
                 if self.type_moule == "stable" or self.type_moule == "mono":
                     attributes.append("epaisseur_pilier")
+
+                # Codage par trous pour mono-piliers uniquement
+                if self.type_moule == "mono":
+                    attributes.append("pilier_codage")
+                    if self.pilier_codage:
+                        attributes.append("hole_diam_codage")
 
                 return attributes
 

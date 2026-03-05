@@ -1107,6 +1107,36 @@ class AddPilierMoule(bpy.types.Operator, AddObjectHelper):
         if posprops.pilier_moule_rotation:
             mesh_obj.rotation_euler = [0, 0, math.radians(90)]
 
+        # --- Codage par trous traversants (mono-piliers uniquement) ---
+        if difprops.type_moule == "mono" and getattr(difprops, "pilier_codage", False):
+            circles = get_codage_monopilier_circles(difprops, arrayprops)
+
+            curve_data = bpy.data.curves.new("Codage_Piliers", type='CURVE')
+            curve_data.dimensions = '2D'
+
+            segments = 32
+            for (cx, cy, radius) in circles:
+                spline = curve_data.splines.new('POLY')
+                spline.use_cyclic_u = True
+                spline.points.add(segments - 1)  # déjà 1 point par défaut
+                for j in range(segments):
+                    angle = 2 * math.pi * j / segments
+                    x = cx + radius * math.cos(angle)
+                    y = cy + radius * math.sin(angle)
+                    spline.points[j].co = (x, y, 0, 1)
+
+            codage_obj = bpy.data.objects.new("Codage_Piliers", curve_data)
+            bpy.context.collection.objects.link(codage_obj)
+            bpy.types.Scene.dif_parts.append(codage_obj.name)
+
+            codage_obj.location = (
+                posprops.pilier_moule_position[0],
+                posprops.pilier_moule_position[1],
+                posprops.pilier_moule_position[2],
+            )
+            if posprops.pilier_moule_rotation:
+                codage_obj.rotation_euler = [0, 0, math.radians(90)]
+
         return {"FINISHED"}
 
 
