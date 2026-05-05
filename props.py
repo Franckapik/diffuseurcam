@@ -1421,7 +1421,7 @@ class Batch3DProps(bpy.types.PropertyGroup):
     batch_product_type: EnumProperty(
         name="Type de produit",
         description="Type de diffuseur pour le batch",
-        items=[("0", "Diffuseur 2D", ""), ("1", "Diffuseur 1D", "")],
+        items=[("0", "Diffuseur 2D", ""), ("1", "Diffuseur 1D", ""), ("2", "1D + 2D", "Générer les deux types dans la même scène")],
         default="0",
     )
     preset_name: StringProperty(
@@ -1700,6 +1700,37 @@ class BatchRenderProps(bpy.types.PropertyGroup):
         min=-90,
         max=90,
         subtype='NONE',
+    )
+    preview_object_index: IntProperty(
+        name="Index modèle",
+        description="Index du modèle actuellement affiché en preview",
+        default=0,
+        min=0,
+    )
+    preview_current_info: StringProperty(
+        name="Info modèle courant",
+        description="Dimensions du modèle en preview",
+        default="",
+    )
+    auto_scale_energy: BoolProperty(
+        name="Auto-scale luminosité",
+        description=(
+            "Ajuste automatiquement l'énergie des lumières selon la taille du modèle "
+            "pour obtenir une luminosité homogène sur tous les rendus"
+        ),
+        default=False,
+    )
+    reference_model_dim: FloatProperty(
+        name="Dim. référence (m)",
+        description=(
+            "Dimension max (X/Y/Z) du modèle de référence. "
+            "L'énergie lumineuse est normalisée par rapport à cette valeur : "
+            "un modèle deux fois plus grand reçoit quatre fois plus d'énergie."
+        ),
+        default=0.3,
+        min=0.001,
+        precision=3,
+        unit='LENGTH',
     )
 
     # --- État interne (non affiché directement) ---

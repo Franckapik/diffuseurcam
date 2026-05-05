@@ -1816,12 +1816,14 @@ class Batch3DGenerate(bpy.types.Operator):
         orig_product_type = scene.product_props.product_type
         orig_moule_type = difprops.moule_type
 
-        # Configurer le type de produit pour la génération 3D
-        scene.product_props.product_type = batch_props.batch_product_type
-        difprops.moule_type = "1d" if batch_props.batch_product_type == "1" else "2d"
+        # Déterminer les types de produits à générer
+        if batch_props.batch_product_type == "2":
+            product_types = ["0", "1"]
+        else:
+            product_types = [batch_props.batch_product_type]
 
-        # Toutes les combinaisons
-        combinations = list(iterproduct(types, profondeurs, longueurs))
+        # Toutes les combinaisons (product_type, type, profondeur, longueur)
+        combinations = list(iterproduct(product_types, types, profondeurs, longueurs))
         total = len(combinations)
 
         # Créer une collection dédiée au batch
@@ -1838,8 +1840,10 @@ class Batch3DGenerate(bpy.types.Operator):
         print(f"Types: {types} | Profondeurs(mm): {[p*1000 for p in profondeurs]} | Longueurs: {longueurs}")
         print(f"{'='*50}")
 
-        for i, (t, p, l) in enumerate(combinations):
+        for i, (pt, t, p, l) in enumerate(combinations):
             # Appliquer les paramètres de cette combinaison
+            scene.product_props.product_type = pt
+            difprops.moule_type = "1d" if pt == "1" else "2d"
             difprops.type = t
             difprops.profondeur = p
             difprops.longueur_diffuseur = l
@@ -2527,6 +2531,18 @@ class BatchRender(bpy.types.Operator):
             self._position_camera(self._cam_obj, bbox_center, bbox_size, rp, orbit_angle=0.0)
             self._position_lights(self._lights, bbox_center, bbox_size, rp, orbit_angle=0.0)
 
+            # ── Auto-scale énergie lumineuse selon la taille du modèle ──────
+            if rp.auto_scale_energy and rp.reference_model_dim > 0:
+                max_dim = max(bbox_size.x, bbox_size.y, bbox_size.z)
+                scale = (max_dim / rp.reference_model_dim) ** 2
+                for i, (lobj, ldata) in enumerate(self._lights):
+                    if i == 0:
+                        ldata.energy = rp.light_energy * scale
+                    elif i == 1:
+                        ldata.energy = rp.light_energy * 0.3 * scale
+                    elif i == 2:
+                        ldata.energy = rp.light_energy * 0.6 * scale
+
             # Positionner le shadow catcher plane si actif
             if self._shadow_plane:
                 max_dim = max(bbox_size.x, bbox_size.y, bbox_size.z)
@@ -2571,7 +2587,7 @@ class BatchRender(bpy.types.Operator):
             try:
                 # Appliquer le type d'affichage selon la préférence
                 bpy.context.preferences.view.render_display_type = (
-                    'SCREEN' if rp.show_render_preview else 'NONE'
+                    'WINDOW' if rp.show_render_preview else 'NONE'
                 )
                 bpy.ops.render.render(write_still=True)
                 print(f"  ✅ Sauvegardé : {scene.render.filepath}")
@@ -2908,34 +2924,42 @@ class BatchRenderPreview(bpy.types.Operator):
         if hasattr(rp, "_preview_shadow_rot"):
             del rp._preview_shadow_rot
 
-        # Trouver le premier objet mesh du batch
+        # Collecter et trier les objets mesh du batch (tri par nom pour ordre stable)
         batch_objs = []
-        for collection in bpy.data.collections:
+        for collection in sorted(bpy.data.collections, key=lambda c: c.name):
             if collection.name.startswith("Batch_3D_"):
                 for obj in collection.objects:
                     if obj.type == 'MESH':
                         batch_objs.append(obj)
 
-        first_obj = batch_objs[0] if batch_objs else None
-
-        if not first_obj:
+        if not batch_objs:
             self.report({"WARNING"}, "Aucun objet trouvé dans les collections Batch_3D_*")
             return {"CANCELLED"}
+
+        # Sélectionner le modèle cible via l'index (navigation)
+        n = len(batch_objs)
+        rp.preview_object_index = rp.preview_object_index % n
+        idx = rp.preview_object_index
+        target_obj = batch_objs[idx]
+
+        # ── Isoler le modèle cible : masquer tous les autres dans le viewport ─
+        rp._preview_visibility = {obj.name: obj.hide_viewport for obj in batch_objs}
+        for obj in batch_objs:
+            obj.hide_viewport = (obj is not target_obj)
 
         # ── Sauvegarder les rotations originales et appliquer l'angle de preview ─
         orbit_angle = math.radians(rp.preview_orbit_angle)
         rp._preview_rotations = {obj.name: obj.rotation_euler.copy() for obj in batch_objs}
         if orbit_angle != 0.0:
-            for obj in batch_objs:
-                orig_rot = rp._preview_rotations[obj.name]
-                new_rot = orig_rot.copy()
-                if rp.orbit_rotation_axis == 'X':
-                    new_rot.x += orbit_angle
-                elif rp.orbit_rotation_axis == 'Y':
-                    new_rot.y += orbit_angle
-                elif rp.orbit_rotation_axis == 'Z':
-                    new_rot.z += orbit_angle
-                obj.rotation_euler = new_rot
+            orig_rot = rp._preview_rotations[target_obj.name]
+            new_rot = orig_rot.copy()
+            if rp.orbit_rotation_axis == 'X':
+                new_rot.x += orbit_angle
+            elif rp.orbit_rotation_axis == 'Y':
+                new_rot.y += orbit_angle
+            elif rp.orbit_rotation_axis == 'Z':
+                new_rot.z += orbit_angle
+            target_obj.rotation_euler = new_rot
 
         # ── Créer la caméra preview ──────────────────────────────────────
         cam_data = bpy.data.cameras.new("_BatchPreview_Cam")
@@ -2946,15 +2970,22 @@ class BatchRenderPreview(bpy.types.Operator):
         scene.collection.objects.link(cam_obj)
         scene.camera = cam_obj
 
-        # ── Positionner la caméra (fixe, les modèles tournent) ───────────
-        bbox_center, bbox_size = BatchRender._get_bbox_info(None, first_obj)
+        # ── Positionner la caméra sur le modèle cible ────────────────────
+        bbox_center, bbox_size = BatchRender._get_bbox_info(None, target_obj)
         BatchRender._position_camera(None, cam_obj, bbox_center, bbox_size, rp, orbit_angle=0.0)
+
+        # ── Calculer l'énergie lumineuse (avec auto-scale selon taille) ──
+        actual_energy = rp.light_energy
+        if rp.auto_scale_energy and rp.reference_model_dim > 0:
+            max_dim = max(bbox_size.x, bbox_size.y, bbox_size.z)
+            scale = (max_dim / rp.reference_model_dim) ** 2
+            actual_energy = rp.light_energy * scale
 
         # ── Créer les lumières preview ───────────────────────────────────
         lights_created = []
 
         key_data = bpy.data.lights.new("_BatchPreview_Key", 'AREA')
-        key_data.energy = rp.light_energy
+        key_data.energy = actual_energy
         key_data.size = 2.0
         key_obj = bpy.data.objects.new("_BatchPreview_Key", key_data)
         scene.collection.objects.link(key_obj)
@@ -2962,14 +2993,14 @@ class BatchRenderPreview(bpy.types.Operator):
 
         if rp.use_three_point:
             fill_data = bpy.data.lights.new("_BatchPreview_Fill", 'AREA')
-            fill_data.energy = rp.light_energy * 0.3
+            fill_data.energy = actual_energy * 0.3
             fill_data.size = 3.0
             fill_obj = bpy.data.objects.new("_BatchPreview_Fill", fill_data)
             scene.collection.objects.link(fill_obj)
             lights_created.append((fill_obj, fill_data))
 
             rim_data = bpy.data.lights.new("_BatchPreview_Rim", 'AREA')
-            rim_data.energy = rp.light_energy * 0.6
+            rim_data.energy = actual_energy * 0.6
             rim_data.size = 1.5
             rim_obj = bpy.data.objects.new("_BatchPreview_Rim", rim_data)
             scene.collection.objects.link(rim_obj)
@@ -3020,8 +3051,15 @@ class BatchRenderPreview(bpy.types.Operator):
                         break
                 break
 
+        # ── Mettre à jour l'info du modèle courant ───────────────────────
+        sx = bbox_size.x * 1000
+        sy = bbox_size.y * 1000
+        sz = bbox_size.z * 1000
+        energy_info = f"  | énergie ×{(actual_energy / max(rp.light_energy, 0.001)):.2f}" if rp.auto_scale_energy else ""
+        rp.preview_current_info = f"{target_obj.name}  ({sx:.0f}×{sy:.0f}×{sz:.0f} mm){energy_info}"
+
         rp.is_preview_active = True
-        self.report({"INFO"}, f"Preview sur « {first_obj.name} » — Ajustez les paramètres puis lancez le rendu")
+        self.report({"INFO"}, f"Preview {idx + 1}/{n} — « {target_obj.name} »  ({sx:.0f}×{sy:.0f}×{sz:.0f} mm)")
         return {"FINISHED"}
 
     @staticmethod
@@ -3029,6 +3067,14 @@ class BatchRenderPreview(bpy.types.Operator):
         """Supprime tous les objets de preview _BatchPreview_*"""
         scene = context.scene
         rp = scene.batch_render_props
+
+        # Restaurer la visibilité des modèles masqués par le preview
+        if hasattr(rp, "_preview_visibility"):
+            for name, was_hidden in rp._preview_visibility.items():
+                obj = bpy.data.objects.get(name)
+                if obj:
+                    obj.hide_viewport = was_hidden
+            del rp._preview_visibility
 
         # Restaurer les rotations des modèles si elles ont été modifiées pour le preview
         if hasattr(rp, "_preview_rotations"):
@@ -3127,6 +3173,49 @@ class BatchRenderPreviewResetAngle(bpy.types.Operator):
         return {"FINISHED"}
 
 
+class BatchRenderPreviewNavigate(bpy.types.Operator):
+    """Navigue vers le modèle suivant ou précédent dans le preview"""
+    bl_idname = "render.batch_render_preview_navigate"
+    bl_label = "Naviguer preview"
+    bl_options = {"REGISTER", "UNDO"}
+
+    direction: bpy.props.EnumProperty(
+        name="Direction",
+        items=[
+            ('NEXT', "Suivant", "Passer au modèle suivant", 'TRIA_RIGHT', 0),
+            ('PREV', "Précédent", "Revenir au modèle précédent", 'TRIA_LEFT', 1),
+        ],
+        default='NEXT',
+    )
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.batch_render_props.is_preview_active
+
+    def execute(self, context):
+        rp = context.scene.batch_render_props
+
+        # Compter les objets batch disponibles
+        batch_objs = [
+            obj
+            for collection in sorted(bpy.data.collections, key=lambda c: c.name)
+            if collection.name.startswith("Batch_3D_")
+            for obj in collection.objects
+            if obj.type == 'MESH'
+        ]
+
+        if not batch_objs:
+            return {"CANCELLED"}
+
+        n = len(batch_objs)
+        if self.direction == 'NEXT':
+            rp.preview_object_index = (rp.preview_object_index + 1) % n
+        else:
+            rp.preview_object_index = (rp.preview_object_index - 1) % n
+
+        return bpy.ops.render.batch_render_preview('EXEC_DEFAULT')
+
+
 classes = [
     AddCadreMortaise,
     AddCadreTenon,
@@ -3171,6 +3260,7 @@ classes = [
     BatchRenderPreview,
     BatchRenderCleanPreview,
     BatchRenderPreviewResetAngle,
+    BatchRenderPreviewNavigate,
 ]
 
 

@@ -552,6 +552,9 @@ class Diffuseur_SideBar(Panel):
             if render_props.use_hdri:
                 render_box.prop(render_props, "hdri_path")
                 render_box.prop(render_props, "hdri_strength")
+            render_box.prop(render_props, "auto_scale_energy")
+            if render_props.auto_scale_energy:
+                render_box.prop(render_props, "reference_model_dim")
 
             # Multi-angles caméra (rotation autour d'un axe)
             render_box.separator()
@@ -598,6 +601,28 @@ class Diffuseur_SideBar(Panel):
             row = render_box.row(align=True)
             row.prop(render_props, "preview_orbit_angle", slider=True)
             row.operator("render.batch_render_preview_reset_angle", text="Reset", icon="LOOP_BACK")
+
+            # Navigation entre modèles (si preview actif) + info modèle courant
+            if render_props.is_preview_active:
+                batch_objs = [
+                    obj
+                    for c in sorted(bpy.data.collections, key=lambda c: c.name)
+                    if c.name.startswith("Batch_3D_")
+                    for obj in c.objects
+                    if obj.type == 'MESH'
+                ]
+                nb_models = len(batch_objs)
+                if nb_models > 1:
+                    idx = render_props.preview_object_index % nb_models
+                    nav_row = render_box.row(align=True)
+                    op_prev = nav_row.operator("render.batch_render_preview_navigate", text="", icon="TRIA_LEFT")
+                    op_prev.direction = 'PREV'
+                    nav_row.label(text=f"Modèle {idx + 1} / {nb_models}")
+                    op_next = nav_row.operator("render.batch_render_preview_navigate", text="", icon="TRIA_RIGHT")
+                    op_next.direction = 'NEXT'
+                if render_props.preview_current_info:
+                    info_row = render_box.row()
+                    info_row.label(text=render_props.preview_current_info, icon="INFO")
 
             row = render_box.row(align=True)
             row.scale_y = 1.5
