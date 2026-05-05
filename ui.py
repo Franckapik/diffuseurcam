@@ -548,12 +548,6 @@ class Diffuseur_SideBar(Panel):
                 row = render_box.row(align=True)
                 row.prop(render_props, "shadow_plane_size")
                 row.prop(render_props, "shadow_plane_offset")
-            row = render_box.row(align=True)
-            row.prop(render_props, "use_shadows")
-            if render_props.use_shadows:
-                row2 = render_box.row(align=True)
-                row2.prop(render_props, "light_size_multiplier")
-                row2.prop(render_props, "shadow_softness")
             render_box.prop(render_props, "use_hdri")
             if render_props.use_hdri:
                 render_box.prop(render_props, "hdri_path")
@@ -643,7 +637,6 @@ class Diffuseur_SideBar(Panel):
             # Bouton de lancement
             render_box.separator()
             render_box.prop(render_props, "show_render_preview")
-            render_box.prop(render_props, "render_range", icon="LINENUMBERS_ON")
             row = render_box.row()
             row.scale_y = 2.0
             row.operator("render.batch_render", text="Lancer le Batch Render", icon="RENDER_ANIMATION")
