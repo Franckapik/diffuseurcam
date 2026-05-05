@@ -479,16 +479,18 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         return round(offset, 4)
 
     @staticmethod
-    def generate_dif_name(type_val, largeur_diffuseur, profondeur, longueur_diffuseur, epaisseur):
+    def generate_dif_name(type_val, largeur_diffuseur, profondeur, longueur_diffuseur, epaisseur, dim=None):
         """Génère un nom normalisé pour un diffuseur avec les paramètres donnés.
-        
-        Format: N{type}W{largeur_cm}P{profondeur_cm}L{longueur}E{epaisseur_microns}
-        Exemple: N7W50P10L1E3
-        
-        Cette fonction est réutilisable pour la nomenclature dans les batches et autres contextes.
+
+        Format: D{dim}N{type}W{largeur_cm}P{profondeur_cm}L{longueur}E{epaisseur_microns}
+        Exemple: D1N7W50P10L1E3 (1D), D2N7W50P10L1E3 (2D)
+
+        dim : 1 pour 1D, 2 pour 2D. Si None le préfixe D est omis (compatibilité).
         """
+        prefix = f"D{dim}" if dim is not None else ""
         dif_name = (
-            "N"
+            prefix
+            + "N"
             + str(type_val)
             + "W"
             + str(round(largeur_diffuseur * 100))
@@ -501,14 +503,24 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         )
         return dif_name
 
-    def getDifName(self):
-        """Retourne le nom normalisé basé sur les propriétés actuelles."""
+    def getDifName(self, scene=None):
+        """Retourne le nom normalisé basé sur les propriétés actuelles.
+
+        Si scene est fourni, inclut le préfixe D1/D2 selon le product_type courant.
+        Sans scene, retourne le nom sans préfixe (comportement historique).
+        """
+        dim = None
+        if scene is not None:
+            pt = scene.product_props.product_type
+            is_1d = (self.moule_type == "1d") or (pt == "1")
+            dim = 1 if is_1d else 2
         return self.generate_dif_name(
             self.type,
             self.largeur_diffuseur,
             self.profondeur,
             self.longueur_diffuseur,
-            self.epaisseur
+            self.epaisseur,
+            dim=dim,
         )
 
     def getRang(self):
@@ -1746,6 +1758,25 @@ class BatchRenderProps(bpy.types.PropertyGroup):
         precision=2,
         soft_min=0.5,
         soft_max=2.0,
+    )
+
+    # --- Intervalle de rendu ---
+    render_range: StringProperty(
+        name="Intervalle",
+        description=(
+            "Rendre uniquement les modèles dans cet intervalle (ex: 5:8 = modèles 5 à 8 inclus). "
+            "Laissez vide pour tout rendre."
+        ),
+        default="",
+    )
+
+    # --- Temps empirique par image (mesure du dernier batch) ---
+    last_render_time_per_image: FloatProperty(
+        name="Temps par image",
+        description="Durée moyenne mesurée lors du dernier batch render (secondes/image). Utilisée pour estimer la durée du prochain batch.",
+        default=0.0,
+        min=0.0,
+        options={'HIDDEN'},
     )
 
     # --- État interne (non affiché directement) ---

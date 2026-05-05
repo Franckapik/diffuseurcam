@@ -637,9 +637,39 @@ class Diffuseur_SideBar(Panel):
             # Bouton de lancement
             render_box.separator()
             render_box.prop(render_props, "show_render_preview")
+            range_row = render_box.row(align=True)
+            range_row.prop(render_props, "render_range", text="Intervalle", icon="LINENUMBERS_ON")
+            if render_props.render_range.strip():
+                range_row.alert = True
+                range_row.label(text="", icon="FILTER")
             row = render_box.row()
             row.scale_y = 2.0
             row.operator("render.batch_render", text="Lancer le Batch Render", icon="RENDER_ANIMATION")
+
+            # ── Estimation du temps ──────────────────────────────────────
+            est_row = render_box.row()
+            est_row.scale_y = 0.8
+            if render_props.last_render_time_per_image > 0:
+                secs = render_props.last_render_time_per_image * total_imgs
+                h = int(secs // 3600)
+                m = int((secs % 3600) // 60)
+                s = int(secs % 60)
+                if h > 0:
+                    time_str = f"{h}h {m:02d}m {s:02d}s"
+                elif m > 0:
+                    time_str = f"{m}m {s:02d}s"
+                else:
+                    time_str = f"{s}s"
+                spi = render_props.last_render_time_per_image
+                est_row.label(
+                    text=f"Estimation : ~{time_str}  ({spi:.1f}s/img, base empirique)",
+                    icon="TIME",
+                )
+            else:
+                est_row.label(
+                    text="Estimation : lancez un 1er batch pour calibrer",
+                    icon="TIME",
+                )
 
         # Addon
         layout.separator()

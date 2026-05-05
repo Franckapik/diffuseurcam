@@ -8,7 +8,24 @@ from bpy_extras.object_utils import AddObjectHelper
 from bpy.props import FloatVectorProperty, StringProperty, IntProperty
 import math
 import os
+import re
+import time
 from mathutils import Vector
+
+
+def _batch_sort_key(obj):
+    """Clé de tri numérique pour les objets batch.
+    Format attendu : D{dim}N{type}W{largeur}P{profondeur}L{longueur}E{epaisseur}[.suffix]
+    Exemples : D1N7W50P5L1E5, D2N11W50P10L2E5.001
+    Ordre : D1 < D2, puis N7 < N11 < N13, puis P5 < P10 < P15 < P20, etc."""
+    m = re.match(r'D(\d+)N(\d+)W(\d+)P(\d+)L(\d+)E(\d+)', obj.name)
+    if m:
+        return tuple(int(x) for x in m.groups()) + (obj.name,)
+    # Fallback : noms sans préfixe D (anciens objets)
+    m2 = re.match(r'N(\d+)W(\d+)P(\d+)L(\d+)E(\d+)', obj.name)
+    if m2:
+        return (9999,) + tuple(int(x) for x in m2.groups()) + (obj.name,)
+    return (9999, 9999, 9999, 9999, 9999, 9999, obj.name)
 
 
 class AddCadreMortaise(bpy.types.Operator, AddObjectHelper):
@@ -1001,7 +1018,7 @@ class Add3DModel(bpy.types.Operator, AddObjectHelper):
                         self._create_box(bm, tx, ty, z, tile_w, tile_l, e, MAT_CARREAU)
 
         # ── Création du mesh et de l'objet Blender ───────────────────────
-        mesh_name = "3D_" + difprops.getDifName()
+        mesh_name = "3D_" + difprops.getDifName(scene)
         mesh = bpy.data.meshes.new(mesh_name)
         bm.to_mesh(mesh)
         bm.free()
@@ -1853,8 +1870,8 @@ class Batch3DGenerate(bpy.types.Operator):
 
             obj = context.active_object
             if obj:
-                # Utiliser la nomenclature centralisée
-                obj.name = difprops.getDifName()
+                # Utiliser la nomenclature centralisée (D1/D2 + paramètres)
+                obj.name = difprops.getDifName(scene)
 
                 # Déplacer dans la collection batch
                 for coll in list(obj.users_collection):
@@ -2304,7 +2321,8 @@ class BatchRender(bpy.types.Operator):
 
     # ── État interne (par instance d'opérateur) ─────────────────────────
     _timer = None
-    _batch_objects = []
+    _batch_objects = []       # Objets dans l'intervalle (à rendre)
+    _all_batch_objects = []   # Tous les objets Batch_3D_* (pour masquage complet)
     _current_index = 0
     _current_orbit_step = 0
     _orbit_angles = []
@@ -2319,8 +2337,10 @@ class BatchRender(bpy.types.Operator):
     _shadow_plane_data = None
     _orig = None
     _orig_world = None
-    _orig_hide_render = {}
+    _orig_hide_render = {}    # Sauvegarde hide_render pour TOUS les objets batch
     _orig_display_type = None
+    _orig_collection_exclude = {}
+    _render_times = []           # Durées mesurées des rendus individuels
 
     # ── Poll ────────────────────────────────────────────────────────────
     @classmethod
@@ -2345,17 +2365,43 @@ class BatchRender(bpy.types.Operator):
             return {"CANCELLED"}
         os.makedirs(self._output_dir, exist_ok=True)
 
-        # Collecter les objets mesh dans les collections Batch_3D_*
-        self._batch_objects = []
-        for collection in bpy.data.collections:
+        # Collecter et trier tous les objets mesh dans les collections Batch_3D_*
+        # Tri : (nom de collection, nom d'objet) → ordre alphanumérique stable et prévisible
+        raw_objects = []
+        for collection in sorted(bpy.data.collections, key=lambda c: c.name):
             if collection.name.startswith("Batch_3D_"):
-                for obj in collection.objects:
+                for obj in sorted(collection.objects, key=_batch_sort_key):
                     if obj.type == 'MESH':
-                        self._batch_objects.append(obj)
+                        raw_objects.append(obj)
 
-        if not self._batch_objects:
+        if not raw_objects:
             self.report({"WARNING"}, "Aucun objet trouvé dans les collections Batch_3D_*")
             return {"CANCELLED"}
+
+        # Conserver la liste complète pour masquer les objets hors-intervalle
+        self._all_batch_objects = raw_objects
+
+        # ── Filtrage par intervalle (ex: "5:8" → modèles 5 à 8 inclus, 1-indexé) ──
+        range_str = rp.render_range.strip()
+        if range_str:
+            try:
+                parts = range_str.split(":")
+                if len(parts) != 2:
+                    raise ValueError("Format attendu : N:M")
+                idx_start = int(parts[0].strip()) - 1  # Convertir en 0-indexé
+                idx_end = int(parts[1].strip())         # Inclus → slice exclusif OK
+                n_total = len(raw_objects)
+                if idx_start < 0 or idx_end > n_total or idx_start >= idx_end:
+                    self.report({"ERROR"}, f"Intervalle '{range_str}' invalide — plage autorisée : 1:{n_total}")
+                    return {"CANCELLED"}
+                self._batch_objects = raw_objects[idx_start:idx_end]
+                print(f"  ↳ Intervalle actif : modèles {idx_start + 1} à {idx_end} "
+                      f"({len(self._batch_objects)}/{n_total} objets)")
+            except (ValueError, IndexError) as e:
+                self.report({"ERROR"}, f"Format d'intervalle invalide : '{range_str}' — {e}")
+                return {"CANCELLED"}
+        else:
+            self._batch_objects = raw_objects
 
         total = len(self._batch_objects)
         self._current_index = 0
@@ -2415,11 +2461,32 @@ class BatchRender(bpy.types.Operator):
             # Rendre le plan invisible au viewport mais visible au rendu
             self._shadow_plane.display_type = 'WIRE'
 
-        # ── Sauvegarder la visibilité originale ──────────────────────────
-        self._orig_hide_render = {obj.name: obj.hide_render for obj in self._batch_objects}
+        # ── S'assurer que toutes les collections Batch_3D_* sont incluses dans le view layer ──
+        # (une collection exclue rend ses objets invisibles au rendu même avec hide_render=False)
+        self._orig_collection_exclude = {}
+        for layer_coll in context.view_layer.layer_collection.children:
+            if layer_coll.name.startswith("Batch_3D_"):
+                self._orig_collection_exclude[layer_coll.name] = layer_coll.exclude
+                if layer_coll.exclude:
+                    layer_coll.exclude = False
+                    print(f"  ↳ Collection '{layer_coll.name}' réactivée dans le view layer")
 
-        # ── Sauvegarder les rotations originales des modèles ──────────────
-        self._orig_rotations = {obj.name: obj.rotation_euler.copy() for obj in self._batch_objects}
+        # ── Forcer hide_render=False sur tous les objets batch (réinitialisation robuste) ──
+        # Évite la corruption d'état si un run précédent n'a pas restauré correctement
+        for obj in raw_objects:
+            obj.hide_render = False
+
+        # ── Sauvegarder la visibilité originale de TOUS les objets batch ──
+        self._orig_hide_render = {obj.name: False for obj in self._all_batch_objects}
+
+        # ── Masquer immédiatement tous les objets hors-intervalle ────────
+        rendered_names = {obj.name for obj in self._batch_objects}
+        for obj in self._all_batch_objects:
+            if obj.name not in rendered_names:
+                obj.hide_render = True
+
+        # ── Sauvegarder les rotations originales des modèles (tous) ────────
+        self._orig_rotations = {obj.name: obj.rotation_euler.copy() for obj in self._all_batch_objects}
         if self._shadow_plane:
             self._orig_shadow_rotation = self._shadow_plane.rotation_euler.copy()
 
@@ -2450,6 +2517,7 @@ class BatchRender(bpy.types.Operator):
         
         self._current_orbit_step = 0
         total_renders = total * len(self._orbit_angles)
+        self._render_times = []   # Réinitialiser les mesures de temps
 
         # ── Mettre à jour les propriétés de progression ──────────────────
         rp.is_running = True
@@ -2524,6 +2592,11 @@ class BatchRender(bpy.types.Operator):
                     new_rot.z += orbit_angle
             obj.rotation_euler = new_rot
 
+            # Forcer la mise à jour de matrix_world avant _get_bbox_info
+            # (sans cela, matrix_world est périmé → bounding box fausse → caméra décalée
+            # → images vides, surtout pour les modèles avec Z important comme P10/P15)
+            bpy.context.view_layer.update()
+
             # ── Positionner caméra et lumières (sans orbite) ────────────────
             bbox_center, bbox_size = self._get_bbox_info(obj)
 
@@ -2589,8 +2662,12 @@ class BatchRender(bpy.types.Operator):
                 bpy.context.preferences.view.render_display_type = (
                     'WINDOW' if rp.show_render_preview else 'NONE'
                 )
+                _t0 = time.time()
                 bpy.ops.render.render(write_still=True)
-                print(f"  ✅ Sauvegardé : {scene.render.filepath}")
+                _elapsed = time.time() - _t0
+                self._render_times.append(_elapsed)
+                rp.last_render_time_per_image = sum(self._render_times) / len(self._render_times)
+                print(f"  ✅ Sauvegardé : {scene.render.filepath}  ({_elapsed:.1f}s)")
                 self._rendered += 1
             except Exception as e:
                 print(f"  ❌ Erreur : {e}")
@@ -2618,14 +2695,20 @@ class BatchRender(bpy.types.Operator):
             context.window_manager.event_timer_remove(self._timer)
             self._timer = None
 
-        # Restaurer la visibilité
-        for obj in self._batch_objects:
+        # Restaurer la visibilité de TOUS les objets batch
+        for obj in self._all_batch_objects:
             if obj.name in self._orig_hide_render:
                 obj.hide_render = self._orig_hide_render[obj.name]
 
+        # Restaurer l'état d'exclusion des collections Batch_3D_* dans le view layer
+        if hasattr(self, '_orig_collection_exclude'):
+            for layer_coll in context.view_layer.layer_collection.children:
+                if layer_coll.name in self._orig_collection_exclude:
+                    layer_coll.exclude = self._orig_collection_exclude[layer_coll.name]
+
         # Restaurer les rotations des modèles
         if self._orig_rotations:
-            for obj in self._batch_objects:
+            for obj in self._all_batch_objects:
                 orig_rot = self._orig_rotations.get(obj.name)
                 if orig_rot:
                     obj.rotation_euler = orig_rot
@@ -2924,11 +3007,12 @@ class BatchRenderPreview(bpy.types.Operator):
         if hasattr(rp, "_preview_shadow_rot"):
             del rp._preview_shadow_rot
 
-        # Collecter et trier les objets mesh du batch (tri par nom pour ordre stable)
+        # Collecter et trier les objets mesh du batch
+        # Tri identique au batch render : collections par nom, puis objets par nom
         batch_objs = []
         for collection in sorted(bpy.data.collections, key=lambda c: c.name):
             if collection.name.startswith("Batch_3D_"):
-                for obj in collection.objects:
+                for obj in sorted(collection.objects, key=_batch_sort_key):
                     if obj.type == 'MESH':
                         batch_objs.append(obj)
 
@@ -3195,12 +3279,12 @@ class BatchRenderPreviewNavigate(bpy.types.Operator):
     def execute(self, context):
         rp = context.scene.batch_render_props
 
-        # Compter les objets batch disponibles
+        # Compter les objets batch disponibles (même ordre que le preview et le batch render)
         batch_objs = [
             obj
             for collection in sorted(bpy.data.collections, key=lambda c: c.name)
             if collection.name.startswith("Batch_3D_")
-            for obj in collection.objects
+            for obj in sorted(collection.objects, key=_batch_sort_key)
             if obj.type == 'MESH'
         ]
 
