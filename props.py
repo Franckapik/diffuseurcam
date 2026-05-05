@@ -1404,6 +1404,22 @@ class BatchPresetItem(bpy.types.PropertyGroup):
     longueurs: StringProperty(name="Longueurs", default="1,2")
 
 
+
+@bpy.app.handlers.persistent
+def _batch_render_load_post(dummy):
+    """Réinitialise l'état du batch render au chargement d'un fichier .blend.
+    Évite que l'UI reste bloquée sur la fenêtre de progression si Blender
+    a été fermé pendant un rendu en cours."""
+    for scene in bpy.data.scenes:
+        try:
+            brp = scene.batch_render_props
+            brp.is_running = False
+            brp.is_preview_active = False
+            brp.current_object_name = ""
+        except Exception:
+            pass
+
+
 class Batch3DProps(bpy.types.PropertyGroup):
     """Propriétés pour la génération batch de modèles 3D"""
     batch_types: StringProperty(
@@ -1841,6 +1857,7 @@ def register():
     bpy.types.Scene.batch_presets = bpy.props.CollectionProperty(type=BatchPresetItem)
     bpy.types.Scene.batch_render_props = bpy.props.PointerProperty(type=BatchRenderProps)
     bpy.types.Scene.dif_parts = []
+    bpy.app.handlers.load_post.append(_batch_render_load_post)
 
 
 def unregister():
@@ -1859,3 +1876,5 @@ def unregister():
     del bpy.types.Scene.batch_3d_props
     del bpy.types.Scene.batch_presets
     del bpy.types.Scene.batch_render_props
+    if _batch_render_load_post in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.remove(_batch_render_load_post)

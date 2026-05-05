@@ -2627,11 +2627,23 @@ class BatchRender(bpy.types.Operator):
                     bbox_center.z - bbox_size.z / 2 + rp.shadow_plane_offset,
                 ))
                 self._shadow_plane.scale = (plane_scale, plane_scale, 1.0)
-
-                # Le shadow plane reste toujours horizontal (rotation 0,0,0).
-                # C'est le modèle qui tourne pour les vues multi-angles, pas le plan sol.
-                # La position est déjà correcte car _get_bbox_info utilise matrix_world.
-                self._shadow_plane.rotation_euler = (0.0, 0.0, 0.0)
+                
+                # Le shadow plane tourne aussi avec le modèle
+                orbit_angle = self._orbit_angles[orbit_step]
+                if orbit_angle != 0.0:
+                    orig_shadow_rot = self._orig_shadow_rotation
+                    new_shadow_rot = orig_shadow_rot.copy()
+                    
+                    if rp.orbit_rotation_axis == 'X':
+                        new_shadow_rot.x += orbit_angle
+                    elif rp.orbit_rotation_axis == 'Y':
+                        new_shadow_rot.y += orbit_angle
+                    elif rp.orbit_rotation_axis == 'Z':
+                        new_shadow_rot.z += orbit_angle
+                    
+                    self._shadow_plane.rotation_euler = new_shadow_rot
+                else:
+                    self._shadow_plane.rotation_euler = self._orig_shadow_rotation
 
             # Chemin de sortie
             ext = self._FORMAT_EXT.get(rp.output_format, '.png')
@@ -3111,9 +3123,17 @@ class BatchRenderPreview(bpy.types.Operator):
                 bbox_center.z - bbox_size.z / 2 + rp.shadow_plane_offset,
             ))
             plane_obj.scale = (plane_scale, plane_scale, 1.0)
-            # Le shadow plane reste toujours horizontal : c'est le modèle qui tourne,
-            # pas le plan sol. Sauvegarder uniquement pour le cleanup de _cleanup_preview.
+            # Sauvegarder et appliquer la rotation au shadow plane
             rp._preview_shadow_rot = plane_obj.rotation_euler.copy()
+            if orbit_angle != 0.0:
+                new_rot = rp._preview_shadow_rot.copy()
+                if rp.orbit_rotation_axis == 'X':
+                    new_rot.x += orbit_angle
+                elif rp.orbit_rotation_axis == 'Y':
+                    new_rot.y += orbit_angle
+                elif rp.orbit_rotation_axis == 'Z':
+                    new_rot.z += orbit_angle
+                plane_obj.rotation_euler = new_rot
 
         # ── Basculer en vue caméra + Material Preview ────────────────────
         for area in context.screen.areas:
