@@ -1735,6 +1735,20 @@ class BatchRenderProps(bpy.types.PropertyGroup):
         default=0,
         min=0,
     )
+    preview_flat_index: IntProperty(
+        name="Index séquence preview",
+        description="Index plat dans la séquence complète (modèles × angles) parcourue par la navigation",
+        default=0,
+        min=0,
+    )
+    preview_orig_rotations_json: StringProperty(
+        name="Rotations originales (JSON)",
+        description=(
+            "Sauvegarde persistante des rotations d'origine des modèles batch avant preview. "
+            "Stockée en JSON pour survivre aux undo-steps Blender."
+        ),
+        default="",
+    )
     preview_current_info: StringProperty(
         name="Info modèle courant",
         description="Dimensions du modèle en preview",

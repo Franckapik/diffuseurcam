@@ -3010,12 +3010,8 @@ class BatchRenderPreview(bpy.types.Operator):
         rp = scene.batch_render_props
 
         # Nettoyer un éventuel preview précédent
+        # (restaure les rotations originales depuis preview_orig_rotations_json)
         self._cleanup_preview(context)
-        # Assurer une base saine (aucune rotation résiduelle)
-        if hasattr(rp, "_preview_rotations"):
-            del rp._preview_rotations
-        if hasattr(rp, "_preview_shadow_rot"):
-            del rp._preview_shadow_rot
 
         # Collecter et trier les objets mesh du batch
         # Tri identique au batch render : collections par nom, puis objets par nom
@@ -3037,15 +3033,26 @@ class BatchRenderPreview(bpy.types.Operator):
         target_obj = batch_objs[idx]
 
         # ── Isoler le modèle cible : masquer tous les autres dans le viewport ─
-        rp._preview_visibility = {obj.name: obj.hide_viewport for obj in batch_objs}
         for obj in batch_objs:
             obj.hide_viewport = (obj is not target_obj)
 
-        # ── Sauvegarder les rotations originales et appliquer l'angle de preview ─
+        # ── Sauvegarder les rotations originales dans le JSON persistant ────────
+        # Utiliser une StringProperty (pas un attribut Python dynamique) pour que
+        # la sauvegarde survive aux undo-steps Blender (qui recrée le wrapper Python
+        # du PropertyGroup et efface les attributs dynamiques → accumulation sinon).
+        import json as _json
+        orig_rots_dict = {
+            obj.name: {"rot": list(obj.rotation_euler), "order": obj.rotation_mode}
+            for obj in batch_objs
+        }
+        rp.preview_orig_rotations_json = _json.dumps(orig_rots_dict)
+
+        # ── Appliquer l'angle d'orbite (ABSOLU depuis les originaux JSON) ────────
         orbit_angle = math.radians(rp.preview_orbit_angle)
-        rp._preview_rotations = {obj.name: obj.rotation_euler.copy() for obj in batch_objs}
         if orbit_angle != 0.0:
-            orig_rot = rp._preview_rotations[target_obj.name]
+            rot_data = orig_rots_dict[target_obj.name]
+            from mathutils import Euler as _Euler
+            orig_rot = _Euler(rot_data["rot"], rot_data["order"])
             new_rot = orig_rot.copy()
             if rp.orbit_rotation_axis == 'X':
                 new_rot.x += orbit_angle
@@ -3054,6 +3061,11 @@ class BatchRenderPreview(bpy.types.Operator):
             elif rp.orbit_rotation_axis == 'Z':
                 new_rot.z += orbit_angle
             target_obj.rotation_euler = new_rot
+
+        # ── Forcer la mise à jour de matrix_world (même précaution que le batch render)
+        # Sans cela, _get_bbox_info lit une matrix_world périmée → caméra, lumières
+        # et shadow plane décalés par rapport au modèle tourné.
+        bpy.context.view_layer.update()
 
         # ── Créer la caméra preview ──────────────────────────────────────
         cam_data = bpy.data.cameras.new("_BatchPreview_Cam")
@@ -3123,10 +3135,10 @@ class BatchRenderPreview(bpy.types.Operator):
                 bbox_center.z - bbox_size.z / 2 + rp.shadow_plane_offset,
             ))
             plane_obj.scale = (plane_scale, plane_scale, 1.0)
-            # Sauvegarder et appliquer la rotation au shadow plane
-            rp._preview_shadow_rot = plane_obj.rotation_euler.copy()
+            # Appliquer la rotation au shadow plane (le plan est créé frais à (0,0,0)
+            # à chaque appel → rotation toujours absolue, pas d'accumulation possible)
             if orbit_angle != 0.0:
-                new_rot = rp._preview_shadow_rot.copy()
+                new_rot = plane_obj.rotation_euler.copy()
                 if rp.orbit_rotation_axis == 'X':
                     new_rot.x += orbit_angle
                 elif rp.orbit_rotation_axis == 'Y':
@@ -3152,36 +3164,58 @@ class BatchRenderPreview(bpy.types.Operator):
         energy_info = f"  | énergie ×{(actual_energy / max(rp.light_energy, 0.001)):.2f}" if rp.auto_scale_energy else ""
         rp.preview_current_info = f"{target_obj.name}  ({sx:.0f}×{sy:.0f}×{sz:.0f} mm){energy_info}"
 
+        # ── Synchroniser preview_flat_index avec la position courante ────
+        # (permet à la navigation de repartir du bon endroit après un preview manuel)
+        _adeg = []
+        if rp.orbit_angle_neg90: _adeg.append(-90)
+        if rp.orbit_angle_neg60: _adeg.append(-60)
+        if rp.orbit_angle_neg45: _adeg.append(-45)
+        if rp.orbit_angle_neg30: _adeg.append(-30)
+        if rp.orbit_angle_0:     _adeg.append(0)
+        if rp.orbit_angle_30:    _adeg.append(30)
+        if rp.orbit_angle_45:    _adeg.append(45)
+        if rp.orbit_angle_60:    _adeg.append(60)
+        if rp.orbit_angle_90:    _adeg.append(90)
+        if not _adeg: _adeg = [0]
+        _aidx = _adeg.index(rp.preview_orbit_angle) if rp.preview_orbit_angle in _adeg else 0
+        rp.preview_flat_index = idx * len(_adeg) + _aidx
+
         rp.is_preview_active = True
         self.report({"INFO"}, f"Preview {idx + 1}/{n} — « {target_obj.name} »  ({sx:.0f}×{sy:.0f}×{sz:.0f} mm)")
         return {"FINISHED"}
 
     @staticmethod
     def _cleanup_preview(context):
-        """Supprime tous les objets de preview _BatchPreview_*"""
+        """Supprime tous les objets de preview _BatchPreview_* et restaure l'état original.
+
+        La restauration des rotations utilise preview_orig_rotations_json (StringProperty
+        persistante) plutôt que des attributs Python dynamiques, qui seraient perdus
+        lors des undo-steps Blender (le wrapper Python du PropertyGroup est recréé).
+        """
         scene = context.scene
         rp = scene.batch_render_props
 
-        # Restaurer la visibilité des modèles masqués par le preview
-        if hasattr(rp, "_preview_visibility"):
-            for name, was_hidden in rp._preview_visibility.items():
-                obj = bpy.data.objects.get(name)
-                if obj:
-                    obj.hide_viewport = was_hidden
-            del rp._preview_visibility
+        # Restaurer les rotations originales depuis le JSON persistant
+        if rp.preview_orig_rotations_json:
+            try:
+                import json as _json
+                from mathutils import Euler as _Euler
+                orig_rots = _json.loads(rp.preview_orig_rotations_json)
+                for name, rot_data in orig_rots.items():
+                    obj = bpy.data.objects.get(name)
+                    if obj:
+                        obj.rotation_euler = _Euler(rot_data["rot"], rot_data["order"])
+            except Exception as e:
+                print(f"[BatchPreview] Erreur restauration rotations : {e}")
+            rp.preview_orig_rotations_json = ""
 
-        # Restaurer les rotations des modèles si elles ont été modifiées pour le preview
-        if hasattr(rp, "_preview_rotations"):
-            for name, rot in rp._preview_rotations.items():
-                obj = bpy.data.objects.get(name)
-                if obj:
-                    obj.rotation_euler = rot
-            del rp._preview_rotations
-        if hasattr(rp, "_preview_shadow_rot"):
-            plane = bpy.data.objects.get("_BatchPreview_ShadowPlane")
-            if plane:
-                plane.rotation_euler = rp._preview_shadow_rot
-            del rp._preview_shadow_rot
+        # Rétablir la visibilité de tous les objets batch
+        # (on les montre tous — ils sont tous visibles par défaut dans les collections Batch_3D_*)
+        for collection in bpy.data.collections:
+            if collection.name.startswith("Batch_3D_"):
+                for obj in collection.objects:
+                    if obj.type == 'MESH':
+                        obj.hide_viewport = False
 
         # Supprimer les objets preview
         to_remove = [obj for obj in bpy.data.objects if obj.name.startswith("_BatchPreview_")]
@@ -3248,16 +3282,18 @@ class BatchRenderPreviewResetAngle(bpy.types.Operator):
         # Remettre le slider à 0
         rp.preview_orbit_angle = 0
 
-        # Si un preview est actif et qu'on a sauvegardé les rotations, les restaurer
-        if hasattr(rp, "_preview_rotations"):
-            for name, rot in rp._preview_rotations.items():
-                obj = bpy.data.objects.get(name)
-                if obj:
-                    obj.rotation_euler = rot
-        if hasattr(rp, "_preview_shadow_rot"):
-            plane = bpy.data.objects.get("_BatchPreview_ShadowPlane")
-            if plane:
-                plane.rotation_euler = rp._preview_shadow_rot
+        # Restaurer les rotations originales depuis le JSON persistant
+        if rp.preview_orig_rotations_json:
+            try:
+                import json as _json
+                from mathutils import Euler as _Euler
+                orig_rots = _json.loads(rp.preview_orig_rotations_json)
+                for name, rot_data in orig_rots.items():
+                    obj = bpy.data.objects.get(name)
+                    if obj:
+                        obj.rotation_euler = _Euler(rot_data["rot"], rot_data["order"])
+            except Exception as e:
+                print(f"[BatchPreview] Erreur restauration rotations (reset) : {e}")
 
         # Rafraîchir la vue 3D
         for area in context.screen.areas:
@@ -3289,7 +3325,7 @@ class BatchRenderPreviewNavigate(bpy.types.Operator):
     def execute(self, context):
         rp = context.scene.batch_render_props
 
-        # Compter les objets batch disponibles (même ordre que le preview et le batch render)
+        # Objets batch (même ordre que le batch render)
         batch_objs = [
             obj
             for collection in sorted(bpy.data.collections, key=lambda c: c.name)
@@ -3301,11 +3337,32 @@ class BatchRenderPreviewNavigate(bpy.types.Operator):
         if not batch_objs:
             return {"CANCELLED"}
 
-        n = len(batch_objs)
+        # Angles d'orbite actifs (même ordre que le batch render)
+        orbit_angles_deg = []
+        if rp.orbit_angle_neg90: orbit_angles_deg.append(-90)
+        if rp.orbit_angle_neg60: orbit_angles_deg.append(-60)
+        if rp.orbit_angle_neg45: orbit_angles_deg.append(-45)
+        if rp.orbit_angle_neg30: orbit_angles_deg.append(-30)
+        if rp.orbit_angle_0:     orbit_angles_deg.append(0)
+        if rp.orbit_angle_30:    orbit_angles_deg.append(30)
+        if rp.orbit_angle_45:    orbit_angles_deg.append(45)
+        if rp.orbit_angle_60:    orbit_angles_deg.append(60)
+        if rp.orbit_angle_90:    orbit_angles_deg.append(90)
+        if not orbit_angles_deg:
+            orbit_angles_deg = [0]
+
+        n_models = len(batch_objs)
+        n_angles = len(orbit_angles_deg)
+        total = n_models * n_angles
+
         if self.direction == 'NEXT':
-            rp.preview_object_index = (rp.preview_object_index + 1) % n
+            rp.preview_flat_index = (rp.preview_flat_index + 1) % total
         else:
-            rp.preview_object_index = (rp.preview_object_index - 1) % n
+            rp.preview_flat_index = (rp.preview_flat_index - 1) % total
+
+        # Dériver index modèle et angle depuis le flat index (même séquence que le batch render)
+        rp.preview_object_index = rp.preview_flat_index // n_angles
+        rp.preview_orbit_angle  = orbit_angles_deg[rp.preview_flat_index % n_angles]
 
         return bpy.ops.render.batch_render_preview('EXEC_DEFAULT')
 

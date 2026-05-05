@@ -614,14 +614,40 @@ class Diffuseur_SideBar(Panel):
                     if obj.type == 'MESH'
                 ]
                 nb_models = len(batch_objs)
-                if nb_models > 1:
-                    idx = render_props.preview_object_index % nb_models
-                    nav_row = render_box.row(align=True)
-                    op_prev = nav_row.operator("render.batch_render_preview_navigate", text="", icon="TRIA_LEFT")
-                    op_prev.direction = 'PREV'
-                    nav_row.label(text=f"Modèle {idx + 1} / {nb_models}")
-                    op_next = nav_row.operator("render.batch_render_preview_navigate", text="", icon="TRIA_RIGHT")
-                    op_next.direction = 'NEXT'
+
+                # Reconstruire la liste des angles actifs (même logique que le batch render)
+                _adeg_ui = []
+                if render_props.orbit_angle_neg90: _adeg_ui.append(-90)
+                if render_props.orbit_angle_neg60: _adeg_ui.append(-60)
+                if render_props.orbit_angle_neg45: _adeg_ui.append(-45)
+                if render_props.orbit_angle_neg30: _adeg_ui.append(-30)
+                if render_props.orbit_angle_0:     _adeg_ui.append(0)
+                if render_props.orbit_angle_30:    _adeg_ui.append(30)
+                if render_props.orbit_angle_45:    _adeg_ui.append(45)
+                if render_props.orbit_angle_60:    _adeg_ui.append(60)
+                if render_props.orbit_angle_90:    _adeg_ui.append(90)
+                if not _adeg_ui: _adeg_ui = [0]
+                nb_angles_ui = len(_adeg_ui)
+                total_steps = nb_models * nb_angles_ui
+
+                flat = render_props.preview_flat_index % total_steps if total_steps > 0 else 0
+                model_idx = flat // nb_angles_ui
+                angle_idx = flat % nb_angles_ui
+                cur_angle_deg = _adeg_ui[angle_idx]
+                angle_sign = f"+{cur_angle_deg}" if cur_angle_deg > 0 else str(cur_angle_deg)
+
+                nav_row = render_box.row(align=True)
+                op_prev = nav_row.operator("render.batch_render_preview_navigate", text="", icon="TRIA_LEFT")
+                op_prev.direction = 'PREV'
+                if nb_angles_ui > 1:
+                    nav_row.label(
+                        text=f"Modèle {model_idx + 1}/{nb_models}  ·  {angle_sign}°  (étape {flat + 1}/{total_steps})"
+                    )
+                else:
+                    nav_row.label(text=f"Modèle {model_idx + 1} / {nb_models}")
+                op_next = nav_row.operator("render.batch_render_preview_navigate", text="", icon="TRIA_RIGHT")
+                op_next.direction = 'NEXT'
+
                 if render_props.preview_current_info:
                     info_row = render_box.row()
                     info_row.label(text=render_props.preview_current_info, icon="INFO")
