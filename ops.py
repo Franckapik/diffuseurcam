@@ -2617,7 +2617,7 @@ class BatchRender(bpy.types.Operator):
                     elif i == 2:
                         ldata.energy = rp.light_energy * 0.6 * scale
 
-            # Positionner le shadow catcher plane si actif
+            # Positionner le shadow catcher plane si actif 
             # On travaille en espace LOCAL du modèle pour que shadow_plane_offset
             # soit toujours exact (la bbox monde grossit diagonalement lors des
             # rotations et fausse le calcul du bas).
