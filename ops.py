@@ -2618,32 +2618,24 @@ class BatchRender(bpy.types.Operator):
                         ldata.energy = rp.light_energy * 0.6 * scale
 
             # Positionner le shadow catcher plane si actif
+            # On travaille en espace LOCAL du modèle pour que shadow_plane_offset
+            # soit toujours exact (la bbox monde grossit diagonalement lors des
+            # rotations et fausse le calcul du bas).
+            # Le plan reçoit la même rotation que le modèle (parallèle à sa base).
             if self._shadow_plane:
-                max_dim = max(bbox_size.x, bbox_size.y, bbox_size.z)
-                plane_scale = max_dim * rp.shadow_plane_size
-                self._shadow_plane.location = Vector((
-                    bbox_center.x,
-                    bbox_center.y,
-                    bbox_center.z - bbox_size.z / 2 + rp.shadow_plane_offset,
-                ))
+                _lc = [Vector(c) for c in obj.bound_box]
+                _lxs = [v.x for v in _lc]; _lys = [v.y for v in _lc]; _lzs = [v.z for v in _lc]
+                _local_cx = (min(_lxs) + max(_lxs)) / 2
+                _local_cy = (min(_lys) + max(_lys)) / 2
+                _local_min_z = min(_lzs)
+                _local_max_dim = max(max(_lxs) - min(_lxs), max(_lys) - min(_lys), max(_lzs) - min(_lzs))
+                # Point bas-centre en local → transformé en monde (rotation + échelle incluses)
+                _local_pt = Vector((_local_cx, _local_cy, _local_min_z + rp.shadow_plane_offset))
+                _world_pt = obj.matrix_world @ _local_pt
+                plane_scale = _local_max_dim * rp.shadow_plane_size
+                self._shadow_plane.location = _world_pt
                 self._shadow_plane.scale = (plane_scale, plane_scale, 1.0)
-                
-                # Le shadow plane tourne aussi avec le modèle
-                orbit_angle = self._orbit_angles[orbit_step]
-                if orbit_angle != 0.0:
-                    orig_shadow_rot = self._orig_shadow_rotation
-                    new_shadow_rot = orig_shadow_rot.copy()
-                    
-                    if rp.orbit_rotation_axis == 'X':
-                        new_shadow_rot.x += orbit_angle
-                    elif rp.orbit_rotation_axis == 'Y':
-                        new_shadow_rot.y += orbit_angle
-                    elif rp.orbit_rotation_axis == 'Z':
-                        new_shadow_rot.z += orbit_angle
-                    
-                    self._shadow_plane.rotation_euler = new_shadow_rot
-                else:
-                    self._shadow_plane.rotation_euler = self._orig_shadow_rotation
+                self._shadow_plane.rotation_euler = obj.rotation_euler.copy()
 
             # Chemin de sortie
             ext = self._FORMAT_EXT.get(rp.output_format, '.png')
@@ -3127,25 +3119,21 @@ class BatchRenderPreview(bpy.types.Operator):
             scene.collection.objects.link(plane_obj)
             plane_obj.is_shadow_catcher = True
             plane_obj.display_type = 'WIRE'
-            max_dim = max(bbox_size.x, bbox_size.y, bbox_size.z)
-            plane_scale = max_dim * rp.shadow_plane_size
-            plane_obj.location = Vector((
-                bbox_center.x,
-                bbox_center.y,
-                bbox_center.z - bbox_size.z / 2 + rp.shadow_plane_offset,
-            ))
+            # Calcul en espace LOCAL du modèle → shadow_plane_offset toujours exact,
+            # indépendamment de la rotation (la bbox monde grossit diagonalement).
+            # Le plan reçoit la même rotation que le modèle (parallèle à sa base).
+            _lc = [Vector(c) for c in target_obj.bound_box]
+            _lxs = [v.x for v in _lc]; _lys = [v.y for v in _lc]; _lzs = [v.z for v in _lc]
+            _local_cx = (min(_lxs) + max(_lxs)) / 2
+            _local_cy = (min(_lys) + max(_lys)) / 2
+            _local_min_z = min(_lzs)
+            _local_max_dim = max(max(_lxs) - min(_lxs), max(_lys) - min(_lys), max(_lzs) - min(_lzs))
+            _local_pt = Vector((_local_cx, _local_cy, _local_min_z + rp.shadow_plane_offset))
+            _world_pt = target_obj.matrix_world @ _local_pt
+            plane_scale = _local_max_dim * rp.shadow_plane_size
+            plane_obj.location = _world_pt
             plane_obj.scale = (plane_scale, plane_scale, 1.0)
-            # Appliquer la rotation au shadow plane (le plan est créé frais à (0,0,0)
-            # à chaque appel → rotation toujours absolue, pas d'accumulation possible)
-            if orbit_angle != 0.0:
-                new_rot = plane_obj.rotation_euler.copy()
-                if rp.orbit_rotation_axis == 'X':
-                    new_rot.x += orbit_angle
-                elif rp.orbit_rotation_axis == 'Y':
-                    new_rot.y += orbit_angle
-                elif rp.orbit_rotation_axis == 'Z':
-                    new_rot.z += orbit_angle
-                plane_obj.rotation_euler = new_rot
+            plane_obj.rotation_euler = target_obj.rotation_euler.copy()
 
         # ── Basculer en vue caméra + Material Preview ────────────────────
         for area in context.screen.areas:
