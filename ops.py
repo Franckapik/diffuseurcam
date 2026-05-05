@@ -2316,6 +2316,7 @@ class BatchRender(bpy.types.Operator):
     _orig = None
     _orig_world = None
     _orig_hide_render = {}
+    _orig_display_type = None
 
     # ── Poll ────────────────────────────────────────────────────────────
     @classmethod
@@ -2452,6 +2453,9 @@ class BatchRender(bpy.types.Operator):
         rp.progress_total = total_renders
         rp.current_object_name = ""
 
+        # ── Sauvegarder le type d'affichage du rendu ─────────────────────
+        self._orig_display_type = bpy.context.preferences.view.render_display_type
+
         # ── Lancer le modal avec un timer ────────────────────────────────
         wm = context.window_manager
         self._timer = wm.event_timer_add(0.1, window=context.window)
@@ -2565,6 +2569,10 @@ class BatchRender(bpy.types.Operator):
 
             # Rendu
             try:
+                # Appliquer le type d'affichage selon la préférence
+                bpy.context.preferences.view.render_display_type = (
+                    'SCREEN' if rp.show_render_preview else 'NONE'
+                )
                 bpy.ops.render.render(write_still=True)
                 print(f"  ✅ Sauvegardé : {scene.render.filepath}")
                 self._rendered += 1
@@ -2626,6 +2634,10 @@ class BatchRender(bpy.types.Operator):
         # Restaurer le world si modifié
         if rp.use_hdri and rp.hdri_path and self._orig_world:
             scene.world = self._orig_world
+
+        # Restaurer le type d'affichage du rendu
+        if self._orig_display_type is not None:
+            bpy.context.preferences.view.render_display_type = self._orig_display_type
 
         # Restaurer l'état de rendu original
         if self._orig:

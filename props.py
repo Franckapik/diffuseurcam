@@ -1725,6 +1725,11 @@ class BatchRenderProps(bpy.types.PropertyGroup):
         description="Un preview de cadrage est actuellement affiché",
         default=False,
     )
+    show_render_preview: BoolProperty(
+        name="Aperçu dans l'Image Editor",
+        description="Afficher le résultat de chaque rendu dans l'Image Editor pendant le batch render",
+        default=False,
+    )
 
 
 classes = [

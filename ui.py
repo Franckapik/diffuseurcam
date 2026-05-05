@@ -609,6 +609,7 @@ class Diffuseur_SideBar(Panel):
 
             # Bouton de lancement
             render_box.separator()
+            render_box.prop(render_props, "show_render_preview")
             row = render_box.row()
             row.scale_y = 2.0
             row.operator("render.batch_render", text="Lancer le Batch Render", icon="RENDER_ANIMATION")
