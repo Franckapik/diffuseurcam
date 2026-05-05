@@ -2357,6 +2357,22 @@ class BatchRender(bpy.types.Operator):
             self.report({"WARNING"}, "Aucun objet trouvé dans les collections Batch_3D_*")
             return {"CANCELLED"}
 
+        # ── Filtrer selon l'intervalle si renseigné ───────────────────────
+        range_str = rp.render_range.strip()
+        if range_str:
+            try:
+                parts = [p.strip() for p in range_str.replace(",", ";").split(";")]
+                r_start = int(parts[0])
+                r_end = int(parts[1]) if len(parts) >= 2 else r_start
+                if r_start < 1 or r_end < r_start or r_end > len(self._batch_objects):
+                    self.report({"ERROR"}, f"Intervalle '{range_str}' hors bornes (1–{len(self._batch_objects)})")
+                    return {"CANCELLED"}
+                self._batch_objects = self._batch_objects[r_start - 1 : r_end]
+                print(f"  → Intervalle [{r_start};{r_end}] : {len(self._batch_objects)} objet(s)")
+            except (ValueError, IndexError):
+                self.report({"ERROR"}, f"Intervalle invalide '{range_str}' — utilisez le format '5;8'")
+                return {"CANCELLED"}
+
         total = len(self._batch_objects)
         self._current_index = 0
         self._rendered = 0
@@ -2534,7 +2550,7 @@ class BatchRender(bpy.types.Operator):
             # ── Auto-scale énergie lumineuse selon la taille du modèle ──────
             if rp.auto_scale_energy and rp.reference_model_dim > 0:
                 max_dim = max(bbox_size.x, bbox_size.y, bbox_size.z)
-                scale = (max_dim / rp.reference_model_dim) ** 2
+                scale = (max_dim / rp.reference_model_dim) ** rp.energy_scale_exponent
                 for i, (lobj, ldata) in enumerate(self._lights):
                     if i == 0:
                         ldata.energy = rp.light_energy * scale
@@ -2788,7 +2804,12 @@ class BatchRender(bpy.types.Operator):
 
         key_data = bpy.data.lights.new("_BatchRender_Key", 'AREA')
         key_data.energy = rp.light_energy
-        key_data.size = 2.0
+        key_data.size = 2.0 * rp.light_size_multiplier
+        key_data.use_shadow = rp.use_shadows
+        try:
+            key_data.shadow_softness_factor = rp.shadow_softness
+        except AttributeError:
+            pass
         key_obj = bpy.data.objects.new("_BatchRender_Key", key_data)
         scene.collection.objects.link(key_obj)
         lights.append((key_obj, key_data))
@@ -2796,14 +2817,24 @@ class BatchRender(bpy.types.Operator):
         if rp.use_three_point:
             fill_data = bpy.data.lights.new("_BatchRender_Fill", 'AREA')
             fill_data.energy = rp.light_energy * 0.3
-            fill_data.size = 3.0
+            fill_data.size = 3.0 * rp.light_size_multiplier
+            fill_data.use_shadow = rp.use_shadows
+            try:
+                fill_data.shadow_softness_factor = rp.shadow_softness
+            except AttributeError:
+                pass
             fill_obj = bpy.data.objects.new("_BatchRender_Fill", fill_data)
             scene.collection.objects.link(fill_obj)
             lights.append((fill_obj, fill_data))
 
             rim_data = bpy.data.lights.new("_BatchRender_Rim", 'AREA')
             rim_data.energy = rp.light_energy * 0.6
-            rim_data.size = 1.5
+            rim_data.size = 1.5 * rp.light_size_multiplier
+            rim_data.use_shadow = rp.use_shadows
+            try:
+                rim_data.shadow_softness_factor = rp.shadow_softness
+            except AttributeError:
+                pass
             rim_obj = bpy.data.objects.new("_BatchRender_Rim", rim_data)
             scene.collection.objects.link(rim_obj)
             lights.append((rim_obj, rim_data))
@@ -2978,7 +3009,7 @@ class BatchRenderPreview(bpy.types.Operator):
         actual_energy = rp.light_energy
         if rp.auto_scale_energy and rp.reference_model_dim > 0:
             max_dim = max(bbox_size.x, bbox_size.y, bbox_size.z)
-            scale = (max_dim / rp.reference_model_dim) ** 2
+            scale = (max_dim / rp.reference_model_dim) ** rp.energy_scale_exponent
             actual_energy = rp.light_energy * scale
 
         # ── Créer les lumières preview ───────────────────────────────────

@@ -1637,6 +1637,36 @@ class BatchRenderProps(bpy.types.PropertyGroup):
         precision=3,
     )
 
+    # --- Qualité des ombres portées ---
+    use_shadows: BoolProperty(
+        name="Ombres portées",
+        description="Active les ombres projetées par les lumières du batch rendu",
+        default=True,
+    )
+    light_size_multiplier: FloatProperty(
+        name="Taille lumières",
+        description=(
+            "Taille des lumières Area (multiplicateur). "
+            "Plus grande = ombres plus douces et diffuses. "
+            "Recommandé : 2–5 pour adoucir les ombres sans perdre les détails"
+        ),
+        default=1.0,
+        min=0.1,
+        max=10.0,
+        precision=1,
+    )
+    shadow_softness: FloatProperty(
+        name="Douceur ombres",
+        description=(
+            "Flou des ombres portées (EEVEE uniquement). "
+            "0.0 = ombres dures | 0.5 = mi-douces | 1.0 = très diffuses"
+        ),
+        default=0.0,
+        min=0.0,
+        max=1.0,
+        precision=2,
+    )
+
     # --- Multi-angles caméra (rotation autour d'un axe) ---
     orbit_rotation_axis: EnumProperty(
         name="Axe de rotation",
@@ -1724,16 +1754,40 @@ class BatchRenderProps(bpy.types.PropertyGroup):
         name="Dim. référence (m)",
         description=(
             "Dimension max (X/Y/Z) du modèle de référence. "
-            "L'énergie lumineuse est normalisée par rapport à cette valeur : "
-            "un modèle deux fois plus grand reçoit quatre fois plus d'énergie."
+            "L'énergie lumineuse est normalisée par rapport à cette valeur."
         ),
         default=0.3,
         min=0.001,
         precision=3,
         unit='LENGTH',
     )
+    energy_scale_exponent: FloatProperty(
+        name="Exposant",
+        description=(
+            "Exposant de la loi de compensation lumineuse.\n"
+            "2.0 = loi 1/r² stricte (compensation maximale)\n"
+            "1.5 = compensation partielle (recommandé — les grands modèles réfléchissent plus)\n"
+            "1.0 = compensation linéaire\n"
+            "0.0 = pas de compensation (énergie fixe)"
+        ),
+        default=1.5,
+        min=0.0,
+        max=3.0,
+        precision=2,
+        soft_min=0.5,
+        soft_max=2.0,
+    )
 
     # --- État interne (non affiché directement) ---
+    render_range: StringProperty(
+        name="Intervalle",
+        description=(
+            "Restreindre le batch à un intervalle d'objets (1-indexé).\n"
+            "Exemples : '5;8' → objets 5 à 8 inclus | '3;3' → objet 3 uniquement | vide → tous"
+        ),
+        default="",
+    )
+
     is_running: BoolProperty(
         name="En cours",
         description="Le batch render est en cours d'exécution",
