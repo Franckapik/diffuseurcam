@@ -917,14 +917,45 @@ class Add3DModel(bpy.types.Operator, AddObjectHelper):
         #  ─────────────────────────┼────────────┼───────────────────────
         #  Cadre tenon bas (W-2ec × ec × D)      Cadre tenon haut
 
-        # Cadre mortaise gauche (côté long)
-        self._create_box(bm, 0, 0, 0, ec, L, D, MAT_CADRE)
-        # Cadre mortaise droit
-        self._create_box(bm, W - ec, 0, 0, ec, L, D, MAT_CADRE)
-        # Cadre tenon bas (côté court, entre les mortaises)
-        self._create_box(bm, ec, 0, 0, W - 2 * ec, ec, D, MAT_CADRE)
-        # Cadre tenon haut
-        self._create_box(bm, ec, L - ec, 0, W - 2 * ec, ec, D, MAT_CADRE)
+        type_tenon_cadre = difprops.type_tenon_cadre
+        tc = difprops.tenon_cadre  # largeur du tenon en Z
+
+        if type_tenon_cadre == "1" and tc > 0:
+            # ── Assemblage tenon-mortaise ─────────────────────────────────
+            # Le tenon est centré à mi-profondeur (Z = D/2).
+            # Cadres mortaises (longs, selon Y) : encoches aux 2 extrémités.
+            # Cadres tenons (courts, selon X)   : tenons saillants à chaque bout.
+            tc_z0 = D / 2 - tc / 2   # début du tenon en Z
+            tc_z1 = D / 2 + tc / 2   # fin   du tenon en Z
+
+            # Cadre mortaise gauche (X=0 → ec, Y=0 → L)
+            self._create_box(bm, 0, 0, 0,     ec, L,           tc_z0,        MAT_CADRE)  # Z bas (plein)
+            self._create_box(bm, 0, 0, tc_z1,  ec, L,           D - tc_z1,    MAT_CADRE)  # Z haut (plein)
+            self._create_box(bm, 0, ec, tc_z0,  ec, L - 2 * ec,  tc,           MAT_CADRE)  # Z milieu, Y intérieur
+
+            # Cadre mortaise droit (X=W-ec → W, Y=0 → L)
+            self._create_box(bm, W - ec, 0, 0,     ec, L,           tc_z0,        MAT_CADRE)
+            self._create_box(bm, W - ec, 0, tc_z1,  ec, L,           D - tc_z1,    MAT_CADRE)
+            self._create_box(bm, W - ec, ec, tc_z0,  ec, L - 2 * ec,  tc,           MAT_CADRE)
+
+            # Cadre tenon bas (Y=0 → ec, X=ec → W-ec + tenons saillants)
+            self._create_box(bm, ec,     0, 0,     W - 2 * ec,  ec, D,   MAT_CADRE)  # corps
+            self._create_box(bm, 0,      0, tc_z0, ec,          ec, tc,  MAT_CADRE)  # tenon gauche
+            self._create_box(bm, W - ec, 0, tc_z0, ec,          ec, tc,  MAT_CADRE)  # tenon droit
+
+            # Cadre tenon haut (Y=L-ec → L, X=ec → W-ec + tenons saillants)
+            self._create_box(bm, ec,     L - ec, 0,     W - 2 * ec,  ec, D,   MAT_CADRE)
+            self._create_box(bm, 0,      L - ec, tc_z0, ec,          ec, tc,  MAT_CADRE)
+            self._create_box(bm, W - ec, L - ec, tc_z0, ec,          ec, tc,  MAT_CADRE)
+        else:
+            # Cadre mortaise gauche (côté long)
+            self._create_box(bm, 0, 0, 0, ec, L, D, MAT_CADRE)
+            # Cadre mortaise droit
+            self._create_box(bm, W - ec, 0, 0, ec, L, D, MAT_CADRE)
+            # Cadre tenon bas (côté court, entre les mortaises)
+            self._create_box(bm, ec, 0, 0, W - 2 * ec, ec, D, MAT_CADRE)
+            # Cadre tenon haut
+            self._create_box(bm, ec, L - ec, 0, W - 2 * ec, ec, D, MAT_CADRE)
 
         # ── PEIGNES LONGS (divisent la largeur en N colonnes) ────────────
         # Orientés selon Y, de épaisseur e, entre les cadres tenon
