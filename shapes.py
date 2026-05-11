@@ -4,6 +4,7 @@ import math
 
 def add_cadre_mortaise(difprops, productprops, usinageprops):
     epaisseur = difprops.epaisseur
+    ec = difprops.getEpaisseurCadre()
     profondeur = difprops.profondeur
     tenon_cadre = difprops.tenon_cadre
     type_tenon_cadre = difprops.type_tenon_cadre
@@ -12,7 +13,7 @@ def add_cadre_mortaise(difprops, productprops, usinageprops):
     longueur_diffuseur = difprops.longueur_diffuseur
     largeur_accroche = difprops.largeur_accroche
     product_type = productprops.product_type
-    startup = epaisseur / 2
+    startup = ec - epaisseur / 2
     N = difprops.type
     rang = difprops.getRang()
     longueurTotale = difprops.getLongueur()
@@ -185,12 +186,13 @@ def add_cadre_mortaise(difprops, productprops, usinageprops):
 
 def add_cadre_tenon(difprops, productprops, usinageprops):
     epaisseur = difprops.epaisseur
+    ec = difprops.getEpaisseurCadre()
     profondeur = difprops.profondeur
     tenon_cadre = difprops.tenon_cadre
     bord_cadre = difprops.bord_cadre
     largeur_diffuseur = difprops.largeur_diffuseur
     tenon_peigne = difprops.tenon_peigne
-    startup = epaisseur / 2
+    startup = ec - epaisseur / 2
     product_type = productprops.product_type
     largeur_accroche = difprops.largeur_accroche
     type_tenon_cadre = difprops.type_tenon_cadre
@@ -210,29 +212,29 @@ def add_cadre_tenon(difprops, productprops, usinageprops):
     if product_type == "0" or product_type == "1":
         if type_tenon_cadre == "1":
             vertsCadre = [
-                (0, epaisseur, 0),
-                (0, largeur_diffuseur - epaisseur, 0),
+                (0, ec, 0),
+                (0, largeur_diffuseur - ec, 0),
                 *tenonHaut(
                     (profondeur / 2 - tenon_cadre / 2),
-                    largeur_diffuseur - epaisseur,
+                    largeur_diffuseur - ec,
                     difprops,
                     usinageprops,
                 ),
-                ((profondeur), largeur_diffuseur - epaisseur, 0),
-                ((profondeur), epaisseur, 0),
+                ((profondeur), largeur_diffuseur - ec, 0),
+                ((profondeur), ec, 0),
                 *tenonBas(
                     (profondeur / 2 + tenon_cadre / 2),
-                    epaisseur,
+                    ec,
                     difprops,
                     usinageprops,
                 ),
             ]
         else:
             vertsCadre = [
-                (0, epaisseur, 0),
-                (0, largeur_diffuseur - epaisseur, 0),
-                ((profondeur), largeur_diffuseur - epaisseur, 0),
-                ((profondeur), epaisseur, 0),
+                (0, ec, 0),
+                (0, largeur_diffuseur - ec, 0),
+                ((profondeur), largeur_diffuseur - ec, 0),
+                ((profondeur), ec, 0),
             ]
 
         for k in range(1, round(N)):
@@ -354,6 +356,7 @@ def add_cadre_tenon(difprops, productprops, usinageprops):
 
 def add_peigne_court(difprops, productprops, usinageprops):
     epaisseur = difprops.epaisseur
+    ec = difprops.getEpaisseurCadre()
     profondeur = difprops.profondeur
     bord_cadre = difprops.bord_cadre
     largeur_diffuseur = difprops.largeur_diffuseur
@@ -370,48 +373,49 @@ def add_peigne_court(difprops, productprops, usinageprops):
     peignes = []
     for k in range(1, N):
         peignes += [
-            (profondeur, largeur_diffuseur - rang * k + offset_peigne, 0),
+            (profondeur, largeur_diffuseur - rang * k + (epaisseur - ec) + offset_peigne, 0),
             (
                 profondeur / 2 - rainure_offset,
-                largeur_diffuseur - rang * k + offset_peigne,
+                largeur_diffuseur - rang * k + (epaisseur - ec) + offset_peigne,
                 0,
             ),
             (
                 profondeur / 2 - rainure_offset,
-                largeur_diffuseur - rang * k - epaisseur - offset_peigne,
+                largeur_diffuseur - rang * k - ec - offset_peigne,
                 0,
             ),
-            (profondeur, largeur_diffuseur - rang * k - epaisseur - offset_peigne, 0),
+            (profondeur, largeur_diffuseur - rang * k - ec - offset_peigne, 0),
         ]
 
+    hauteur_tenon = difprops.getHauteurTenon()
     if type_tenon_peigne == "3":
         vertsCadre = [
-            (0, epaisseur / 2, 0),
-            (0, largeur_diffuseur - epaisseur / 2, 0),
-            (profondeur, largeur_diffuseur - epaisseur / 2, 0),
+            (0, ec - hauteur_tenon, 0),
+            (0, largeur_diffuseur - ec + hauteur_tenon, 0),
+            (profondeur, largeur_diffuseur - ec + hauteur_tenon, 0),
             # peignes
             *list(peignes),
-            (profondeur, epaisseur / 2, 0),
-            (0, epaisseur / 2, 0),
+            (profondeur, ec - hauteur_tenon, 0),
+            (0, ec - hauteur_tenon, 0),
         ]
     else:
         vertsCadre = [
-            (0, epaisseur, 0),
-            (0, largeur_diffuseur - epaisseur, 0),
-            *tenonPeigneHaut(bord_cadre, largeur_diffuseur - epaisseur, difprops, usinageprops),
+            (0, ec, 0),
+            (0, largeur_diffuseur - ec, 0),
+            *tenonPeigneHaut(bord_cadre, largeur_diffuseur - ec, difprops, usinageprops),
             *tenonPeigneHaut(
                 profondeur - bord_cadre - tenon_peigne,
-                largeur_diffuseur - epaisseur,
+                largeur_diffuseur - ec,
                 difprops,
                 usinageprops,
             ),
-            (profondeur, largeur_diffuseur - epaisseur, 0),
+            (profondeur, largeur_diffuseur - ec, 0),
             # peignes
             *list(peignes),
-            (profondeur, epaisseur, 0),
-            *tenonPeigneBas(profondeur - bord_cadre, epaisseur, difprops, usinageprops),
-            *tenonPeigneBas(bord_cadre + tenon_peigne, epaisseur, difprops, usinageprops),
-            (0, epaisseur, 0),
+            (profondeur, ec, 0),
+            *tenonPeigneBas(profondeur - bord_cadre, ec, difprops, usinageprops),
+            *tenonPeigneBas(bord_cadre + tenon_peigne, ec, difprops, usinageprops),
+            (0, ec, 0),
         ]
 
     edgesCadre = []
@@ -426,6 +430,7 @@ def add_peigne_court(difprops, productprops, usinageprops):
 
 def add_peigne_long(difprops, productprops, usinageprops):
     epaisseur = difprops.epaisseur
+    ec = difprops.getEpaisseurCadre()
     profondeur = difprops.profondeur
     bord_cadre = difprops.bord_cadre
     tenon_peigne = difprops.tenon_peigne
@@ -446,44 +451,45 @@ def add_peigne_long(difprops, productprops, usinageprops):
 
     for k in range(1, round(N * longueur_diffuseur)):
         peignes += [
-            (profondeur, longueurTotale - rang * k + offset_peigne, 0),
-            (profondeur / 2 - rainure_offset, longueurTotale - rang * k + offset_peigne, 0),
+            (profondeur, longueurTotale - rang * k + (epaisseur - ec) + offset_peigne, 0),
+            (profondeur / 2 - rainure_offset, longueurTotale - rang * k + (epaisseur - ec) + offset_peigne, 0),
             (
                 profondeur / 2 - rainure_offset,
-                longueurTotale - rang * k - epaisseur - offset_peigne,
+                longueurTotale - rang * k - ec - offset_peigne,
                 0,
             ),
-            (profondeur, longueurTotale - rang * k - epaisseur - offset_peigne, 0),
+            (profondeur, longueurTotale - rang * k - ec - offset_peigne, 0),
         ]
 
+    hauteur_tenon = difprops.getHauteurTenon()
     if type_tenon_peigne == "3":
         vertsCadre = [
-            (0, epaisseur / 2, 0),
-            (0, longueurTotale - epaisseur / 2, 0),
-            (profondeur, longueurTotale - epaisseur / 2, 0),
+            (0, ec - hauteur_tenon, 0),
+            (0, longueurTotale - ec + hauteur_tenon, 0),
+            (profondeur, longueurTotale - ec + hauteur_tenon, 0),
             # peignes
             *list(peignes),
-            (profondeur, epaisseur / 2, 0),
-            (0, epaisseur / 2, 0),
+            (profondeur, ec - hauteur_tenon, 0),
+            (0, ec - hauteur_tenon, 0),
         ]
     else:
         vertsCadre = [
-            (0, epaisseur, 0),
-            (0, longueurTotale - epaisseur, 0),
-            *tenonPeigneHaut(bord_cadre, longueurTotale - epaisseur, difprops, usinageprops),
+            (0, ec, 0),
+            (0, longueurTotale - ec, 0),
+            *tenonPeigneHaut(bord_cadre, longueurTotale - ec, difprops, usinageprops),
             *tenonPeigneHaut(
                 profondeur - bord_cadre - tenon_peigne,
-                longueurTotale - epaisseur,
+                longueurTotale - ec,
                 difprops,
                 usinageprops,
             ),
-            (profondeur, longueurTotale - epaisseur, 0),
+            (profondeur, longueurTotale - ec, 0),
             # peignes
             *[x for x in peignes if product_type == "0"],
-            (profondeur, epaisseur, 0),
-            *tenonPeigneBas(profondeur - bord_cadre, epaisseur, difprops, usinageprops),
-            *tenonPeigneBas(bord_cadre + tenon_peigne, epaisseur, difprops, usinageprops),
-            (0, epaisseur, 0),
+            (profondeur, ec, 0),
+            *tenonPeigneBas(profondeur - bord_cadre, ec, difprops, usinageprops),
+            *tenonPeigneBas(bord_cadre + tenon_peigne, ec, difprops, usinageprops),
+            (0, ec, 0),
         ]
 
     for k in range(0, len(vertsCadre) - 1):
@@ -497,6 +503,7 @@ def add_peigne_long(difprops, productprops, usinageprops):
 def add_carreau(difprops, productprops, usinageprops):
     product_type = productprops.product_type
     epaisseur = difprops.epaisseur
+    ec = difprops.getEpaisseurCadre()
 
     N = difprops.type
     rang = difprops.getRang()
@@ -514,8 +521,8 @@ def add_carreau(difprops, productprops, usinageprops):
     else:
         vertsCadre = [
             (0, 0, 0),
-            (0, longueurTotale - epaisseur * 2, 0),
-            (rang - epaisseur, longueurTotale - epaisseur * 2, 0),
+            (0, longueurTotale - 2 * ec, 0),
+            (rang - epaisseur, longueurTotale - 2 * ec, 0),
             (rang - epaisseur, 0, 0),
             (0, 0, 0),
         ]

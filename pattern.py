@@ -1,18 +1,18 @@
 def mortaiseHaut(x, y, difprops, usinageprops):
     offset = usinageprops.getOffset()
-    epaisseur = difprops.epaisseur
+    ec = difprops.getEpaisseurCadre()
     tenon_cadre = difprops.tenon_cadre
 
     return [
         (x, y, 0),
         (
             x - offset,
-            y - epaisseur,
+            y - ec,
             0,
         ),
         (
             x + offset + tenon_cadre,
-            y - epaisseur,
+            y - ec,
             0,
         ),
         (
@@ -71,19 +71,19 @@ def papillonDroit(x, y, difprops, usinageprops):
 
 def mortaiseBas(x, y, difprops, usinageprops):
     offset = usinageprops.getOffset()
-    epaisseur = difprops.epaisseur
+    ec = difprops.getEpaisseurCadre()
     tenon_cadre = difprops.tenon_cadre
 
     return [
         (x, y, 0),
         (
             x + offset,
-            y + epaisseur,
+            y + ec,
             0,
         ),
         (
             x - offset - tenon_cadre,
-            y + epaisseur,
+            y + ec,
             0,
         ),
         (
@@ -96,18 +96,18 @@ def mortaiseBas(x, y, difprops, usinageprops):
 
 def mortaiseGauche(x, y, difprops, usinageprops):
     offset = usinageprops.getOffset()
-    epaisseur = difprops.epaisseur
+    ec = difprops.getEpaisseurCadre()
     tenon_cadre = difprops.tenon_cadre
 
     return [
         (x, y, 0),
         (
-            x + epaisseur,
+            x + ec,
             y - offset,
             0,
         ),
         (
-            x + epaisseur,
+            x + ec,
             y + offset + tenon_cadre,
             0,
         ),
@@ -121,18 +121,18 @@ def mortaiseGauche(x, y, difprops, usinageprops):
 
 def mortaiseDroite(x, y, difprops, usinageprops):
     offset = usinageprops.getOffset()
-    epaisseur = difprops.epaisseur
+    ec = difprops.getEpaisseurCadre()
     tenon_cadre = difprops.tenon_cadre
 
     return [
         (x, y, 0),
         (
-            x - epaisseur,
+            x - ec,
             y + offset,
             0,
         ),
         (
-            x - epaisseur,
+            x - ec,
             y - offset - tenon_cadre,
             0,
         ),
@@ -237,19 +237,19 @@ def mortaiseIntTraversante(x, y, difprops, usinageprops):
 
 def tenonHaut(x, y, difprops, usinageprops):
     offset = usinageprops.getOffset()
-    epaisseur = difprops.epaisseur
+    ec = difprops.getEpaisseurCadre()
     tenon_cadre = difprops.tenon_cadre
 
     return [
         (x + offset, y, 0),
         (
             x,
-            y + epaisseur,
+            y + ec,
             0,
         ),
         (
             x + tenon_cadre,
-            y + epaisseur,
+            y + ec,
             0,
         ),
         (
@@ -262,18 +262,18 @@ def tenonHaut(x, y, difprops, usinageprops):
 
 def tenonGauche(x, y, difprops, usinageprops):
     offset = usinageprops.getOffset()
-    epaisseur = difprops.epaisseur
+    ec = difprops.getEpaisseurCadre()
     tenon_cadre = difprops.tenon_cadre
 
     return [
         (x, y + offset, 0),
         (
-            x - epaisseur,
+            x - ec,
             y,
             0,
         ),
         (
-            x - epaisseur,
+            x - ec,
             y + tenon_cadre,
             0,
         ),
@@ -287,18 +287,18 @@ def tenonGauche(x, y, difprops, usinageprops):
 
 def tenonDroit(x, y, difprops, usinageprops):
     offset = usinageprops.getOffset()
-    epaisseur = difprops.epaisseur
+    ec = difprops.getEpaisseurCadre()
     tenon_cadre = difprops.tenon_cadre
 
     return [
         (x, y - offset, 0),
         (
-            x + epaisseur,
+            x + ec,
             y,
             0,
         ),
         (
-            x + epaisseur,
+            x + ec,
             y - tenon_cadre,
             0,
         ),
@@ -312,19 +312,19 @@ def tenonDroit(x, y, difprops, usinageprops):
 
 def tenonBas(x, y, difprops, usinageprops):
     offset = usinageprops.getOffset()
-    epaisseur = difprops.epaisseur
+    ec = difprops.getEpaisseurCadre()
     tenon_cadre = difprops.tenon_cadre
 
     return [
         (x - offset, y, 0),
         (
             x,
-            y - epaisseur,
+            y - ec,
             0,
         ),
         (
             x - tenon_cadre,
-            y - epaisseur,
+            y - ec,
             0,
         ),
         (

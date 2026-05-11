@@ -178,6 +178,22 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         precision=4,
     )
 
+    cadre_epais: BoolProperty(
+        name="Cadre épais",
+        description="Active une épaisseur spécifique pour les pièces cadre (mortaise et tenon)",
+        default=False,
+    )
+
+    epaisseur_cadre: FloatProperty(
+        name="Epaisseur cadre",
+        description="Epaisseur des pièces cadre lorsque le cadre épais est activé",
+        default=0.015,
+        step=0.001,
+        unit="LENGTH",
+        precision=4,
+        min=0.001,
+    )
+
     type: IntProperty(
         name="Type",
         description="Type du diffuseur",
@@ -474,9 +490,24 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         precision=4,
     )
 
+    profondeur_tenon_peigne: FloatProperty(
+        name="Profondeur tenon peigne",
+        description="Profondeur d'insertion du tenon du peigne dans le cadre (remplac\u00e9 epaisseur/2 pour les modes mi-traversant)",
+        default=0.0025,
+        min=0.001,
+        max=0.05,
+        step=0.001,
+        unit="LENGTH",
+        precision=4,
+    )
+
     def getOffsetPeigne(self):
         offset = float(self.offset_peigne / 100) * float(self.epaisseur)
         return round(offset, 4)
+
+    def getEpaisseurCadre(self):
+        """Retourne l'épaisseur des pièces cadre (epaisseur_cadre si cadre_epais, sinon epaisseur)."""
+        return self.epaisseur_cadre if self.cadre_epais else self.epaisseur
 
     @staticmethod
     def generate_dif_name(type_val, largeur_diffuseur, profondeur, longueur_diffuseur, epaisseur, dim=None):
@@ -524,24 +555,24 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         )
 
     def getRang(self):
-        rang = (self.largeur_diffuseur - self.epaisseur) / self.type
+        ec = self.getEpaisseurCadre()
+        rang = (self.largeur_diffuseur - 2 * ec + self.epaisseur) / self.type
         return round(rang, 4)
 
     def getHauteurTenon(self):
         match self.type_tenon_peigne:
             case "0":
-                """Pas de tenons"""
                 return 0
             case "1":
-                return self.epaisseur / 2
+                return self.profondeur_tenon_peigne
             case "2":
                 return self.epaisseur
             case "3":
-                """Mono tenon mi traversant"""
-                return self.epaisseur / 2
+                return self.profondeur_tenon_peigne
 
     def getLongueur(self):
-        longueurTotale = round(self.type * self.longueur_diffuseur) * self.getRang() + self.epaisseur
+        ec = self.getEpaisseurCadre()
+        longueurTotale = round(self.type * self.longueur_diffuseur) * self.getRang() + 2 * ec - self.epaisseur
         return longueurTotale
 
     def getLargeurPilier(self):
@@ -762,6 +793,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
             case "0":
                 return [
                     "epaisseur",
+                    "cadre_epais",
                     "type",
                     "profondeur",
                     "bord_cadre",
@@ -776,6 +808,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
             case "1":
                 return [
                     "epaisseur",
+                    "cadre_epais",
                     "type",
                     "profondeur",
                     "bord_cadre",

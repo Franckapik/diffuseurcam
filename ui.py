@@ -133,7 +133,13 @@ class Diffuseur_SideBar(Panel):
             row2.prop(difprops, "moule_type", expand=True)
         for att in (x for x in difprops.listAttributes(productprops.product_type)):
             box.prop(difprops, att)
-        
+
+        if productprops.product_type in ("0", "1") and difprops.cadre_epais:
+            box.prop(difprops, "epaisseur_cadre")
+
+        if productprops.product_type in ("0", "1") and difprops.type_tenon_peigne != "0":
+            box.prop(difprops, "profondeur_tenon_peigne")
+
         # Informations spécifiques aux moules
         if productprops.product_type == "3":
             # Message d'information pour les encoches

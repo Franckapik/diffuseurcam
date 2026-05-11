@@ -869,7 +869,8 @@ class Add3DModel(bpy.types.Operator, AddObjectHelper):
             return {"CANCELLED"}
 
         # ── Paramètres du diffuseur ──────────────────────────────────────
-        e = difprops.epaisseur              # Épaisseur du bois (ex: 3mm)
+        e = difprops.epaisseur              # Épaisseur du bois peignes/carreaux (ex: 3mm)
+        ec = difprops.getEpaisseurCadre()   # Épaisseur des cadres (peut différer si cadre_epais)
         D = difprops.profondeur             # Profondeur totale (ex: 100mm)
         W = difprops.largeur_diffuseur      # Largeur totale (ex: 500mm)
         N = difprops.type                   # Ordre QRD (ex: 7)
@@ -911,19 +912,19 @@ class Add3DModel(bpy.types.Operator, AddObjectHelper):
         # ── CADRES (rectangle extérieur) ─────────────────────────────────
         # Convention: X = largeur, Y = longueur, Z = profondeur (face à la pièce)
         #
-        #  Cadre mortaise gauche   │  cellules  │   Cadre mortaise droit
-        #        (e × L × D)       │            │      (e × L × D)
-        #  ────────────────────────┼────────────┼───────────────────────
-        #  Cadre tenon bas (W-2e × e × D)       Cadre tenon haut
+        #  Cadre mortaise gauche    │  cellules  │   Cadre mortaise droit
+        #        (ec × L × D)       │            │      (ec × L × D)
+        #  ─────────────────────────┼────────────┼───────────────────────
+        #  Cadre tenon bas (W-2ec × ec × D)      Cadre tenon haut
 
         # Cadre mortaise gauche (côté long)
-        self._create_box(bm, 0, 0, 0, e, L, D, MAT_CADRE)
+        self._create_box(bm, 0, 0, 0, ec, L, D, MAT_CADRE)
         # Cadre mortaise droit
-        self._create_box(bm, W - e, 0, 0, e, L, D, MAT_CADRE)
+        self._create_box(bm, W - ec, 0, 0, ec, L, D, MAT_CADRE)
         # Cadre tenon bas (côté court, entre les mortaises)
-        self._create_box(bm, e, 0, 0, W - 2 * e, e, D, MAT_CADRE)
+        self._create_box(bm, ec, 0, 0, W - 2 * ec, ec, D, MAT_CADRE)
         # Cadre tenon haut
-        self._create_box(bm, e, L - e, 0, W - 2 * e, e, D, MAT_CADRE)
+        self._create_box(bm, ec, L - ec, 0, W - 2 * ec, ec, D, MAT_CADRE)
 
         # ── PEIGNES LONGS (divisent la largeur en N colonnes) ────────────
         # Orientés selon Y, de épaisseur e, entre les cadres tenon
@@ -931,30 +932,30 @@ class Add3DModel(bpy.types.Operator, AddObjectHelper):
         half_D = D / 2
 
         for k in range(1, num_cols):
-            px = k * rang
+            px = k * rang + (ec - e)
 
             if is_1d:
                 # 1D : pas de croisement, peigne pleine hauteur
-                self._create_box(bm, px, e, 0, e, L - 2 * e, D, MAT_PEIGNE)
+                self._create_box(bm, px, ec, 0, e, L - 2 * ec, D, MAT_PEIGNE)
             else:
                 # 2D : le peigne long a des rainures dans la moitié HAUTE (Z >= half_D)
                 # aux positions Y des peignes courts.
                 # Partie basse (0 → half_D) : continue sur toute la longueur
-                self._create_box(bm, px, e, 0, e, L - 2 * e, half_D, MAT_PEIGNE)
+                self._create_box(bm, px, ec, 0, e, L - 2 * ec, half_D, MAT_PEIGNE)
 
                 # Partie haute (half_D → D) : découpée aux croisements
-                y_start = e  # début après le cadre tenon bas
+                y_start = ec  # début après le cadre tenon bas
                 for j in range(1, num_rows):
-                    cross_y = j * rang
+                    cross_y = j * rang + (ec - e)  # bord gauche du j-ème peigne court
                     # Segment avant la rainure
                     seg_len = cross_y - y_start
                     if seg_len > 0.0001:
                         self._create_box(bm, px, y_start, half_D, e, seg_len, half_D, MAT_PEIGNE)
                     # Sauter la rainure (largeur = e)
-                    y_start = cross_y + e
+                    y_start = cross_y + e  # bord droit = j*rang + ec
 
                 # Dernier segment après la dernière rainure
-                seg_len = (L - e) - y_start
+                seg_len = (L - ec) - y_start
                 if seg_len > 0.0001:
                     self._create_box(bm, px, y_start, half_D, e, seg_len, half_D, MAT_PEIGNE)
 
@@ -963,24 +964,24 @@ class Add3DModel(bpy.types.Operator, AddObjectHelper):
         # Rainures dans la moitié BASSE (Z < half_D) aux croisements avec les peignes longs
         if not is_1d:
             for k in range(1, num_rows):
-                py = k * rang
+                py = k * rang + (ec - e)
 
                 # Partie haute (half_D → D) : continue sur toute la largeur
-                self._create_box(bm, e, py, half_D, W - 2 * e, e, half_D, MAT_PEIGNE)
+                self._create_box(bm, ec, py, half_D, W - 2 * ec, e, half_D, MAT_PEIGNE)
 
                 # Partie basse (0 → half_D) : découpée aux croisements
-                x_start = e  # début après le cadre mortaise gauche
+                x_start = ec  # début après le cadre mortaise gauche
                 for j in range(1, num_cols):
-                    cross_x = j * rang
+                    cross_x = j * rang + (ec - e)  # bord gauche du j-ème peigne long
                     # Segment avant la rainure
                     seg_len = cross_x - x_start
                     if seg_len > 0.0001:
                         self._create_box(bm, x_start, py, 0, seg_len, e, half_D, MAT_PEIGNE)
                     # Sauter la rainure (largeur = e)
-                    x_start = cross_x + e
+                    x_start = cross_x + e  # bord droit = j*rang + ec
 
                 # Dernier segment après la dernière rainure
-                seg_len = (W - e) - x_start
+                seg_len = (W - ec) - x_start
                 if seg_len > 0.0001:
                     self._create_box(bm, x_start, py, 0, seg_len, e, half_D, MAT_PEIGNE)
 
@@ -989,33 +990,36 @@ class Add3DModel(bpy.types.Operator, AddObjectHelper):
         # positionné en Z selon la séquence quadratique de Schroeder :
         #   depth=0 → fond du puits (contre le mur)
         #   depth≈D → surface (face à la pièce)
-        tile_w = rang - e   # largeur claire d'une cellule
+        # Toutes les cellules ont la même dimension (rang - e), y compris les bordures,
+        # grâce à la formule rang = (W - 2·ec + e) / N qui garantit l'uniformité.
 
         if is_1d:
             # 1D : carreaux allongés sur toute la longueur
-            tile_l = L - 2 * e
+            tile_l = L - 2 * ec
             for col in range(num_cols):
                 if col < len(depth):
                     z = depth[col]
-                    # Inverser Z si demandé
                     if invert_depth:
                         z = D - z - e
-                    tx = col * rang + e
-                    self._create_box(bm, tx, e, z, tile_w, tile_l, e, MAT_CARREAU)
+                    tx = col * rang + ec
+                    tw = rang - e
+                    if tw > 0.0001:
+                        self._create_box(bm, tx, ec, z, tw, tile_l, e, MAT_CARREAU)
         else:
             # 2D : carreaux carrés dans chaque cellule de la grille
+            tile_w = rang - e
             tile_l = rang - e
             for row in range(num_rows):
                 for col in range(num_cols):
                     idx = row * num_cols + col
                     if idx < len(depth):
                         z = depth[idx]
-                        # Inverser Z si demandé
                         if invert_depth:
                             z = D - z - e
-                        tx = col * rang + e
-                        ty = row * rang + e
-                        self._create_box(bm, tx, ty, z, tile_w, tile_l, e, MAT_CARREAU)
+                        tx = col * rang + ec
+                        ty = row * rang + ec
+                        if tile_w > 0.0001 and tile_l > 0.0001:
+                            self._create_box(bm, tx, ty, z, tile_w, tile_l, e, MAT_CARREAU)
 
         # ── Création du mesh et de l'objet Blender ───────────────────────
         mesh_name = "3D_" + difprops.getDifName(scene)
