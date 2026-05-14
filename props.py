@@ -232,7 +232,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
     tenon_cadre: FloatProperty(
         name="Tenon_cadre",
         description="Box tenon_cadre",
-        min=0.01,
+        min=0.001,
         max=0.1,
         default=0.05,
         unit="LENGTH",
@@ -311,6 +311,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         items=(
             ("0", "Pas de tenon", ""),
             ("1", "Tenon mortaise", ""),
+            ("2", "Queues droites", ""),
         ),
     )
 

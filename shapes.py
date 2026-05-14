@@ -43,6 +43,15 @@ def add_cadre_mortaise(difprops, productprops, usinageprops):
                 ((profondeur), 0, 0),
                 *mortaiseBas((profondeur / 2 + tenon_cadre / 2), 0, difprops, usinageprops),
             ]
+        elif type_tenon_cadre == "2":
+            vertsCadre = [
+                (0, 0, 0),
+                (0, longueurTotale, 0),
+                *queuesDroitesHaut(profondeur, longueurTotale, difprops, usinageprops),
+                ((profondeur), longueurTotale, 0),
+                ((profondeur), 0, 0),
+                *queuesDroitesBas(profondeur, 0, difprops, usinageprops),
+            ]
         else:
             vertsCadre = [
                 (0, 0, 0),
@@ -228,6 +237,15 @@ def add_cadre_tenon(difprops, productprops, usinageprops):
                     difprops,
                     usinageprops,
                 ),
+            ]
+        elif type_tenon_cadre == "2":
+            vertsCadre = [
+                (0, ec, 0),
+                (0, largeur_diffuseur - ec, 0),
+                *queuesDroitesTenonHaut(profondeur, largeur_diffuseur - ec, difprops, usinageprops),
+                ((profondeur), largeur_diffuseur - ec, 0),
+                ((profondeur), ec, 0),
+                *queuesDroitesTenonBas(profondeur, ec, difprops, usinageprops),
             ]
         else:
             vertsCadre = [

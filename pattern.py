@@ -335,6 +335,96 @@ def tenonBas(x, y, difprops, usinageprops):
     ]
 
 
+def _queues_droites_layout(profondeur, t):
+    """Calcule n (nombre de sections, forcé impair) et la marge de centrage.
+    n impair garantit que le profil commence et finit par un tenon (symétrie).
+    La marge est garantie >= t ou == 0 pour éviter des restes trop petits."""
+    n = max(1, int(profondeur / t))
+    if n % 2 == 0:
+        n -= 1
+    margin = (profondeur - n * t) / 2
+    if 0 < margin < t:
+        n = max(1, n - 2)
+        margin = (profondeur - n * t) / 2
+    return n, margin
+
+
+def queuesDroitesHaut(profondeur, y, difprops, usinageprops):
+    """Mortaises multiples (queues droites) sur le bord haut, de gauche à droite."""
+    offset = usinageprops.getOffset()
+    ec = difprops.getEpaisseurCadre()
+    t = difprops.tenon_cadre
+    n, margin = _queues_droites_layout(profondeur, t)
+    verts = []
+    for i in range(0, n, 2):
+        x_l = margin + i * t
+        x_r = x_l + t
+        verts += [
+            (x_l, y, 0),
+            (x_l - offset, y - ec, 0),
+            (x_r + offset, y - ec, 0),
+            (x_r, y, 0),
+        ]
+    return verts
+
+
+def queuesDroitesBas(profondeur, y, difprops, usinageprops):
+    """Mortaises multiples (queues droites) sur le bord bas, de droite à gauche."""
+    offset = usinageprops.getOffset()
+    ec = difprops.getEpaisseurCadre()
+    t = difprops.tenon_cadre
+    n, margin = _queues_droites_layout(profondeur, t)
+    verts = []
+    for i in reversed(range(0, n, 2)):
+        x_l = margin + i * t
+        x_r = x_l + t
+        verts += [
+            (x_r, y, 0),
+            (x_r + offset, y + ec, 0),
+            (x_l - offset, y + ec, 0),
+            (x_l, y, 0),
+        ]
+    return verts
+
+
+def queuesDroitesTenonHaut(profondeur, y, difprops, usinageprops):
+    """Tenons multiples (queues droites) sur le bord haut, de gauche à droite."""
+    offset = usinageprops.getOffset()
+    ec = difprops.getEpaisseurCadre()
+    t = difprops.tenon_cadre
+    n, margin = _queues_droites_layout(profondeur, t)
+    verts = []
+    for i in range(0, n, 2):
+        x_l = margin + i * t
+        x_r = x_l + t
+        verts += [
+            (x_l + offset, y, 0),
+            (x_l, y + ec, 0),
+            (x_r, y + ec, 0),
+            (x_r - offset, y, 0),
+        ]
+    return verts
+
+
+def queuesDroitesTenonBas(profondeur, y, difprops, usinageprops):
+    """Tenons multiples (queues droites) sur le bord bas, de droite à gauche."""
+    offset = usinageprops.getOffset()
+    ec = difprops.getEpaisseurCadre()
+    t = difprops.tenon_cadre
+    n, margin = _queues_droites_layout(profondeur, t)
+    verts = []
+    for i in reversed(range(0, n, 2)):
+        x_l = margin + i * t
+        x_r = x_l + t
+        verts += [
+            (x_r - offset, y, 0),
+            (x_r, y - ec, 0),
+            (x_l, y - ec, 0),
+            (x_l + offset, y, 0),
+        ]
+    return verts
+
+
 def tenonPeigneHaut(x, y, difprops, usinageprops):
     offset = usinageprops.getOffset()
     hauteurTenonPeigne = difprops.getHauteurTenon()
