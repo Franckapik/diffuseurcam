@@ -69,6 +69,7 @@ class Diffuseur_SideBar(Panel):
         usinageprops = scene.usinage_props
         devisprops = scene.devis_props
         devislist = scene.devis_list
+        uistate = scene.ui_state
         areaCutted = (
             difprops.getLongueur() * difprops.profondeur * (difprops.type + 1)
             + difprops.largeur_diffuseur * difprops.profondeur * (difprops.type + 1)
@@ -99,634 +100,659 @@ class Diffuseur_SideBar(Panel):
 
         # Diffuseur name
         box = layout.box()
-        box.label(text="Usinage ", icon="X")
-        """ for att in (x for x in usinageprops.listAttributes()):
-            box.prop(usinageprops, att) """
-        box.prop(usinageprops, "fraise")
-        box.prop(difprops, "offset_peigne")
+        row = box.row()
+        row.prop(uistate, "show_usinage",
+                 icon='TRIA_DOWN' if uistate.show_usinage else 'TRIA_RIGHT',
+                 emboss=False, text="Usinage")
+        if uistate.show_usinage:
+            """ for att in (x for x in usinageprops.listAttributes()):
+                box.prop(usinageprops, att) """
+            box.prop(usinageprops, "fraise")
+            box.prop(difprops, "offset_peigne")
 
-        box.label(text=f"Offset de fraise : {usinageprops.getOffset() * 1000} mm")
-        box.label(text=f"Offset des peignes : {difprops.getOffsetPeigne() * 1000} mm")
+            box.label(text=f"Offset de fraise : {usinageprops.getOffset() * 1000} mm")
+            box.label(text=f"Offset des peignes : {difprops.getOffsetPeigne() * 1000} mm")
 
         # Dimensions
         layout.separator()
         box = layout.box()
-        box.label(
-            text="Dimensions : "
-            + (
-                "D2"
-                if productprops.product_type == "0"
-                else (
-                    "D1"
-                    if productprops.product_type == "1"
-                    else "A" if productprops.product_type == "2" else "M"
-                )
-            )
-            + difprops.getDifName(),
-            icon="X",
-        )
-        
         row = box.row()
-        row2 = box.row()
-        row.prop(productprops, "product_type", expand=True)
-        if productprops.product_type == "3":
-            row2.prop(difprops, "moule_type", expand=True)
-        for att in (x for x in difprops.listAttributes(productprops.product_type)):
-            box.prop(difprops, att)
+        dim_label = "Dimensions : " + (
+            "D2" if productprops.product_type == "0" else
+            ("D1" if productprops.product_type == "1" else
+             ("A" if productprops.product_type == "2" else "M"))
+        ) + difprops.getDifName()
+        row.prop(uistate, "show_dimensions",
+                 icon='TRIA_DOWN' if uistate.show_dimensions else 'TRIA_RIGHT',
+                 emboss=False, text=dim_label)
+        if uistate.show_dimensions:
+            row2 = box.row()
+            row3 = box.row()
+            row2.prop(productprops, "product_type", expand=True)
+            if productprops.product_type == "3":
+                row3.prop(difprops, "moule_type", expand=True)
+            for att in (x for x in difprops.listAttributes(productprops.product_type)):
+                box.prop(difprops, att)
 
-        if productprops.product_type in ("0", "1") and difprops.cadre_epais:
-            box.prop(difprops, "epaisseur_cadre")
+            if productprops.product_type in ("0", "1") and difprops.cadre_epais:
+                box.prop(difprops, "epaisseur_cadre")
 
-        if productprops.product_type in ("0", "1") and difprops.type_tenon_peigne != "0":
-            box.prop(difprops, "profondeur_tenon_peigne")
+            if productprops.product_type in ("0", "1") and difprops.type_tenon_peigne != "0":
+                box.prop(difprops, "profondeur_tenon_peigne")
 
-        # Informations spécifiques aux moules
-        if productprops.product_type == "3":
-            # Message d'information pour les encoches
-            if difprops.moule_type == "2d":
-                if not (hasattr(difprops, 'pilier_encoches') and difprops.pilier_encoches):
-                    box.label(text="ℹ️ Encoches recommandées pour diffuseurs 2D", icon="INFO")
-            elif difprops.moule_type == "1d" and hasattr(difprops, 'pilier_encoches') and difprops.pilier_encoches:
-                box.label(text="⚠️ Encoches déconseillées pour diffuseurs 1D", icon="ERROR")
-        
-        if productprops.product_type is not "2":
-            box.label(text=f"Rang : {difprops.getRang() * 1000} mm")
-            # Affichage différencié pour mode pyramidal (mono uniquement)
-            if (productprops.product_type == "3" and difprops.type_moule == "mono" and 
-                hasattr(difprops, 'pilier_pyramidal') and difprops.pilier_pyramidal):
-                box.label(text=f"Pilier base : {round(difprops.getLargeurPilier() * 1000 , 3)} mm")
-                box.label(text=f"Pilier haut : {round(difprops.getLargeurPilierHaut() * 1000 , 3)} mm")
-            else:
-                box.label(text=f"Pilier : {round(difprops.getLargeurPilier() * 1000 , 3)} mm")
-        
-        if productprops.product_type is "2" :
-            is_splitted = True if difprops.longueur_absorbeur > difprops.split and difprops.split != 0 else False
-            box.label(text=f"Splitted : {is_splitted}")
+            # Informations spécifiques aux moules
+            if productprops.product_type == "3":
+                # Message d'information pour les encoches
+                if difprops.moule_type == "2d":
+                    if not (hasattr(difprops, 'pilier_encoches') and difprops.pilier_encoches):
+                        box.label(text="ℹ️ Encoches recommandées pour diffuseurs 2D", icon="INFO")
+                elif difprops.moule_type == "1d" and hasattr(difprops, 'pilier_encoches') and difprops.pilier_encoches:
+                    box.label(text="⚠️ Encoches déconseillées pour diffuseurs 1D", icon="ERROR")
+            
+            if productprops.product_type is not "2":
+                box.label(text=f"Rang : {difprops.getRang() * 1000} mm")
+                # Affichage différencié pour mode pyramidal (mono uniquement)
+                if (productprops.product_type == "3" and difprops.type_moule == "mono" and 
+                    hasattr(difprops, 'pilier_pyramidal') and difprops.pilier_pyramidal):
+                    box.label(text=f"Pilier base : {round(difprops.getLargeurPilier() * 1000 , 3)} mm")
+                    box.label(text=f"Pilier haut : {round(difprops.getLargeurPilierHaut() * 1000 , 3)} mm")
+                else:
+                    box.label(text=f"Pilier : {round(difprops.getLargeurPilier() * 1000 , 3)} mm")
+            
+            if productprops.product_type is "2" :
+                is_splitted = True if difprops.longueur_absorbeur > difprops.split and difprops.split != 0 else False
+                box.label(text=f"Splitted : {is_splitted}")
 
         # Array
         layout.separator()
         box = layout.box()
-        box.label(text="Array", icon="X")
         row = box.row()
-        row.label(text="Option")
-        split = row.split()
-        col1 = split.column()
-        col2 = split.column()
+        row.prop(uistate, "show_array",
+                 icon='TRIA_DOWN' if uistate.show_array else 'TRIA_RIGHT',
+                 emboss=False, text="Array")
+        if uistate.show_array:
+            row2 = box.row()
+            row2.label(text="Option")
+            split = row2.split()
+            col1 = split.column()
+            col2 = split.column()
 
-        col1.operator(
-            "mesh.set_array_offset", text="Standard (3x)"
-        ).arrayOffsetFactor = 3
-        col2.operator(
-            "mesh.set_array_offset", text="Minimal (2x)"
-        ).arrayOffsetFactor = 2
-        box.prop(arrayprops, "array_offset")
+            col1.operator(
+                "mesh.set_array_offset", text="Standard (3x)"
+            ).arrayOffsetFactor = 3
+            col2.operator(
+                "mesh.set_array_offset", text="Minimal (2x)"
+            ).arrayOffsetFactor = 2
+            box.prop(arrayprops, "array_offset")
 
-        box.separator()
-        box.operator("mesh.set_array_recommended", text="Pré-remplir")
+            box.separator()
+            box.operator("mesh.set_array_recommended", text="Pré-remplir")
 
-        split = box.split()
-        col1 = split.column()
-        col2 = split.column()
-        col1.label(
-            text="X count",
-        )
-        col2.label(text="Y count")
-        for arr in (
-            x
-            for x in arrayprops.listAttributes(productprops.product_type)
-            if x != "array_offset"
-        ):
-            if arr[-1] == "x":
-                col1.prop(arrayprops, arr)
-            if arr[-1] == "y":
-                col2.prop(arrayprops, arr)
+            split = box.split()
+            col1 = split.column()
+            col2 = split.column()
+            col1.label(
+                text="X count",
+            )
+            col2.label(text="Y count")
+            for arr in (
+                x
+                for x in arrayprops.listAttributes(productprops.product_type)
+                if x != "array_offset"
+            ):
+                if arr[-1] == "x":
+                    col1.prop(arrayprops, arr)
+                if arr[-1] == "y":
+                    col2.prop(arrayprops, arr)
 
-        box.label(
-            text=f"Nombre de pièces : {arrayprops.nbPieces(productprops.product_type)}"
-        )
+            box.label(
+                text=f"Nombre de pièces : {arrayprops.nbPieces(productprops.product_type)}"
+            )
 
         # Generateur
         layout.separator()
         box = layout.box()
-        box.label(text="Générateur", icon="X")
+        row = box.row()
+        row.prop(uistate, "show_generateur",
+                 icon='TRIA_DOWN' if uistate.show_generateur else 'TRIA_RIGHT',
+                 emboss=False, text="Générateur")
 
         if bpy.context.selected_objects:
             # Obtient le premier objet sélectionné
             selected_object = bpy.context.selected_objects[0]
             cursor = selected_object.location
-
         else:
             cursor = bpy.context.scene.cursor.location
 
-        box.label(
-            text=f"{'Mesh selectionné' if bpy.context.selected_objects else 'Cursor 3D'} : X{round(cursor[0], 2)}  Y{round(cursor[1], 2)}  Z{round(cursor[2], 2)}"
-        )
+        if uistate.show_generateur:
+            box.label(
+                text=f"{'Mesh selectionné' if bpy.context.selected_objects else 'Cursor 3D'} : X{round(cursor[0], 2)}  Y{round(cursor[1], 2)}  Z{round(cursor[2], 2)}"
+            )
 
-        # Debug: afficher toutes les pièces pour le product_type (seulement une fois)
-        pieces_list = posprops.listAttributes(productprops.product_type)
-        
-        for piece in pieces_list:
-            row = box.row()
-            if "_position" in piece:
-                row.prop(posprops, piece)
-                op = row.operator("mesh.pick_position", text="", icon="EYEDROPPER")
-                op.cursor = cursor
-                op.target = piece
-                row.prop(
-                    posprops,
-                    piece.replace("_position", "_rotation"),
-                    icon="EVENT_R",
-                    text="",
-                )
-                
-                # Création du bouton opérateur
-                operator_name = f"mesh.{piece.replace('_position', '')}"
-                row.operator(operator_name, text="", icon="ADD")
+            # Debug: afficher toutes les pièces pour le product_type (seulement une fois)
+            pieces_list = posprops.listAttributes(productprops.product_type)
+            
+            for piece in pieces_list:
+                row = box.row()
+                if "_position" in piece:
+                    row.prop(posprops, piece)
+                    op = row.operator("mesh.pick_position", text="", icon="EYEDROPPER")
+                    op.cursor = cursor
+                    op.target = piece
+                    row.prop(
+                        posprops,
+                        piece.replace("_position", "_rotation"),
+                        icon="EVENT_R",
+                        text="",
+                    )
+                    
+                    # Création du bouton opérateur
+                    operator_name = f"mesh.{piece.replace('_position', '')}"
+                    row.operator(operator_name, text="", icon="ADD")
 
-        match productprops.product_type:
-            case "0":
-                box.operator("mesh.add_diffuseur")
-            case "1":
-                box.operator("mesh.add_diffuseur")
-            case "2":
-                box.operator("mesh.add_absorbeur")
-            case "3":
-                box.operator("mesh.add_moule")
+            match productprops.product_type:
+                case "0":
+                    box.operator("mesh.add_diffuseur")
+                case "1":
+                    box.operator("mesh.add_diffuseur")
+                case "2":
+                    box.operator("mesh.add_absorbeur")
+                case "3":
+                    box.operator("mesh.add_moule")
 
-        box.operator("mesh.no_overlap")
+            box.operator("mesh.no_overlap")
 
         # Prepare to Cam
         layout.separator()
         box = layout.box()
-        box.label(text="Préparation CAM", icon="X")
-
         row = box.row()
-        row.prop(prepprops, "selection_prepare", expand=True)
+        row.prop(uistate, "show_prepare_cam",
+                 icon='TRIA_DOWN' if uistate.show_prepare_cam else 'TRIA_RIGHT',
+                 emboss=False, text="Préparation CAM")
+        if uistate.show_prepare_cam:
+            row2 = box.row()
+            row2.prop(prepprops, "selection_prepare", expand=True)
 
-        box.prop(prepprops, "isNewMesh_prepare")
+            box.prop(prepprops, "isNewMesh_prepare")
 
-        if prepprops.isNewMesh_prepare:
-            box.prop(prepprops, "isHidingOldMesh_prepare")
-            box.prop(prepprops, "isDeleteOldMesh_prepare")
-        """ else:
-            prepprops.isDeleteOldMesh_prepare = False """
+            if prepprops.isNewMesh_prepare:
+                box.prop(prepprops, "isHidingOldMesh_prepare")
+                box.prop(prepprops, "isDeleteOldMesh_prepare")
+            """ else:
+                prepprops.isDeleteOldMesh_prepare = False """
 
-        box.prop(prepprops, "isConvertToCurve_prepare")
-        if prepprops.isConvertToCurve_prepare:
-            box.prop(prepprops, "isCRemove_prepare")
+            box.prop(prepprops, "isConvertToCurve_prepare")
+            if prepprops.isConvertToCurve_prepare:
+                box.prop(prepprops, "isCRemove_prepare")
 
-            if prepprops.isJoin_prepare:
-                box.prop(prepprops, "isOvercuts")
+                if prepprops.isJoin_prepare:
+                    box.prop(prepprops, "isOvercuts")
 
-        box.prop(prepprops, "isJoin_prepare")
-        
-        box.prop(prepprops, "isOffsetCarreau_prepare")
+            box.prop(prepprops, "isJoin_prepare")
+            
+            box.prop(prepprops, "isOffsetCarreau_prepare")
 
-        box.operator("mesh.prepare_cam")
+            box.operator("mesh.prepare_cam")
 
         # Position selected
         layout.separator()
         box = layout.box()
-        box.label(text="Positionner la selection", icon="X")
-        col = box.column()
-        col.label(text="Positionner deux pièces selectionnées")
+        row = box.row()
+        row.prop(uistate, "show_position_selected",
+                 icon='TRIA_DOWN' if uistate.show_position_selected else 'TRIA_RIGHT',
+                 emboss=False, text="Positionner la sélection")
+        if uistate.show_position_selected:
+            col = box.column()
+            col.label(text="Positionner deux pièces selectionnées")
 
-        # Grille pour former une croix
-        grid = col.grid_flow(row_major=True, columns=3, even_columns=True, even_rows=True, align=True)
-        grid.label(text="")  # Espace vide
-        grid.operator("mesh.position_selected", text="Haut").direction = 'Y+'
-        grid.label(text="")  # Espace vide
-        grid.operator("mesh.position_selected", text="Gauche").direction = 'X-'
-        grid.label(text="")  # Espace vide
-        grid.operator("mesh.position_selected", text="Droite").direction = 'X+'
-        grid.label(text="")  # Espace vide
-        grid.operator("mesh.position_selected", text="Bas").direction = 'Y-'
-        grid.label(text="")  # Espace vide
+            # Grille pour former une croix
+            grid = col.grid_flow(row_major=True, columns=3, even_columns=True, even_rows=True, align=True)
+            grid.label(text="")  # Espace vide
+            grid.operator("mesh.position_selected", text="Haut").direction = 'Y+'
+            grid.label(text="")  # Espace vide
+            grid.operator("mesh.position_selected", text="Gauche").direction = 'X-'
+            grid.label(text="")  # Espace vide
+            grid.operator("mesh.position_selected", text="Droite").direction = 'X+'
+            grid.label(text="")  # Espace vide
+            grid.operator("mesh.position_selected", text="Bas").direction = 'Y-'
+            grid.label(text="")  # Espace vide
 
         # Devis
         layout.separator()
         box = layout.box()
-        box.label(text="Devis", icon="X")
-
         row = box.row()
-        box.prop(devisprops, "qtyDif")
-        split = box.split()
-        col1 = split.column()
-        col2 = split.column()
-        col1.label(
-            text="Longueur",
-        )
-        col2.label(text="Largeur")
-        col1.prop(devisprops, "panelx")
-        col2.prop(devisprops, "panely")
-        split = box.split()
-        col1 = split.column()
-        col2 = split.column()
-        col1.label(text=f"Aire D2 cutted: {round(areaCutted, 3)} m2")
-        col1.label(text=f"Aire D2 material : {round(areaMaterial, 3)} m2")
-        col2.label(text=f"Aire panneau : {round(areaPanel, 3)} m2")
-        col2.label(text=f"% Panel coupé : {round(percentPanel)} %")
-        box.label(text=f"Nb Panel : {ceil(qtyPanel)} panneau(x)")
-        box.prop(devisprops, "panelPrice")
-        box.prop(devisprops, "marge")
-        box.prop(devisprops, "priceByPiece")
-        box.prop(devisprops, "alea")
-        box.prop(devisprops, "consommable")
-        box.prop(devisprops, "urssaf")
+        row.prop(uistate, "show_devis",
+                 icon='TRIA_DOWN' if uistate.show_devis else 'TRIA_RIGHT',
+                 emboss=False, text="Devis")
+        if uistate.show_devis:
+            box.prop(devisprops, "qtyDif")
+            split = box.split()
+            col1 = split.column()
+            col2 = split.column()
+            col1.label(
+                text="Longueur",
+            )
+            col2.label(text="Largeur")
+            col1.prop(devisprops, "panelx")
+            col2.prop(devisprops, "panely")
+            split = box.split()
+            col1 = split.column()
+            col2 = split.column()
+            col1.label(text=f"Aire D2 cutted: {round(areaCutted, 3)} m2")
+            col1.label(text=f"Aire D2 material : {round(areaMaterial, 3)} m2")
+            col2.label(text=f"Aire panneau : {round(areaPanel, 3)} m2")
+            col2.label(text=f"% Panel coupé : {round(percentPanel)} %")
+            box.label(text=f"Nb Panel : {ceil(qtyPanel)} panneau(x)")
+            box.prop(devisprops, "panelPrice")
+            box.prop(devisprops, "marge")
+            box.prop(devisprops, "priceByPiece")
+            box.prop(devisprops, "alea")
+            box.prop(devisprops, "consommable")
+            box.prop(devisprops, "urssaf")
 
-        split = box.split()
-        col8 = split.column()
-        col9 = split.column()
-        col8.label(
-            text=f"Matière première/Diffuseur) : {ceil(ceil(devisprops.getPriceMP(ceil(qtyPanel))) / devisprops.qtyDif)} € "
-        )
-        col9.label(
-            text=f"Matière première Totale) : {ceil(ceil(devisprops.getPriceMP(ceil(qtyPanel))))} € "
-        )
+            split = box.split()
+            col8 = split.column()
+            col9 = split.column()
+            col8.label(
+                text=f"Matière première/Diffuseur) : {ceil(ceil(devisprops.getPriceMP(ceil(qtyPanel))) / devisprops.qtyDif)} € "
+            )
+            col9.label(
+                text=f"Matière première Totale) : {ceil(ceil(devisprops.getPriceMP(ceil(qtyPanel))))} € "
+            )
 
-        split = box.split()
-        col3 = split.column()
-        col4 = split.column()
-        col3.label(text="--- Marge ---")
-        col3.label(
-            text=f"Prix du Diffuseur : {ceil(ceil(devisprops.getTTCMarge(ceil(qtyPanel))) / devisprops.qtyDif)} € "
-        )
-        col3.label(
-            text=f"Prix Total : {ceil(devisprops.getTTCMarge(ceil(qtyPanel)) )} € "
-        )
-        col3.label(
-            text=f"Dont Urssaf : {ceil(devisprops.getTTCMarge(ceil(qtyPanel) ) * devisprops.urssaf/100)} € "
-        )
+            split = box.split()
+            col3 = split.column()
+            col4 = split.column()
+            col3.label(text="--- Marge ---")
+            col3.label(
+                text=f"Prix du Diffuseur : {ceil(ceil(devisprops.getTTCMarge(ceil(qtyPanel))) / devisprops.qtyDif)} € "
+            )
+            col3.label(
+                text=f"Prix Total : {ceil(devisprops.getTTCMarge(ceil(qtyPanel)) )} € "
+            )
+            col3.label(
+                text=f"Dont Urssaf : {ceil(devisprops.getTTCMarge(ceil(qtyPanel) ) * devisprops.urssaf/100)} € "
+            )
 
-        col3.label(
-            text=f"Bénéfice : {ceil(devisprops.getBenefMarge(ceil(qtyPanel)) )} € "
-        )
+            col3.label(
+                text=f"Bénéfice : {ceil(devisprops.getBenefMarge(ceil(qtyPanel)) )} € "
+            )
 
-        col4.label(text="--- Piece ---")
-        col4.label(
-            text=f"Prix du Diffuseur : {ceil(ceil(devisprops.getTTCPiece(arrayprops.nbPieces(productprops.product_type), ceil(qtyPanel) )) / devisprops.qtyDif)} € "
-        )
-        col4.label(
-            text=f"Prix Total : {ceil(devisprops.getTTCPiece(arrayprops.nbPieces(productprops.product_type), ceil(qtyPanel) ))} € "
-        )
-        col4.label(
-            text=f"Dont Urssaf : {ceil(devisprops.getTTCPiece(arrayprops.nbPieces(productprops.product_type), ceil(qtyPanel) ) * devisprops.urssaf/100)} € "
-        )
-        col4.label(
-            text=f"Bénéfice : {ceil(devisprops.getBenefPiece(arrayprops.nbPieces(productprops.product_type)) )} € "
-        )
+            col4.label(text="--- Piece ---")
+            col4.label(
+                text=f"Prix du Diffuseur : {ceil(ceil(devisprops.getTTCPiece(arrayprops.nbPieces(productprops.product_type), ceil(qtyPanel) )) / devisprops.qtyDif)} € "
+            )
+            col4.label(
+                text=f"Prix Total : {ceil(devisprops.getTTCPiece(arrayprops.nbPieces(productprops.product_type), ceil(qtyPanel) ))} € "
+            )
+            col4.label(
+                text=f"Dont Urssaf : {ceil(devisprops.getTTCPiece(arrayprops.nbPieces(productprops.product_type), ceil(qtyPanel) ) * devisprops.urssaf/100)} € "
+            )
+            col4.label(
+                text=f"Bénéfice : {ceil(devisprops.getBenefPiece(arrayprops.nbPieces(productprops.product_type)) )} € "
+            )
 
-        box.operator("mesh.add_list")
-        box2 = box.box()
-        for i, listDif in enumerate(devislist):
-            row = box2.row()
-            row.label(text=listDif.listDif, icon="FILE_VOLUME")
-            oprm = row.operator("mesh.remove_list", icon="X")
-            oprm.item = i
+            box.operator("mesh.add_list")
+            box2 = box.box()
+            for i, listDif in enumerate(devislist):
+                row = box2.row()
+                row.label(text=listDif.listDif, icon="FILE_VOLUME")
+                oprm = row.operator("mesh.remove_list", icon="X")
+                oprm.item = i
 
         # Motif
         layout.separator()
         box = layout.box()
-        box.label(text="Motif", icon="X")
-        row = box.row(align=True)
-        row.prop(productprops, "motif_display", expand=True)
-
-        box.prop(difprops, "center_pattern")
-        
-        # Afficher les décalages comme désactivés si l'auto-centrage est actif
         row = box.row()
-        row.enabled = not difprops.center_pattern
-        row.prop(difprops, "decalage_h")
-        row.prop(difprops, "decalage_v")
-        
-        # Paramètre d'optimisation QRD pour les diffuseurs 1D
-        if difprops.moule_type == "1d":
-            box.prop(difprops, "qrd_optimization")
-        
-        ratio = difprops.getMotif(productprops.motif_display)
-        ratio_readable = [int(x * 1000) for x in ratio]
-        compteur = Counter(ratio_readable)
+        row.prop(uistate, "show_motif",
+                 icon='TRIA_DOWN' if uistate.show_motif else 'TRIA_RIGHT',
+                 emboss=False, text="Motif")
+        if uistate.show_motif:
+            row2 = box.row(align=True)
+            row2.prop(productprops, "motif_display", expand=True)
 
-        rowC = box.row()
-        rowC.scale_y = 3
-        split = rowC.split() 
-        
-        for x, occurence in compteur.items():
-            col = split.column()
-            col.label(text=f"{x}:{occurence}x")
+            box.prop(difprops, "center_pattern")
+            
+            # Afficher les décalages comme désactivés si l'auto-centrage est actif
+            row3 = box.row()
+            row3.enabled = not difprops.center_pattern
+            row3.prop(difprops, "decalage_h")
+            row3.prop(difprops, "decalage_v")
+            
+            # Paramètre d'optimisation QRD pour les diffuseurs 1D
+            if difprops.moule_type == "1d":
+                box.prop(difprops, "qrd_optimization")
+            
+            ratio = difprops.getMotif(productprops.motif_display)
+            ratio_readable = [int(x * 1000) for x in ratio]
+            compteur = Counter(ratio_readable)
 
-        if difprops.moule_type  =="1d":
-            row = box.row()
-            split = box.split()
-            for k in range(difprops.type):
+            rowC = box.row()
+            rowC.scale_y = 3
+            split = rowC.split() 
+            
+            for x, occurence in compteur.items():
                 col = split.column()
-                col.label(text=str(int(ratio[k] * 1000)))
-        else:
-            for i in range(round(difprops.type * difprops.longueur_diffuseur)):
-                row = box.row()
+                col.label(text=f"{x}:{occurence}x")
+
+            if difprops.moule_type  =="1d":
+                row4 = box.row()
                 split = box.split()
                 for k in range(difprops.type):
-
                     col = split.column()
-                    col.label(text=str(int(ratio[i * difprops.type + k] * 1000)))
+                    col.label(text=str(int(ratio[k] * 1000)))
+            else:
+                for i in range(round(difprops.type * difprops.longueur_diffuseur)):
+                    row4 = box.row()
+                    split = box.split()
+                    for k in range(difprops.type):
 
-        box.operator("mesh.colle")
+                        col = split.column()
+                        col.label(text=str(int(ratio[i * difprops.type + k] * 1000)))
+
+            box.operator("mesh.colle")
 
         # Modèle 3D
         layout.separator()
         box = layout.box()
-        box.label(text="Modèle 3D", icon="MESH_CUBE")
+        row = box.row()
+        row.prop(uistate, "show_modele_3d",
+                 icon='TRIA_DOWN' if uistate.show_modele_3d else 'TRIA_RIGHT',
+                 emboss=False, text="Modèle 3D")
+        if uistate.show_modele_3d:
+            if productprops.product_type in ("0", "1"):
+                box.prop(difprops, "invert_depth")
+                box.operator("mesh.simulation")
+            else:
+                box.label(text="Disponible pour Diffuseur 1D/2D", icon="INFO")
 
-        if productprops.product_type in ("0", "1"):
-            box.prop(difprops, "invert_depth")
-            box.operator("mesh.simulation")
-        else:
-            box.label(text="Disponible pour Diffuseur 1D/2D", icon="INFO")
+            # Batch 3D
+            box.separator()
+            sub = box.box()
+            sub.label(text="Batch 3D", icon="DUPLICATE")
 
-        # Batch 3D
-        box.separator()
-        sub = box.box()
-        sub.label(text="Batch 3D", icon="DUPLICATE")
+            batchprops = scene.batch_3d_props
+            sub.prop(batchprops, "batch_product_type", text="Produit")
+            sub.prop(batchprops, "batch_types")
+            sub.prop(batchprops, "batch_profondeurs")
+            sub.prop(batchprops, "batch_longueurs")
+            sub.prop(batchprops, "batch_grid_gap")
 
-        batchprops = scene.batch_3d_props
-        sub.prop(batchprops, "batch_product_type", text="Produit")
-        sub.prop(batchprops, "batch_types")
-        sub.prop(batchprops, "batch_profondeurs")
-        sub.prop(batchprops, "batch_longueurs")
-        sub.prop(batchprops, "batch_grid_gap")
+            # Nombre de combinaisons
+            try:
+                types_list = [x.strip() for x in batchprops.batch_types.split(",") if x.strip()]
+                prof_list = [x.strip() for x in batchprops.batch_profondeurs.split(",") if x.strip()]
+                long_list = [x.strip() for x in batchprops.batch_longueurs.split(",") if x.strip()]
+                nb_combi = len(types_list) * len(prof_list) * len(long_list)
+                sub.label(text=f"{nb_combi} combinaisons à générer", icon="INFO")
+            except Exception:
+                sub.label(text="Format invalide", icon="ERROR")
 
-        # Nombre de combinaisons
-        try:
-            types_list = [x.strip() for x in batchprops.batch_types.split(",") if x.strip()]
-            prof_list = [x.strip() for x in batchprops.batch_profondeurs.split(",") if x.strip()]
-            long_list = [x.strip() for x in batchprops.batch_longueurs.split(",") if x.strip()]
-            nb_combi = len(types_list) * len(prof_list) * len(long_list)
-            sub.label(text=f"{nb_combi} combinaisons à générer", icon="INFO")
-        except Exception:
-            sub.label(text="Format invalide", icon="ERROR")
+            row = sub.row(align=True)
+            row.scale_y = 1.5
+            row.operator("mesh.batch_3d", icon="PLAY")
+            row.operator("mesh.clear_batch_3d", text="", icon="TRASH")
 
-        row = sub.row(align=True)
-        row.scale_y = 1.5
-        row.operator("mesh.batch_3d", icon="PLAY")
-        row.operator("mesh.clear_batch_3d", text="", icon="TRASH")
+            # Presets Batch
+            sub.separator()
+            sub.label(text="Presets", icon="PRESET")
+            row = sub.row()
+            row.template_list("DIF_UL_batch_presets", "", scene, "batch_presets", batchprops, "active_preset_index", rows=3)
 
-        # Presets Batch
-        sub.separator()
-        sub.label(text="Presets", icon="PRESET")
-        row = sub.row()
-        row.template_list("DIF_UL_batch_presets", "", scene, "batch_presets", batchprops, "active_preset_index", rows=3)
+            col = row.column(align=True)
+            col.operator("mesh.add_batch_preset", text="", icon="ADD")
+            col.operator("mesh.remove_batch_preset", text="", icon="REMOVE")
 
-        col = row.column(align=True)
-        col.operator("mesh.add_batch_preset", text="", icon="ADD")
-        col.operator("mesh.remove_batch_preset", text="", icon="REMOVE")
+            sub.prop(batchprops, "preset_name")
+            row = sub.row(align=True)
+            row.operator("mesh.load_batch_preset", text="Charger", icon="IMPORT")
+            row.operator("mesh.save_batch_preset", text="Sauvegarder", icon="EXPORT")
 
-        sub.prop(batchprops, "preset_name")
-        row = sub.row(align=True)
-        row.operator("mesh.load_batch_preset", text="Charger", icon="IMPORT")
-        row.operator("mesh.save_batch_preset", text="Sauvegarder", icon="EXPORT")
+            # ── Batch Render ─────────────────────────────────────────────────
+            sub.separator()
+            render_box = sub.box()
+            render_box.label(text="Batch Render", icon="RENDER_STILL")
 
-        # ── Batch Render ─────────────────────────────────────────────────
-        sub.separator()
-        render_box = sub.box()
-        render_box.label(text="Batch Render", icon="RENDER_STILL")
+            render_props = scene.batch_render_props
 
-        render_props = scene.batch_render_props
+            # ── Progression en cours ─────────────────────────────────────────
+            if render_props.is_running:
+                prog_box = render_box.box()
+                total = render_props.progress_total
+                current = render_props.progress_current
+                pct = (current / total * 100) if total > 0 else 0
 
-        # ── Progression en cours ─────────────────────────────────────────
-        if render_props.is_running:
-            prog_box = render_box.box()
-            total = render_props.progress_total
-            current = render_props.progress_current
-            pct = (current / total * 100) if total > 0 else 0
+                prog_box.label(text=f"Rendu en cours : {current}/{total}  ({pct:.0f}%)", icon="SORTTIME")
+                if render_props.current_object_name:
+                    prog_box.label(text=f"Objet : {render_props.current_object_name}")
 
-            prog_box.label(text=f"Rendu en cours : {current}/{total}  ({pct:.0f}%)", icon="SORTTIME")
-            if render_props.current_object_name:
-                prog_box.label(text=f"Objet : {render_props.current_object_name}")
+                # Barre de progression visuelle
+                prog_box.separator()
+                prog_box.prop(
+                    render_props, "progress_current",
+                    text=f"{current}/{total}",
+                    slider=True,
+                )
 
-            # Barre de progression visuelle
-            prog_box.separator()
-            prog_box.prop(
-                render_props, "progress_current",
-                text=f"{current}/{total}",
-                slider=True,
-            )
+                prog_box.separator()
+                prog_box.label(text="Appuyez sur ESC pour annuler", icon="CANCEL")
 
-            prog_box.separator()
-            prog_box.label(text="Appuyez sur ESC pour annuler", icon="CANCEL")
+                render_box.separator()
+            else:
+                # ── Paramètres (visibles seulement quand pas en cours) ───────
 
-            render_box.separator()
-        else:
-            # ── Paramètres (visibles seulement quand pas en cours) ───────
+                # Chemin de sortie
+                render_box.prop(render_props, "output_path")
 
-            # Chemin de sortie
-            render_box.prop(render_props, "output_path")
-
-            # Paramètres caméra
-            render_box.separator()
-            render_box.label(text="Caméra", icon="CAMERA_DATA")
-            render_box.prop(render_props, "camera_focal_length")
-            render_box.prop(render_props, "camera_distance")
-            row = render_box.row(align=True)
-            row.prop(render_props, "camera_elevation")
-            row.prop(render_props, "camera_azimuth")
-
-            # Paramètres rendu
-            render_box.separator()
-            render_box.label(text="Rendu Cycles", icon="SCENE")
-            render_box.prop(render_props, "output_format")
-            if render_props.output_format in ('PNG', 'OPEN_EXR'):
-                render_box.prop(render_props, "transparent_background")
-            row = render_box.row(align=True)
-            row.prop(render_props, "render_resolution_x", text="X")
-            row.prop(render_props, "render_resolution_y", text="Y")
-            row.prop(render_props, "render_resolution_keep_ratio", text="", icon='LINKED')
-            row = render_box.row(align=True)
-            row.prop(render_props, "render_samples")
-            row.prop(render_props, "use_denoising", text="", icon="SHADERFX")
-
-            # Éclairage
-            render_box.separator()
-            render_box.label(text="Éclairage", icon="LIGHT_SUN")
-            render_box.prop(render_props, "light_energy")
-            render_box.prop(render_props, "use_three_point")
-            render_box.prop(render_props, "use_shadow_catcher")
-            if render_props.use_shadow_catcher:
+                # Paramètres caméra
+                render_box.separator()
+                render_box.label(text="Caméra", icon="CAMERA_DATA")
+                render_box.prop(render_props, "camera_focal_length")
+                render_box.prop(render_props, "camera_distance")
                 row = render_box.row(align=True)
-                row.prop(render_props, "shadow_plane_size")
-                row.prop(render_props, "shadow_plane_offset")
-            render_box.prop(render_props, "use_hdri")
-            if render_props.use_hdri:
-                render_box.prop(render_props, "hdri_path")
-                render_box.prop(render_props, "hdri_strength")
-            render_box.prop(render_props, "auto_scale_energy")
-            if render_props.auto_scale_energy:
+                row.prop(render_props, "camera_elevation")
+                row.prop(render_props, "camera_azimuth")
+
+                # Paramètres rendu
+                render_box.separator()
+                render_box.label(text="Rendu Cycles", icon="SCENE")
+                render_box.prop(render_props, "output_format")
+                if render_props.output_format in ('PNG', 'OPEN_EXR'):
+                    render_box.prop(render_props, "transparent_background")
                 row = render_box.row(align=True)
-                row.prop(render_props, "reference_model_dim")
-                row.prop(render_props, "energy_scale_exponent")
+                row.prop(render_props, "render_resolution_x", text="X")
+                row.prop(render_props, "render_resolution_y", text="Y")
+                row.prop(render_props, "render_resolution_keep_ratio", text="", icon='LINKED')
+                row = render_box.row(align=True)
+                row.prop(render_props, "render_samples")
+                row.prop(render_props, "use_denoising", text="", icon="SHADERFX")
 
-            # Multi-angles caméra (rotation autour d'un axe)
-            render_box.separator()
-            render_box.label(text="Multi-angles (rotation d'axe)", icon="ORIENTATION_GIMBAL")
-            
-            # Choix de l'axe (boutons radio)
-            render_box.prop(render_props, "orbit_rotation_axis", expand=True)
-            
-            # Angles en deux colonnes équilibrées
-            row = render_box.row(align=True)
-            col_left = row.column(align=True)
-            col_right = row.column(align=True)
+                # Éclairage
+                render_box.separator()
+                render_box.label(text="Éclairage", icon="LIGHT_SUN")
+                render_box.prop(render_props, "light_energy")
+                render_box.prop(render_props, "use_three_point")
+                render_box.prop(render_props, "use_shadow_catcher")
+                if render_props.use_shadow_catcher:
+                    row = render_box.row(align=True)
+                    row.prop(render_props, "shadow_plane_size")
+                    row.prop(render_props, "shadow_plane_offset")
+                render_box.prop(render_props, "use_hdri")
+                if render_props.use_hdri:
+                    render_box.prop(render_props, "hdri_path")
+                    render_box.prop(render_props, "hdri_strength")
+                render_box.prop(render_props, "auto_scale_energy")
+                if render_props.auto_scale_energy:
+                    row = render_box.row(align=True)
+                    row.prop(render_props, "reference_model_dim")
+                    row.prop(render_props, "energy_scale_exponent")
 
-            # Colonne gauche : angles négatifs
-            col_left.prop(render_props, "orbit_angle_neg90", toggle=True)
-            col_left.prop(render_props, "orbit_angle_neg60", toggle=True)
-            col_left.prop(render_props, "orbit_angle_neg45", toggle=True)
-            col_left.prop(render_props, "orbit_angle_neg30", toggle=True)
+                # Multi-angles caméra (rotation autour d'un axe)
+                render_box.separator()
+                render_box.label(text="Multi-angles (rotation d'axe)", icon="ORIENTATION_GIMBAL")
+                
+                # Choix de l'axe (boutons radio)
+                render_box.prop(render_props, "orbit_rotation_axis", expand=True)
+                
+                # Angles en deux colonnes équilibrées
+                row = render_box.row(align=True)
+                col_left = row.column(align=True)
+                col_right = row.column(align=True)
 
-            # Colonne droite : 0 et angles positifs
-            col_right.prop(render_props, "orbit_angle_0", toggle=True)
-            col_right.prop(render_props, "orbit_angle_30", toggle=True)
-            col_right.prop(render_props, "orbit_angle_45", toggle=True)
-            col_right.prop(render_props, "orbit_angle_60", toggle=True)
-            col_right.prop(render_props, "orbit_angle_90", toggle=True)
-            
-            # Compteur d'images
-            nb_batch = sum(1 for c in bpy.data.collections if c.name.startswith("Batch_3D_")
-                           for o in c.objects if o.type == 'MESH')
-            nb_angles = sum([
-                render_props.orbit_angle_neg90, render_props.orbit_angle_neg60,
-                render_props.orbit_angle_neg45, render_props.orbit_angle_neg30,
-                render_props.orbit_angle_0,
-                render_props.orbit_angle_30, render_props.orbit_angle_45,
-                render_props.orbit_angle_60, render_props.orbit_angle_90,
-            ])
-            if nb_angles == 0:
-                nb_angles = 1  # Au moins 0° par défaut
-            total_imgs = nb_batch * nb_angles
-            render_box.label(text=f"{total_imgs} images ({nb_batch} × {nb_angles} angles)", icon="INFO")
+                # Colonne gauche : angles négatifs
+                col_left.prop(render_props, "orbit_angle_neg90", toggle=True)
+                col_left.prop(render_props, "orbit_angle_neg60", toggle=True)
+                col_left.prop(render_props, "orbit_angle_neg45", toggle=True)
+                col_left.prop(render_props, "orbit_angle_neg30", toggle=True)
 
-            # Bouton de preview + slider angle preview
-            render_box.separator()
-            row = render_box.row(align=True)
-            row.prop(render_props, "preview_orbit_angle", slider=True)
-            row.operator("render.batch_render_preview_reset_angle", text="Reset", icon="LOOP_BACK")
+                # Colonne droite : 0 et angles positifs
+                col_right.prop(render_props, "orbit_angle_0", toggle=True)
+                col_right.prop(render_props, "orbit_angle_30", toggle=True)
+                col_right.prop(render_props, "orbit_angle_45", toggle=True)
+                col_right.prop(render_props, "orbit_angle_60", toggle=True)
+                col_right.prop(render_props, "orbit_angle_90", toggle=True)
+                
+                # Compteur d'images
+                nb_batch = sum(1 for c in bpy.data.collections if c.name.startswith("Batch_3D_")
+                               for o in c.objects if o.type == 'MESH')
+                nb_angles = sum([
+                    render_props.orbit_angle_neg90, render_props.orbit_angle_neg60,
+                    render_props.orbit_angle_neg45, render_props.orbit_angle_neg30,
+                    render_props.orbit_angle_0,
+                    render_props.orbit_angle_30, render_props.orbit_angle_45,
+                    render_props.orbit_angle_60, render_props.orbit_angle_90,
+                ])
+                if nb_angles == 0:
+                    nb_angles = 1  # Au moins 0° par défaut
+                total_imgs = nb_batch * nb_angles
+                render_box.label(text=f"{total_imgs} images ({nb_batch} × {nb_angles} angles)", icon="INFO")
 
-            # Navigation entre modèles (si preview actif) + info modèle courant
-            if render_props.is_preview_active:
-                batch_objs = [
-                    obj
-                    for c in sorted(bpy.data.collections, key=lambda c: c.name)
-                    if c.name.startswith("Batch_3D_")
-                    for obj in c.objects
-                    if obj.type == 'MESH'
-                ]
-                nb_models = len(batch_objs)
+                # Bouton de preview + slider angle preview
+                render_box.separator()
+                row = render_box.row(align=True)
+                row.prop(render_props, "preview_orbit_angle", slider=True)
+                row.operator("render.batch_render_preview_reset_angle", text="Reset", icon="LOOP_BACK")
 
-                # Reconstruire la liste des angles actifs (même logique que le batch render)
-                _adeg_ui = []
-                if render_props.orbit_angle_neg90: _adeg_ui.append(-90)
-                if render_props.orbit_angle_neg60: _adeg_ui.append(-60)
-                if render_props.orbit_angle_neg45: _adeg_ui.append(-45)
-                if render_props.orbit_angle_neg30: _adeg_ui.append(-30)
-                if render_props.orbit_angle_0:     _adeg_ui.append(0)
-                if render_props.orbit_angle_30:    _adeg_ui.append(30)
-                if render_props.orbit_angle_45:    _adeg_ui.append(45)
-                if render_props.orbit_angle_60:    _adeg_ui.append(60)
-                if render_props.orbit_angle_90:    _adeg_ui.append(90)
-                if not _adeg_ui: _adeg_ui = [0]
-                nb_angles_ui = len(_adeg_ui)
-                total_steps = nb_models * nb_angles_ui
+                # Navigation entre modèles (si preview actif) + info modèle courant
+                if render_props.is_preview_active:
+                    batch_objs = [
+                        obj
+                        for c in sorted(bpy.data.collections, key=lambda c: c.name)
+                        if c.name.startswith("Batch_3D_")
+                        for obj in c.objects
+                        if obj.type == 'MESH'
+                    ]
+                    nb_models = len(batch_objs)
 
-                flat = render_props.preview_flat_index % total_steps if total_steps > 0 else 0
-                model_idx = flat // nb_angles_ui
-                angle_idx = flat % nb_angles_ui
-                cur_angle_deg = _adeg_ui[angle_idx]
-                angle_sign = f"+{cur_angle_deg}" if cur_angle_deg > 0 else str(cur_angle_deg)
+                    # Reconstruire la liste des angles actifs (même logique que le batch render)
+                    _adeg_ui = []
+                    if render_props.orbit_angle_neg90: _adeg_ui.append(-90)
+                    if render_props.orbit_angle_neg60: _adeg_ui.append(-60)
+                    if render_props.orbit_angle_neg45: _adeg_ui.append(-45)
+                    if render_props.orbit_angle_neg30: _adeg_ui.append(-30)
+                    if render_props.orbit_angle_0:     _adeg_ui.append(0)
+                    if render_props.orbit_angle_30:    _adeg_ui.append(30)
+                    if render_props.orbit_angle_45:    _adeg_ui.append(45)
+                    if render_props.orbit_angle_60:    _adeg_ui.append(60)
+                    if render_props.orbit_angle_90:    _adeg_ui.append(90)
+                    if not _adeg_ui: _adeg_ui = [0]
+                    nb_angles_ui = len(_adeg_ui)
+                    total_steps = nb_models * nb_angles_ui
 
-                nav_row = render_box.row(align=True)
-                op_prev = nav_row.operator("render.batch_render_preview_navigate", text="", icon="TRIA_LEFT")
-                op_prev.direction = 'PREV'
-                if nb_angles_ui > 1:
-                    nav_row.label(
-                        text=f"Modèle {model_idx + 1}/{nb_models}  ·  {angle_sign}°  (étape {flat + 1}/{total_steps})"
+                    flat = render_props.preview_flat_index % total_steps if total_steps > 0 else 0
+                    model_idx = flat // nb_angles_ui
+                    angle_idx = flat % nb_angles_ui
+                    cur_angle_deg = _adeg_ui[angle_idx]
+                    angle_sign = f"+{cur_angle_deg}" if cur_angle_deg > 0 else str(cur_angle_deg)
+
+                    nav_row = render_box.row(align=True)
+                    op_prev = nav_row.operator("render.batch_render_preview_navigate", text="", icon="TRIA_LEFT")
+                    op_prev.direction = 'PREV'
+                    if nb_angles_ui > 1:
+                        nav_row.label(
+                            text=f"Modèle {model_idx + 1}/{nb_models}  ·  {angle_sign}°  (étape {flat + 1}/{total_steps})"
+                        )
+                    else:
+                        nav_row.label(text=f"Modèle {model_idx + 1} / {nb_models}")
+                    op_next = nav_row.operator("render.batch_render_preview_navigate", text="", icon="TRIA_RIGHT")
+                    op_next.direction = 'NEXT'
+
+                    if render_props.preview_current_info:
+                        info_row = render_box.row()
+                        info_row.label(text=render_props.preview_current_info, icon="INFO")
+
+                row = render_box.row(align=True)
+                row.scale_y = 1.5
+                if render_props.is_preview_active:
+                    row.operator("render.batch_render_preview", text="Rafraîchir Preview", icon="FILE_REFRESH")
+                    row.operator("render.batch_render_clean_preview", text="", icon="CANCEL")
+                else:
+                    row.operator("render.batch_render_preview", text="Preview cadrage", icon="HIDE_OFF")
+
+                # Bouton de lancement
+                render_box.separator()
+                render_box.prop(render_props, "show_render_preview")
+                range_row = render_box.row(align=True)
+                range_row.prop(render_props, "render_range", text="Intervalle", icon="LINENUMBERS_ON")
+                if render_props.render_range.strip():
+                    range_row.alert = True
+                    range_row.label(text="", icon="FILTER")
+                row = render_box.row()
+                row.scale_y = 2.0
+                row.operator("render.batch_render", text="Lancer le Batch Render", icon="RENDER_ANIMATION")
+
+                # ── Estimation du temps ──────────────────────────────────────
+                est_row = render_box.row()
+                est_row.scale_y = 0.8
+                if render_props.last_render_time_per_image > 0:
+                    secs = render_props.last_render_time_per_image * total_imgs
+                    h = int(secs // 3600)
+                    m = int((secs % 3600) // 60)
+                    s = int(secs % 60)
+                    if h > 0:
+                        time_str = f"{h}h {m:02d}m {s:02d}s"
+                    elif m > 0:
+                        time_str = f"{m}m {s:02d}s"
+                    else:
+                        time_str = f"{s}s"
+                    spi = render_props.last_render_time_per_image
+                    est_row.label(
+                        text=f"Estimation : ~{time_str}  ({spi:.1f}s/img, base empirique)",
+                        icon="TIME",
                     )
                 else:
-                    nav_row.label(text=f"Modèle {model_idx + 1} / {nb_models}")
-                op_next = nav_row.operator("render.batch_render_preview_navigate", text="", icon="TRIA_RIGHT")
-                op_next.direction = 'NEXT'
-
-                if render_props.preview_current_info:
-                    info_row = render_box.row()
-                    info_row.label(text=render_props.preview_current_info, icon="INFO")
-
-            row = render_box.row(align=True)
-            row.scale_y = 1.5
-            if render_props.is_preview_active:
-                row.operator("render.batch_render_preview", text="Rafraîchir Preview", icon="FILE_REFRESH")
-                row.operator("render.batch_render_clean_preview", text="", icon="CANCEL")
-            else:
-                row.operator("render.batch_render_preview", text="Preview cadrage", icon="HIDE_OFF")
-
-            # Bouton de lancement
-            render_box.separator()
-            render_box.prop(render_props, "show_render_preview")
-            range_row = render_box.row(align=True)
-            range_row.prop(render_props, "render_range", text="Intervalle", icon="LINENUMBERS_ON")
-            if render_props.render_range.strip():
-                range_row.alert = True
-                range_row.label(text="", icon="FILTER")
-            row = render_box.row()
-            row.scale_y = 2.0
-            row.operator("render.batch_render", text="Lancer le Batch Render", icon="RENDER_ANIMATION")
-
-            # ── Estimation du temps ──────────────────────────────────────
-            est_row = render_box.row()
-            est_row.scale_y = 0.8
-            if render_props.last_render_time_per_image > 0:
-                secs = render_props.last_render_time_per_image * total_imgs
-                h = int(secs // 3600)
-                m = int((secs % 3600) // 60)
-                s = int(secs % 60)
-                if h > 0:
-                    time_str = f"{h}h {m:02d}m {s:02d}s"
-                elif m > 0:
-                    time_str = f"{m}m {s:02d}s"
-                else:
-                    time_str = f"{s}s"
-                spi = render_props.last_render_time_per_image
-                est_row.label(
-                    text=f"Estimation : ~{time_str}  ({spi:.1f}s/img, base empirique)",
-                    icon="TIME",
-                )
-            else:
-                est_row.label(
-                    text="Estimation : lancez un 1er batch pour calibrer",
-                    icon="TIME",
-                )
+                    est_row.label(
+                        text="Estimation : lancez un 1er batch pour calibrer",
+                        icon="TIME",
+                    )
 
         # Addon
         layout.separator()
         box = layout.box()
-        box.label(text="Addon", icon="BLENDER")
-        
-        # Affichage de la version
-        try:
-            from .version import __version__
-            version_text = f"Version: {__version__}"
-        except ImportError:
-            version_text = "Version: inconnue"
-        
         row = box.row()
-        row.label(text=version_text, icon="INFO")
-        row.operator("addon.show_info", text="", icon="QUESTION")
-        
-        # Boutons de mise à jour
-        row = box.row(align=True)
-        row.operator("addon.check_update", text="Vérifier", icon="FILE_REFRESH")
-        row.operator("addon.update_git", text="Mettre à jour", icon="IMPORT")
-        
-        # Bouton de diagnostic (pour le débogage)
-        row = box.row()
-        row.operator("addon.git_diagnostic", text="Diagnostic Git", icon="CONSOLE")
+        row.prop(uistate, "show_addon",
+                 icon='TRIA_DOWN' if uistate.show_addon else 'TRIA_RIGHT',
+                 emboss=False, text="Addon")
+        if uistate.show_addon:
+            # Affichage de la version
+            try:
+                from .version import __version__
+                version_text = f"Version: {__version__}"
+            except ImportError:
+                version_text = "Version: inconnue"
+            
+            row2 = box.row()
+            row2.label(text=version_text, icon="INFO")
+            row2.operator("addon.show_info", text="", icon="QUESTION")
+            
+            # Boutons de mise à jour
+            row3 = box.row(align=True)
+            row3.operator("addon.check_update", text="Vérifier", icon="FILE_REFRESH")
+            row3.operator("addon.update_git", text="Mettre à jour", icon="IMPORT")
+            
+            # Bouton de diagnostic (pour le débogage)
+            row4 = box.row()
+            row4.operator("addon.git_diagnostic", text="Diagnostic Git", icon="CONSOLE")
 
 ui_classes = [DIF_MT_Presets, OT_AddMyPreset, DIF_UL_BatchPresets]
 

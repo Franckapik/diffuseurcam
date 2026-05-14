@@ -1872,6 +1872,20 @@ class BatchRenderProps(bpy.types.PropertyGroup):
     )
 
 
+class UIStateProps(bpy.types.PropertyGroup):
+    """État des sections pliables du panel"""
+    show_usinage: bpy.props.BoolProperty(name="Usinage", default=True)
+    show_dimensions: bpy.props.BoolProperty(name="Dimensions", default=True)
+    show_array: bpy.props.BoolProperty(name="Array", default=True)
+    show_generateur: bpy.props.BoolProperty(name="Générateur", default=True)
+    show_prepare_cam: bpy.props.BoolProperty(name="Préparation CAM", default=True)
+    show_position_selected: bpy.props.BoolProperty(name="Positionner la sélection", default=True)
+    show_devis: bpy.props.BoolProperty(name="Devis", default=True)
+    show_motif: bpy.props.BoolProperty(name="Motif", default=True)
+    show_modele_3d: bpy.props.BoolProperty(name="Modèle 3D", default=True)
+    show_addon: bpy.props.BoolProperty(name="Addon", default=True)
+
+
 classes = [
     DiffuseurProps,
     ArrayProps,
@@ -1885,6 +1899,7 @@ classes = [
     BatchPresetItem,
     Batch3DProps,
     BatchRenderProps,
+    UIStateProps,
 ]
 
 
@@ -1903,6 +1918,7 @@ def register():
     bpy.types.Scene.batch_3d_props = bpy.props.PointerProperty(type=Batch3DProps)
     bpy.types.Scene.batch_presets = bpy.props.CollectionProperty(type=BatchPresetItem)
     bpy.types.Scene.batch_render_props = bpy.props.PointerProperty(type=BatchRenderProps)
+    bpy.types.Scene.ui_state = bpy.props.PointerProperty(type=UIStateProps)
     bpy.types.Scene.dif_parts = []
     bpy.app.handlers.load_post.append(_batch_render_load_post)
 
@@ -1923,5 +1939,6 @@ def unregister():
     del bpy.types.Scene.batch_3d_props
     del bpy.types.Scene.batch_presets
     del bpy.types.Scene.batch_render_props
+    del bpy.types.Scene.ui_state
     if _batch_render_load_post in bpy.app.handlers.load_post:
         bpy.app.handlers.load_post.remove(_batch_render_load_post)
