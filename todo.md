@@ -1,3 +1,53 @@
+## 📐 COMPRENDRE LA LONGUEUR DU CADRE MORTAISE (975mm vs 1000mm)
+
+**Question initiale**: Pourquoi le cadre mortaise fait 975mm de long au lieu de 1000mm (2 × 500mm) ?
+
+**Réponse**: Les dimensions externes (500mm largeur, longueur=2) sont fixes, mais elles imposent un pas de cellule réduit à cause du cadre épais.
+
+### Formules
+
+La dimension **largeur** impose le pas `rang` :
+
+```
+rang = (W - 2*ec + e) / N
+```
+
+où:
+
+- `W = largeur_diffuseur` (500mm)
+- `ec = épaisseur_cadre` (15mm) — cadre épais
+- `e = épaisseur` (5mm) — peignes
+- `N = type` (7) — nombre de cellules
+
+La dimension **longueur** se calcule :
+
+```
+L = N_total * rang + 2*ec - e
+```
+
+où `N_total = N * longueur_diffuseur = 7 * 2 = 14`
+
+### Calcul numérique
+
+```
+rang = (500 - 30 + 5) / 7 = 475 / 7 ≈ 67,857 mm
+L = 14 * 67,857 + 30 - 5 = 950 + 25 = 975 mm
+```
+
+### Intuition
+
+Le cadre épais (`ec=15mm`) est **plus épais que les peignes** (`e=5mm`).
+
+- Chaque côté "vole" `ec - e = 10mm` au pas des cellules.
+- Sur 2 périodes en longueur, l'écart total est `2(ec - e) = 20mm`.
+- `1000 - 975 = 25mm = 2*ec - e` ✓
+
+**Conclusion**: 975mm est la dimension externe **correcte** du diffuseur, car elle respecte le pas réduit imposé par le cadre épais.
+
+---
+
+## TODO PRINCIPAL
+
 Je souhaiterais rendre possible un assemblage entre les pièces du cadre en queues droites. Ces queues droites correspondrait aux formes de tenons actuels mais serait mutlipliés sur toute la largeur du cadre de manière à avoir une forme un peu plus esthetique (en piano). Je souhaiterais que tu ajoutes une option dans le menu "interface Cadre/Cadre" qui permette ce mode précis. Je reglerai ensuite la valeur de tenon_cadre à 5mm, soit le diametre de la fraise, et le calcul doit ensuite etre automatique de manière à distribuer ces queues droites de 5mm sur toute la largeur du cadre (qui correspond en réalité à la valeur profondeur du modèle). La largeur du cadre (ex : 100mm), doit etre divisée par la valeur de tenon cadre (ex : 5mm), et si il existe un reste à la division, on peut probablement répartir ce reste sur le haut et le bas du cadre pour centrer le tout.
 
 Les dimensions d'un produits sont externes.
