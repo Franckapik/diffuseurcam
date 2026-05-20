@@ -463,8 +463,10 @@ class Diffuseur_SideBar(Panel):
             if productprops.product_type in ("0", "1"):
                 box.prop(difprops, "invert_depth")
                 box.operator("mesh.simulation")
+            elif productprops.product_type == "2":
+                box.operator("mesh.simulation", text="Générer Modèle 3D Absorbeur")
             else:
-                box.label(text="Disponible pour Diffuseur 1D/2D", icon="INFO")
+                box.label(text="Disponible pour Diffuseur 1D/2D et Absorbeur", icon="INFO")
 
             # Batch 3D
             box.separator()

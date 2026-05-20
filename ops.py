@@ -858,15 +858,119 @@ class Add3DModel(bpy.types.Operator, AddObjectHelper):
                     bsdf.inputs["Roughness"].default_value = 0.75
         return mat
 
+    def _get_or_create_fabric_material(self, name, color):
+        """Récupère ou crée un matériau tissu noir avec la couleur donnée."""
+        mat = bpy.data.materials.get(name)
+        if mat is None:
+            mat = bpy.data.materials.new(name=name)
+            mat.use_nodes = True
+            bsdf = mat.node_tree.nodes.get("Principled BSDF")
+            if bsdf:
+                bsdf.inputs["Base Color"].default_value = color
+                if "Roughness" in bsdf.inputs:
+                    bsdf.inputs["Roughness"].default_value = 0.9
+                if "Sheen Weight" in bsdf.inputs:
+                    bsdf.inputs["Sheen Weight"].default_value = 0.3
+        return mat
+
+    def _create_plane(self, bm, x, y, z, sx, sy, mat_index=0):
+        """Crée un plan (face unique) dans le bmesh.
+        Position (x, y, z) = coin inférieur-gauche.
+        Dimensions (sx, sy) = taille selon X, Y."""
+        verts = [
+            bm.verts.new((x, y, z)),
+            bm.verts.new((x + sx, y, z)),
+            bm.verts.new((x + sx, y + sy, z)),
+            bm.verts.new((x, y + sy, z)),
+        ]
+        f = bm.faces.new(verts)
+        f.material_index = mat_index
+
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
         product_type = scene.product_props.product_type
         invert_depth = difprops.invert_depth
 
-        if product_type not in ("0", "1"):
-            self.report({"WARNING"}, "Le modèle 3D est disponible uniquement pour les diffuseurs 1D et 2D")
+        if product_type not in ("0", "1", "2"):
+            self.report({"WARNING"}, "Le modèle 3D est disponible pour les diffuseurs 1D/2D et les absorbeurs")
             return {"CANCELLED"}
+
+        # ── Matériaux communs (bois) ──────────────────────────────────────
+        mat_ctp = self._load_material_from_blend()
+        if mat_ctp:
+            mat_cadre = mat_ctp
+        else:
+            mat_cadre = self._get_or_create_material("DIF_Cadre", (0.40, 0.24, 0.10, 1.0))
+
+        # ── Branche Absorbeur ─────────────────────────────────────────────
+        if product_type == "2":
+            W = difprops.largeur_diffuseur   # largeur
+            L = difprops.longueur_absorbeur  # longueur
+            D = difprops.profondeur          # profondeur (épaisseur du cadre)
+            ec = difprops.getEpaisseurCadre()
+
+            MAT_CADRE = 0    # bois (même matériau que les diffuseurs)
+            MAT_TISSU = 1    # tissu noir
+
+            mat_tissu = self._get_or_create_fabric_material("ABS_Tissu", (0.02, 0.02, 0.02, 1.0))
+
+            bm = bmesh.new()
+
+            # Cadre bois (4 planches)
+            # Planche gauche
+            self._create_box(bm, 0, 0, 0, ec, L, D, MAT_CADRE)
+            # Planche droite
+            self._create_box(bm, W - ec, 0, 0, ec, L, D, MAT_CADRE)
+            # Planche basse
+            self._create_box(bm, ec, 0, 0, W - 2 * ec, ec, D, MAT_CADRE)
+            # Planche haute
+            self._create_box(bm, ec, L - ec, 0, W - 2 * ec, ec, D, MAT_CADRE)
+
+            # Tissu noir : plan en façade (Z = D), zone interne du cadre
+            self._create_plane(bm, ec, ec, D, W - 2 * ec, L - 2 * ec, MAT_TISSU)
+
+            mesh_name = (
+                "3D_ABS"
+                + "_W" + str(round(W * 100))
+                + "_P" + str(round(D * 100))
+                + "_L" + str(round(L * 100))
+                + "_E" + str(round(ec * 1000))
+            )
+            mesh = bpy.data.meshes.new(mesh_name)
+            bm.to_mesh(mesh)
+            bm.free()
+            mesh.update()
+
+            obj = bpy.data.objects.new(mesh.name, mesh)
+            obj.data.materials.append(mat_cadre)
+            obj.data.materials.append(mat_tissu)
+
+            bpy.context.collection.objects.link(obj)
+            bpy.types.Scene.dif_parts.append(obj.name)
+
+            bpy.ops.object.select_all(action="DESELECT")
+            obj.select_set(True)
+            bpy.context.view_layer.objects.active = obj
+            bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
+
+            bpy.ops.object.mode_set(mode='EDIT')
+            bpy.ops.mesh.select_all(action='SELECT')
+            bpy.ops.uv.smart_project(margin_method='SCALED')
+            mesh = obj.data
+            bm = bmesh.from_edit_mesh(mesh)
+            uv_layer = bm.loops.layers.uv.active
+            if uv_layer:
+                for face in bm.faces:
+                    for loop in face.loops:
+                        loop[uv_layer].uv *= 3
+            bmesh.update_edit_mesh(mesh)
+            bpy.ops.object.mode_set(mode='OBJECT')
+
+            print(f"✅ Modèle 3D Absorbeur généré: {mesh_name}")
+            print(f"   Dimensions: {W*1000:.0f} × {L*1000:.0f} × {D*1000:.0f} mm")
+            print(f"   Pièces: 4 planches bois + 1 tissu noir en façade")
+            return {"FINISHED"}
 
         # ── Paramètres du diffuseur ──────────────────────────────────────
         e = difprops.epaisseur              # Épaisseur du bois peignes/carreaux (ex: 3mm)
@@ -885,21 +989,15 @@ class Add3DModel(bpy.types.Operator, AddObjectHelper):
         num_cols = N
         num_rows = 1 if is_1d else round(N * difprops.longueur_diffuseur)
 
-        # ── Matériaux (3 teintes bois) ───────────────────────────────────
+        # ── Matériaux diffuseur (3 teintes bois) ────────────────────────
         MAT_CADRE = 0       # Cadres (chêne foncé)
         MAT_PEIGNE = 1      # Peignes (chêne moyen)
         MAT_CARREAU = 2     # Carreaux (chêne clair)
 
-        # Essayer de charger le matériau depuis materials.blend
-        mat_ctp = self._load_material_from_blend()
-        
         if mat_ctp:
-            # Utiliser le matériau chargé pour tous les éléments
-            mat_cadre = mat_ctp
             mat_peigne = mat_ctp
             mat_carreau = mat_ctp
         else:
-            # Créer les matériaux par défaut si le chargement échoue
             mat_cadre = self._get_or_create_material(
                 "DIF_Cadre", (0.40, 0.24, 0.10, 1.0))
             mat_peigne = self._get_or_create_material(
