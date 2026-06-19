@@ -673,72 +673,35 @@ def monopilier_profondeurs(x, y, difprops, colonne, cross_monopilier_min):
     pyramidal = difprops.pilier_pyramidal if hasattr(difprops, 'pilier_pyramidal') else False
     encoches = difprops.pilier_encoches if hasattr(difprops, 'pilier_encoches') else True
     
-    # Dans le contexte du moule mono, la largeur disponible est largeur_monopilier
-    # largeur_monopilier = rang * type - epaisseur = (largeur_diffuseur - epaisseur) - epaisseur = largeur_diffuseur - 2*epaisseur
-    largeur_monopilier = largeur_diffuseur - 2 * epaisseur
-    # Zone utile pour les piliers : on laisse epaisseur de marge à droite
-    largeur_utile = largeur_monopilier - epaisseur
-    
-    # Calcul de l'espace théorique par pilier dans la zone utile
-    if difprops.type > 0:
-        espace_theorique_par_pilier = largeur_utile / difprops.type
-    else:
-        espace_theorique_par_pilier = largeur_utile
-    
-    # Calcul de la largeur des piliers selon le mode pyramidal
-    largeur_pilier_base = espace_theorique_par_pilier - epaisseur  # Espace pour le pilier moins l'épaisseur de séparation
-    
+    # largeur_monopilier = rang * type - epaisseur = largeur_diffuseur - 2*ec
+    ec = difprops.getEpaisseurCadre()
+    largeur_monopilier = largeur_diffuseur - 2 * ec
+
+    # La largeur nominale d'un sous-pilier = largeur de cellule du diffuseur (rang - e).
+    # Cela garantit l'alignement exact avec le modèle 3D :
+    #   N * (rang - e) + (N-1) * e = N*rang - e = largeur_monopilier
+    rang = difprops.getRang()
+    largeur_pilier_base = rang - epaisseur
+
     if pyramidal:
-        # Mode pyramidal : la base garde la largeur originale, seul le haut est réduit
-        largeur_pilier_base_finale = largeur_pilier_base  # Base non réduite
-        largeur_pilier_haut = largeur_pilier_base * (1 - reduction_ratio)  # Haut réduit
+        largeur_pilier_base_finale = largeur_pilier_base
+        largeur_pilier_haut = largeur_pilier_base * (1 - reduction_ratio)
     else:
-        # Mode classique : réduction uniforme sur toute la hauteur
         largeur_pilier_base_finale = largeur_pilier_base * (1 - reduction_ratio)
         largeur_pilier_haut = largeur_pilier_base_finale
-    
-    # Pour centrer l'ensemble des piliers : utiliser la largeur de base pour le positionnement
+
     largeur_pilier_pour_positionnement = largeur_pilier_base_finale
-    
+
     if difprops.type > 1:
-        # Calcul de l'espace total occupé par tous les piliers (base)
-        espace_total_piliers = difprops.type * largeur_pilier_pour_positionnement
-        # Espace restant à répartir entre les intervalles (type-1 intervalles)
-        espace_pour_intervalles = largeur_utile - espace_total_piliers
-        # Intervalle uniforme entre les piliers
-        intervalle_entre_piliers = espace_pour_intervalles / (difprops.type - 1)
-        # Espacement entre centres = largeur pilier + intervalle
-        espacement_entre_centres = largeur_pilier_pour_positionnement + intervalle_entre_piliers
-        
-        # Position du premier pilier : centré dans la largeur complète du moule
-        # Le moule va de (x - epaisseur) à (largeur_monopilier + epaisseur)
-        # Nous devons centrer l'ensemble des piliers dans cette largeur totale
-        largeur_totale_moule = largeur_monopilier + 2 * epaisseur  # = largeur_diffuseur
-        largeur_ensemble_total = (difprops.type - 1) * espacement_entre_centres + largeur_pilier_pour_positionnement
-        marge_centrage_moule = (largeur_totale_moule - largeur_ensemble_total) / 2
-        x_premier_pilier = (x - epaisseur) + marge_centrage_moule + largeur_pilier_pour_positionnement / 2
-        
-        # Calculons les positions réelles des piliers par rapport au moule complet
-        positions_piliers = []
-        for i in range(difprops.type):
-            centre_pilier = x_premier_pilier + i * espacement_entre_centres
-            debut_pilier = centre_pilier - largeur_pilier_pour_positionnement / 2
-            fin_pilier = centre_pilier + largeur_pilier_pour_positionnement / 2
-            positions_piliers.append((debut_pilier, fin_pilier))
-        
-        premier_debut = positions_piliers[0][0]
-        dernier_fin = positions_piliers[-1][1]
-        # Les marges sont calculées par rapport aux limites du moule
-        marge_gauche_moule = premier_debut - (x - epaisseur)  # Distance depuis le début du moule
-        marge_droite_moule = (largeur_monopilier + epaisseur) - dernier_fin  # Distance jusqu'à la fin du moule
-        # Les marges utiles (par rapport à la zone de piliers)
-        marge_gauche_utile = premier_debut - (x + epaisseur)
-        marge_droite_utile = (x + epaisseur + largeur_utile) - dernier_fin
+        # Pas centre-à-centre = rang (période des cellules, identique au modèle 3D)
+        espacement_entre_centres = rang
+        # Premier sous-pilier : bord gauche à x (face intérieure du cadre gauche),
+        # centre à x + (rang - e) / 2
+        x_premier_pilier = x + largeur_pilier_base / 2
     else:
-        # Un seul pilier, centré parfaitement dans le moule complet
+        # Un seul pilier, centré dans l'intérieur du moule
         espacement_entre_centres = 0
-        largeur_totale_moule = largeur_monopilier + 2 * epaisseur
-        x_premier_pilier = (x - epaisseur) + largeur_totale_moule / 2
+        x_premier_pilier = x + largeur_monopilier / 2
     
     x0, y0 = x, y  # Initialisation des coordonnées de départ
     result = []
@@ -835,54 +798,30 @@ def contremonopilier_hauteurs(x, y, difprops):
     # La logique pyramidale est disponible pour cette fonction (mono uniquement)
     pyramidal = difprops.pilier_pyramidal if hasattr(difprops, 'pilier_pyramidal') else False
     
-    # Dans le contexte du moule mono, la largeur disponible est largeur_monopilier
-    # largeur_monopilier = rang * type - epaisseur = (largeur_diffuseur - epaisseur) - epaisseur = largeur_diffuseur - 2*epaisseur
-    largeur_monopilier = largeur_diffuseur - 2 * epaisseur
-    # Zone utile pour les piliers : on laisse epaisseur de marge à droite
-    largeur_utile = largeur_monopilier - epaisseur
-    
-    # Calcul de l'espace théorique par pilier dans la zone utile
-    if difprops.type > 0:
-        espace_theorique_par_pilier = largeur_utile / difprops.type
-    else:
-        espace_theorique_par_pilier = largeur_utile
-    
-    # Calcul de la largeur des contrepiliers selon le mode pyramidal
-    largeur_pilier_base = espace_theorique_par_pilier - epaisseur  # Espace pour le pilier moins l'épaisseur de séparation
-    
+    # largeur_monopilier = rang * type - epaisseur = largeur_diffuseur - 2*ec
+    ec = difprops.getEpaisseurCadre()
+    largeur_monopilier = largeur_diffuseur - 2 * ec
+
+    # Largeur nominale d'un sous-pilier = largeur de cellule du diffuseur (rang - e),
+    # identique à monopilier_profondeurs pour garantir l'alignement avec le modèle 3D.
+    rang = difprops.getRang()
+    largeur_pilier_base = rang - epaisseur
+
     if pyramidal:
-        # Mode pyramidal : la base garde la largeur originale, seul le haut est réduit
-        largeur_pilier_base_finale = largeur_pilier_base  # Base non réduite
-        largeur_pilier_haut = largeur_pilier_base * (1 - reduction_ratio)  # Haut réduit
+        largeur_pilier_base_finale = largeur_pilier_base
+        largeur_pilier_haut = largeur_pilier_base * (1 - reduction_ratio)
     else:
-        # Mode classique : réduction uniforme sur toute la hauteur
         largeur_pilier_base_finale = largeur_pilier_base * (1 - reduction_ratio)
         largeur_pilier_haut = largeur_pilier_base_finale
-    
-    # Pour centrer l'ensemble des piliers : utiliser la largeur de base pour le positionnement
+
     largeur_pilier_pour_positionnement = largeur_pilier_base_finale
-    
+
     if difprops.type > 1:
-        # Calcul de l'espace total occupé par tous les piliers (base)
-        espace_total_piliers = difprops.type * largeur_pilier_pour_positionnement
-        # Espace restant à répartir entre les intervalles (type-1 intervalles)
-        espace_pour_intervalles = largeur_utile - espace_total_piliers
-        # Intervalle uniforme entre les piliers
-        intervalle_entre_piliers = espace_pour_intervalles / (difprops.type - 1)
-        # Espacement entre centres = largeur pilier + intervalle
-        espacement_entre_centres = largeur_pilier_pour_positionnement + intervalle_entre_piliers
-        
-        # Position du premier pilier : centré dans la largeur complète du moule
-        # (même logique que monopilier_profondeurs)
-        largeur_totale_moule = largeur_monopilier + 2 * epaisseur  # = largeur_diffuseur
-        largeur_ensemble_total = (difprops.type - 1) * espacement_entre_centres + largeur_pilier_pour_positionnement
-        marge_centrage_moule = (largeur_totale_moule - largeur_ensemble_total) / 2
-        x_premier_pilier = (x - epaisseur) + marge_centrage_moule + largeur_pilier_pour_positionnement / 2
+        espacement_entre_centres = rang
+        x_premier_pilier = x + largeur_pilier_base / 2
     else:
-        # Un seul pilier, centré parfaitement dans le moule complet
         espacement_entre_centres = 0
-        largeur_totale_moule = largeur_monopilier + 2 * epaisseur
-        x_premier_pilier = (x - epaisseur) + largeur_totale_moule / 2
+        x_premier_pilier = x + largeur_monopilier / 2
 
     x0, y0 = x, y  # Initialisation des coordonnées de départ
     result = []

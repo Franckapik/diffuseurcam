@@ -1024,6 +1024,7 @@ def add_fond_moule(difprops, productprops, usinageprops):
 
     N = difprops.type
     rang2 = rang - epaisseur
+    ec = difprops.getEpaisseurCadre()
 
     edgesCadre = []
     vertsMortaisesInt = []
@@ -1033,14 +1034,14 @@ def add_fond_moule(difprops, productprops, usinageprops):
 
     if product_type in ("0", "1", "3"):
         """depart bas/haut"""
-        y0 = rang2 / 2 + epaisseur + epaisseur_moule + debord_moule
+        y0 = rang2 / 2 + ec + epaisseur_moule + debord_moule
         """ depart gauche/droite """
-        x0 = rang2 / 2 + epaisseur + epaisseur_moule + debord_moule
+        x0 = rang2 / 2 + ec + epaisseur_moule + debord_moule
 
         for k in range(0, round(N * round(N * longueur_diffuseur))):
             if k % N == 0 and k != 0:
                 y0 += rang2 + epaisseur
-                x0 = rang2 / 2 + epaisseur + epaisseur_moule + debord_moule
+                x0 = rang2 / 2 + ec + epaisseur_moule + debord_moule
 
             if difprops.type_moule == "eco":
                 if ratio[k] != 0:
@@ -1056,17 +1057,17 @@ def add_fond_moule(difprops, productprops, usinageprops):
 
         if difprops.type_moule == "mono":
             """depart bas/haut"""
-            y0 = rang2 / 2 + epaisseur + epaisseur_moule + debord_moule
+            y0 = rang2 / 2 + ec + epaisseur_moule + debord_moule
             """ depart gauche/droite """
-            x0 = epaisseur + epaisseur_moule + debord_moule
-            
+            x0 = ec + epaisseur_moule + debord_moule
+
             # Espacement sans réduction pour le fond du moule
             mortaise_spacing_base = largeur_monopilier / 5
 
             for k in range(0, round(N * longueur_diffuseur * 2)):
                 if k % (round(N * longueur_diffuseur)) == 0 and k != 0:
                     x0 += mortaise_spacing_base * 2
-                    y0 = rang2 / 2 + epaisseur + epaisseur_moule + debord_moule
+                    y0 = rang2 / 2 + ec + epaisseur_moule + debord_moule
 
                 # apply_reduction=False : mortaises pleines sans réduction
                 vertsMortaisesInt += [*mortaise_pilier_fond_moule_mono(x0, y0, difprops, mortaise_spacing_base, apply_reduction=False)]
@@ -1276,6 +1277,7 @@ def add_cadre_moule_long(difprops, productprops, usinageprops):
 def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
     product_type = productprops.product_type
     epaisseur = difprops.epaisseur
+    ec = difprops.getEpaisseurCadre()
     profondeur = difprops.profondeur
     epaisseur_pilier = difprops.epaisseur_pilier
     socle_monopilier = difprops.socle_monopilier
@@ -1459,11 +1461,11 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
                     centre_mortaise_droite = centre_piece + mortaise_spacing
                     
                     vertsCadre += [
-                        (x0 - epaisseur, y0, 0),
-                        (x0 - epaisseur, y0 + socle_monopilier, 0),
+                        (x0 - ec, y0, 0),
+                        (x0 - ec, y0 + socle_monopilier, 0),
                         *monopilier_profondeurs(x0, y0 + socle_monopilier, difprops, i, cross_monopilier_min),
-                        (largeur_monopilier + epaisseur, y0 + socle_monopilier, 0),
-                        (largeur_monopilier + epaisseur, y0, 0),
+                        (largeur_monopilier + ec, y0 + socle_monopilier, 0),
+                        (largeur_monopilier + ec, y0, 0),
                         # Contour bas avec encoches des mortaises (de droite à gauche)
                         (centre_mortaise_droite + mortaise_largeur / 2, y0, 0),
                         (centre_mortaise_droite + mortaise_largeur / 2, y0 - epaisseur_moule, 0),
@@ -1473,7 +1475,7 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
                         (centre_mortaise_gauche + mortaise_largeur / 2, y0 - epaisseur_moule, 0),
                         (centre_mortaise_gauche - mortaise_largeur / 2, y0 - epaisseur_moule, 0),
                         (centre_mortaise_gauche - mortaise_largeur / 2, y0, 0),
-                        (x0 - epaisseur, y0, 0),
+                        (x0 - ec, y0, 0),
                     ]
                     
                     rangee_end_indices.append(len(vertsCadre) - 1)  # Marquer la fin de cette rangée
