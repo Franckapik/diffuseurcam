@@ -1302,9 +1302,9 @@ class AddContrePilierMoule(bpy.types.Operator, AddObjectHelper):
         productprops = scene.product_props
         usinageprops = scene.usinage_props
         
-        # Vérifier que nous sommes bien dans le bon cas
-        if productprops.product_type != "3":
-            print(f"❌ [DEBUG] ERREUR: product_type doit être '3' (moule), reçu: '{productprops.product_type}'")
+        # Vérifier que nous sommes bien dans un contexte moule (D2/D1 ou ancien Moule)
+        if productprops.product_type not in ("0", "1", "3"):
+            print(f"❌ [DEBUG] ERREUR: product_type doit être '0', '1' ou '3' (moule), reçu: '{productprops.product_type}'")
             return {"CANCELLED"}
             
         try:
@@ -1655,6 +1655,19 @@ class SetRecommendedArray(bpy.types.Operator, AddObjectHelper):
             arrayprops.carreau_y = 1
             arrayprops.accroche_x = 2
             arrayprops.accroche_y = 2
+
+        # Valeurs moule communes à D2 et D1
+        if scene.product_props.product_type in ("0", "1"):
+            arrayprops.fond_moule_x = 1
+            arrayprops.fond_moule_y = 1
+            arrayprops.cadre_moule_x = 1
+            arrayprops.cadre_moule_y = 2
+            arrayprops.cadre_moule_long_x = 1
+            arrayprops.cadre_moule_long_y = 2
+            arrayprops.pilier_moule_x = 1
+            arrayprops.pilier_moule_y = 1
+            arrayprops.contre_pilier_moule_x = 1
+            arrayprops.contre_pilier_moule_y = 1
 
         return {"FINISHED"}
 

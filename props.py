@@ -18,12 +18,20 @@ productType = (
     ("0", "Diffuseur 2D", ""),
     ("1", "Diffuseur 1D", ""),
     ("2", "Absorbeur", ""),
-    ("3", "Moule", ""),
 )
 
 
+def _update_product_type(self, context):
+    """Synchronise moule_type avec l'onglet courant (D2 -> 2d, D1 -> 1d)."""
+    dp = context.scene.dif_props
+    if self.product_type == "0":
+        dp.moule_type = "2d"
+    elif self.product_type == "1":
+        dp.moule_type = "1d"
+
+
 class UIProductProps(bpy.types.PropertyGroup):
-    product_type: EnumProperty(items=productType)
+    product_type: EnumProperty(items=productType, update=_update_product_type)
     motif_display: EnumProperty(
         name="Vue",
         description="Choisissez un affichage",
@@ -877,6 +885,19 @@ class DiffuseurProps(bpy.types.PropertyGroup):
 
             case _:
                 return
+
+    def listMouleAttributes(self):
+        """Attributs strictement moule à afficher dans la section « Moule » des
+        onglets D2/D1, sans dupliquer les dimensions partagées avec le diffuseur.
+        Réutilise la logique conditionnelle de listAttributes("3")."""
+        shared = {
+            "epaisseur",
+            "type",
+            "profondeur",
+            "largeur_diffuseur",
+            "longueur_diffuseur",
+        }
+        return [a for a in self.listAttributes("3") if a not in shared]
 
     # Option pour le modèle 3D
     invert_depth: BoolProperty(
@@ -1884,6 +1905,7 @@ class UIStateProps(bpy.types.PropertyGroup):
     show_devis: bpy.props.BoolProperty(name="Devis", default=True)
     show_motif: bpy.props.BoolProperty(name="Motif", default=True)
     show_modele_3d: bpy.props.BoolProperty(name="Modèle 3D", default=True)
+    show_moule: bpy.props.BoolProperty(name="Moule", default=True)
     show_addon: bpy.props.BoolProperty(name="Addon", default=True)
 
 

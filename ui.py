@@ -119,18 +119,14 @@ class Diffuseur_SideBar(Panel):
         row = box.row()
         dim_label = "Dimensions : " + (
             "D2" if productprops.product_type == "0" else
-            ("D1" if productprops.product_type == "1" else
-             ("A" if productprops.product_type == "2" else "M"))
+            ("D1" if productprops.product_type == "1" else "A")
         ) + difprops.getDifName()
         row.prop(uistate, "show_dimensions",
                  icon='TRIA_DOWN' if uistate.show_dimensions else 'TRIA_RIGHT',
                  emboss=False, text=dim_label)
         if uistate.show_dimensions:
             row2 = box.row()
-            row3 = box.row()
             row2.prop(productprops, "product_type", expand=True)
-            if productprops.product_type == "3":
-                row3.prop(difprops, "moule_type", expand=True)
             for att in (x for x in difprops.listAttributes(productprops.product_type)):
                 box.prop(difprops, att)
 
@@ -140,19 +136,10 @@ class Diffuseur_SideBar(Panel):
             if productprops.product_type in ("0", "1") and difprops.type_tenon_peigne != "0":
                 box.prop(difprops, "profondeur_tenon_peigne")
 
-            # Informations spécifiques aux moules
-            if productprops.product_type == "3":
-                # Message d'information pour les encoches
-                if difprops.moule_type == "2d":
-                    if not (hasattr(difprops, 'pilier_encoches') and difprops.pilier_encoches):
-                        box.label(text="ℹ️ Encoches recommandées pour diffuseurs 2D", icon="INFO")
-                elif difprops.moule_type == "1d" and hasattr(difprops, 'pilier_encoches') and difprops.pilier_encoches:
-                    box.label(text="⚠️ Encoches déconseillées pour diffuseurs 1D", icon="ERROR")
-            
             if productprops.product_type is not "2":
                 box.label(text=f"Rang : {difprops.getRang() * 1000} mm")
                 # Affichage différencié pour mode pyramidal (mono uniquement)
-                if (productprops.product_type == "3" and difprops.type_moule == "mono" and 
+                if (productprops.product_type in ("0", "1") and difprops.type_moule == "mono" and
                     hasattr(difprops, 'pilier_pyramidal') and difprops.pilier_pyramidal):
                     box.label(text=f"Pilier base : {round(difprops.getLargeurPilier() * 1000 , 3)} mm")
                     box.label(text=f"Pilier haut : {round(difprops.getLargeurPilierHaut() * 1000 , 3)} mm")
@@ -162,6 +149,27 @@ class Diffuseur_SideBar(Panel):
             if productprops.product_type is "2" :
                 is_splitted = True if difprops.longueur_absorbeur > difprops.split and difprops.split != 0 else False
                 box.label(text=f"Splitted : {is_splitted}")
+
+        # Moule (uniquement pour Diffuseur 2D / 1D)
+        if productprops.product_type in ("0", "1"):
+            layout.separator()
+            box = layout.box()
+            row = box.row()
+            row.prop(uistate, "show_moule",
+                     icon='TRIA_DOWN' if uistate.show_moule else 'TRIA_RIGHT',
+                     emboss=False, text="Moule")
+            if uistate.show_moule:
+                for att in difprops.listMouleAttributes():
+                    box.prop(difprops, att)
+
+                # Message d'information pour les encoches
+                if difprops.moule_type == "2d":
+                    if not (hasattr(difprops, 'pilier_encoches') and difprops.pilier_encoches):
+                        box.label(text="ℹ️ Encoches recommandées pour diffuseurs 2D", icon="INFO")
+                elif difprops.moule_type == "1d" and hasattr(difprops, 'pilier_encoches') and difprops.pilier_encoches:
+                    box.label(text="⚠️ Encoches déconseillées pour diffuseurs 1D", icon="ERROR")
+
+                box.operator("mesh.add_moule")
 
         # Array
         layout.separator()
@@ -191,19 +199,37 @@ class Diffuseur_SideBar(Panel):
             split = box.split()
             col1 = split.column()
             col2 = split.column()
-            col1.label(
-                text="X count",
-            )
+            col1.label(text="X count")
             col2.label(text="Y count")
-            for arr in (
-                x
-                for x in arrayprops.listAttributes(productprops.product_type)
+
+            # Pièces du diffuseur
+            diff_attrs = [
+                x for x in arrayprops.listAttributes(productprops.product_type)
                 if x != "array_offset"
-            ):
+            ]
+            for arr in diff_attrs:
                 if arr[-1] == "x":
                     col1.prop(arrayprops, arr)
                 if arr[-1] == "y":
                     col2.prop(arrayprops, arr)
+
+            # Pièces du moule (pour D2/D1)
+            if productprops.product_type in ("0", "1"):
+                box.separator()
+                split = box.split()
+                col1 = split.column()
+                col2 = split.column()
+                col1.label(text="Moule - X count")
+                col2.label(text="Moule - Y count")
+
+                mould_attrs = [
+                    a for a in arrayprops.listAttributes("3") if a != "array_offset"
+                ]
+                for arr in mould_attrs:
+                    if arr[-1] == "x":
+                        col1.prop(arrayprops, arr)
+                    if arr[-1] == "y":
+                        col2.prop(arrayprops, arr)
 
             box.label(
                 text=f"Nombre de pièces : {arrayprops.nbPieces(productprops.product_type)}"
@@ -229,9 +255,11 @@ class Diffuseur_SideBar(Panel):
                 text=f"{'Mesh selectionné' if bpy.context.selected_objects else 'Cursor 3D'} : X{round(cursor[0], 2)}  Y{round(cursor[1], 2)}  Z{round(cursor[2], 2)}"
             )
 
-            # Debug: afficher toutes les pièces pour le product_type (seulement une fois)
-            pieces_list = posprops.listAttributes(productprops.product_type)
-            
+            # Pièces du produit courant + pièces moule pour les diffuseurs D2/D1
+            pieces_list = list(posprops.listAttributes(productprops.product_type))
+            if productprops.product_type in ("0", "1"):
+                pieces_list += posprops.listAttributes("3")
+
             for piece in pieces_list:
                 row = box.row()
                 if "_position" in piece:
@@ -257,8 +285,6 @@ class Diffuseur_SideBar(Panel):
                     box.operator("mesh.add_diffuseur")
                 case "2":
                     box.operator("mesh.add_absorbeur")
-                case "3":
-                    box.operator("mesh.add_moule")
 
             box.operator("mesh.no_overlap")
 

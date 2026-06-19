@@ -1031,7 +1031,7 @@ def add_fond_moule(difprops, productprops, usinageprops):
     vertsMortaiseCadre = []
     edgesMortaiseCadre = []
 
-    if product_type == "3":
+    if product_type in ("0", "1", "3"):
         """depart bas/haut"""
         y0 = rang2 / 2 + epaisseur + epaisseur_moule + debord_moule
         """ depart gauche/droite """
@@ -1195,7 +1195,7 @@ def add_cadre_moule(difprops, productprops, usinageprops):
 
     edgesCadre = []
 
-    if product_type == "3":
+    if product_type in ("0", "1", "3"):
         vertsCadre = [
             (-debord_moule, 0, 0),
             (0, 0, 0),
@@ -1208,7 +1208,6 @@ def add_cadre_moule(difprops, productprops, usinageprops):
             (largeur_diffuseur + epaisseur_moule * 2, -profondeur / 2 - 0.005, 0),
             (largeur_diffuseur + epaisseur_moule * 2, 0, 0),
             (largeur_diffuseur + epaisseur_moule * 2 + debord_moule, 0, 0),
-            (largeur_diffuseur + epaisseur_moule * 2 + debord_moule, -profondeur, 0),
             (largeur_diffuseur + epaisseur_moule * 2 + debord_moule, -profondeur, 0),
             (-debord_moule, -profondeur, 0),
         ]
@@ -1242,7 +1241,7 @@ def add_cadre_moule_long(difprops, productprops, usinageprops):
 
     edgesCadre = []
 
-    if product_type == "3":
+    if product_type in ("0", "1", "3"):
         vertsCadre = [
             (-debord_moule - epaisseur_moule, 0, 0),
             *mortaise_bas_fond_moule_long(-epaisseur_moule, 0, difprops, usinageprops),
@@ -1305,7 +1304,7 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
 
     ratio = list(dict.fromkeys(a))  # remove duplicates items
 
-    if product_type == "3":
+    if product_type in ("0", "1", "3"):
         y0 = 0
         x0 = 0
         if difprops.type_moule == "eco":
@@ -1638,39 +1637,43 @@ def add_contre_pilier_moule(difprops, productprops, usinageprops, arrayprops):
 
     ratio = list(dict.fromkeys(a))  # remove duplicates items
 
-    if product_type == "3":
+    if product_type in ("0", "1", "3"):
         y0 = 0
         x0 = 0
 
         if difprops.type_moule in ["eco", "stable"]:
-            # Pour eco et stable, utiliser la fonction contremonopilier_hauteurs
+            # Rectangles individuels groupés par hauteur (même logique que les piliers par profondeur)
+            reduction_ratio = float(difprops.pilier_reduction)
+            encoches = (difprops.type_moule == "stable" and
+                        difprops.pilier_encoches if hasattr(difprops, 'pilier_encoches') else False)
+
             for i in range(len(ratio)):
-                if ratio[i][0] != 0:  # delete hauteur = 0
+                if ratio[i][0] != 0:
+                    h = ratio[i][0]
+
                     for k in range(ratio[i][1]):
-                        contre_pilier_verts = contremonopilier_hauteurs(x0, y0, difprops)
-                        vertsCadre += contre_pilier_verts
+                        largeur_reduite = largeur_pilier * (1 - reduction_ratio)
+                        decalage_reduction = (largeur_pilier - largeur_reduite) / 2
+
+                        vertsCadre += [
+                            (x0 + decalage_reduction, y0, 0),
+                            (x0 + decalage_reduction, y0 + h, 0),
+                            (x0 + decalage_reduction + largeur_reduite, y0 + h, 0),
+                            (x0 + decalage_reduction + largeur_reduite, y0, 0),
+                        ]
                         x0 += largeur_pilier + array_offset
 
                     x0 = 0
-                    # Utiliser amax pour un espacement uniforme entre toutes les rangées
-                    if difprops.type_moule == "eco":
-                        y0 += amax + array_offset + epaisseur_moule
-                    else:  # stable
-                        y0 += amax + array_offset
+                    y0 += amax + array_offset
 
-            # Génération des edges (4 vertices par contre-pilier avec la fonction originale)
-            num_pillars_per_row = difprops.type  # Nombre de piliers par rangée
-            for i in range(0, len(vertsCadre), 4 * num_pillars_per_row):
-                # Pour chaque rangée de piliers
-                for j in range(num_pillars_per_row):
-                    pillar_start = i + j * 4
-                    if pillar_start + 3 < len(vertsCadre):
-                        edgesCadre += [
-                            (pillar_start, pillar_start + 1),
-                            (pillar_start + 1, pillar_start + 2),
-                            (pillar_start + 2, pillar_start + 3),
-                            (pillar_start + 3, pillar_start),
-                        ]
+            # Génération des edges : 4 vertices par pièce
+            for i in range(0, len(vertsCadre), 4):
+                edgesCadre += [
+                    (i, i + 1),
+                    (i + 1, i + 2),
+                    (i + 2, i + 3),
+                    (i + 3, i),
+                ]
 
         elif difprops.type_moule == "mono":
             largeur_monopilier = rang * type - epaisseur
