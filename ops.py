@@ -5,7 +5,9 @@ from .difarray import difArray
 from .bridges import place_empties_on_bounding_box
 from .pack import place_selected_objects_no_overlap
 from bpy_extras.object_utils import AddObjectHelper
+from bpy_extras.io_utils import ExportHelper
 from bpy.props import FloatVectorProperty, StringProperty, IntProperty
+from .cutlist import build_cutlist, write_cutlist_csv
 import math
 import os
 import re
@@ -1574,6 +1576,40 @@ class AddList(bpy.types.Operator, AddObjectHelper):
         newItem = bpy.context.scene.devis_list.add()
         newItem.listDif = f"{difprops.getDifName()} : {qtyPanel} panneaux"
 
+        return {"FINISHED"}
+
+
+class ExportCutlistCSV(bpy.types.Operator, ExportHelper):
+    """Exporte les dimensions de débit du produit courant"""
+
+    bl_idname = "diffuseurcam.export_cutlist_csv"
+    bl_label = "Exporter la liste de débit CSV"
+    bl_description = "Dimensions des pièces du produit courant ; quantités Array multipliées par la quantité du devis"
+    bl_options = {"REGISTER"}
+
+    filename_ext = ".csv"
+    filter_glob: StringProperty(default="*.csv", options={"HIDDEN"})
+
+    def invoke(self, context, event):
+        if context.scene.product_props.product_type == "2":
+            basename = "Absorbeur"
+        else:
+            basename = context.scene.dif_props.getDifName(context.scene)
+        self.filepath = f"{basename}_debit.csv"
+        return super().invoke(context, event)
+
+    def execute(self, context):
+        try:
+            rows = build_cutlist(context.scene)
+            if not rows:
+                self.report({"WARNING"}, "Aucune pièce à exporter : vérifier les compteurs Array")
+                return {"CANCELLED"}
+            write_cutlist_csv(self.filepath, rows)
+        except Exception as exc:
+            self.report({"ERROR"}, f"Export CSV impossible : {exc}")
+            return {"CANCELLED"}
+
+        self.report({"INFO"}, f"{len(rows)} lignes exportées : {self.filepath}")
         return {"FINISHED"}
 
 
@@ -3523,6 +3559,7 @@ classes = [
     AddCadreTissuCourt,
     AddCadreTissuLong,
     AddList,
+    ExportCutlistCSV,
     RemoveList,
     AddCadreMouleLong,
     AddColle,

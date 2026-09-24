@@ -136,8 +136,8 @@ class Diffuseur_SideBar(Panel):
             if productprops.product_type in ("0", "1") and difprops.type_tenon_peigne != "0":
                 box.prop(difprops, "profondeur_tenon_peigne")
 
-            if productprops.product_type is not "2":
-                box.label(text=f"Rang : {difprops.getRang() * 1000} mm")
+            if productprops.product_type != "2":
+                box.label(text=f"Rang : ≈ {difprops.getRang() * 1000:.1f} mm")
                 # Affichage différencié pour mode pyramidal (mono uniquement)
                 if (productprops.product_type in ("0", "1") and difprops.type_moule == "mono" and
                     hasattr(difprops, 'pilier_pyramidal') and difprops.pilier_pyramidal):
@@ -146,7 +146,7 @@ class Diffuseur_SideBar(Panel):
                 else:
                     box.label(text=f"Pilier : {round(difprops.getLargeurPilier() * 1000 , 3)} mm")
             
-            if productprops.product_type is "2" :
+            if productprops.product_type == "2":
                 is_splitted = True if difprops.longueur_absorbeur > difprops.split and difprops.split != 0 else False
                 box.label(text=f"Splitted : {is_splitted}")
 
@@ -352,6 +352,7 @@ class Diffuseur_SideBar(Panel):
                  emboss=False, text="Devis")
         if uistate.show_devis:
             box.prop(devisprops, "qtyDif")
+            box.operator("diffuseurcam.export_cutlist_csv", text="Exporter la liste de débit CSV", icon="EXPORT")
             split = box.split()
             col1 = split.column()
             col2 = split.column()

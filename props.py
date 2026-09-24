@@ -565,8 +565,8 @@ class DiffuseurProps(bpy.types.PropertyGroup):
 
     def getRang(self):
         ec = self.getEpaisseurCadre()
-        rang = (self.largeur_diffuseur - 2 * ec + self.epaisseur) / self.type
-        return round(rang, 4)
+        # Garder le pas exact pour éviter de cumuler un arrondi à chaque cellule.
+        return (self.largeur_diffuseur - 2 * ec + self.epaisseur) / self.type
 
     def getHauteurTenon(self):
         match self.type_tenon_peigne:
