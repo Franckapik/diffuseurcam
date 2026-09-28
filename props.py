@@ -1454,9 +1454,12 @@ class PositionSelectedProps(bpy.types.PropertyGroup):
 class BatchPresetItem(bpy.types.PropertyGroup):
     """Un preset de configuration batch 3D"""
     name: StringProperty(name="Nom", default="Preset")
+    product_type: StringProperty(name="Produit", default="0")
     types: StringProperty(name="Types", default="7,11,13")
     profondeurs: StringProperty(name="Profondeurs (mm)", default="50,100,150,200")
     longueurs: StringProperty(name="Longueurs", default="1,2")
+    grid_gap: FloatProperty(name="Espacement grille", default=0.1)
+    stl_directory: StringProperty(name="Dossier GLB", default="")
 
 
 
@@ -1478,8 +1481,14 @@ def _batch_render_load_post(dummy):
 class Batch3DProps(bpy.types.PropertyGroup):
     """Propriétés pour la génération batch de modèles 3D"""
     batch_stl_directory: StringProperty(
-        name="Dossier STL",
-        description="Dossier de destination des STL individuels (dimensions exportées en mm)",
+        name="Dossier GLB",
+        description="Dossier de destination des fichiers GLB individuels avec matériaux",
+        subtype='DIR_PATH',
+        default="",
+    )
+    quadra_glb_directory: StringProperty(
+        name="Dossier QuadraRoom",
+        description="Dossier des GLB QuadraRoom sans textures",
         subtype='DIR_PATH',
         default="",
     )
@@ -1509,8 +1518,8 @@ class Batch3DProps(bpy.types.PropertyGroup):
     )
     batch_product_type: EnumProperty(
         name="Type de produit",
-        description="Type de diffuseur pour le batch",
-        items=[("0", "Diffuseur 2D", ""), ("1", "Diffuseur 1D", ""), ("2", "1D + 2D", "Générer les deux types dans la même scène")],
+        description="Produit à générer dans le batch",
+        items=[("0", "Diffuseur 2D", ""), ("1", "Diffuseur 1D", ""), ("2", "1D + 2D", "Générer les deux types dans la même scène"), ("3", "Absorbeur", "")],
         default="0",
     )
     preset_name: StringProperty(

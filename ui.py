@@ -1,6 +1,6 @@
 from bpy.types import Panel, Menu, Operator
 import bpy
-from .ops import classes
+from .ops import classes, batch_3d_configuration, _batch_sort_key
 from bl_operators.presets import AddPresetBase
 from math import ceil
 from collections import Counter
@@ -502,28 +502,40 @@ class Diffuseur_SideBar(Panel):
 
             batchprops = scene.batch_3d_props
             sub.prop(batchprops, "batch_product_type", text="Produit")
-            sub.prop(batchprops, "batch_types")
-            sub.prop(batchprops, "batch_profondeurs")
-            sub.prop(batchprops, "batch_longueurs")
+            if batchprops.batch_product_type == "3":
+                sub.label(text=f"Largeur actuelle : {difprops.largeur_diffuseur * 1000:g} mm", icon="INFO")
+                sub.prop(batchprops, "batch_profondeurs")
+                sub.prop(batchprops, "batch_longueurs", text="Ratios de longueur")
+            else:
+                sub.prop(batchprops, "batch_types")
+                sub.prop(batchprops, "batch_profondeurs")
+                sub.prop(batchprops, "batch_longueurs")
             sub.prop(batchprops, "batch_grid_gap")
 
             # Nombre de combinaisons
             try:
-                types_list = [x.strip() for x in batchprops.batch_types.split(",") if x.strip()]
-                prof_list = [x.strip() for x in batchprops.batch_profondeurs.split(",") if x.strip()]
-                long_list = [x.strip() for x in batchprops.batch_longueurs.split(",") if x.strip()]
-                nb_combi = len(types_list) * len(prof_list) * len(long_list)
-                sub.label(text=f"{nb_combi} combinaisons à générer", icon="INFO")
-            except Exception:
-                sub.label(text="Format invalide", icon="ERROR")
+                config = batch_3d_configuration(batchprops, difprops)
+                sub.label(text=f"{config['count']} modèles à générer", icon="INFO")
+                batch_valid = True
+            except ValueError as exc:
+                sub.label(text=str(exc), icon="ERROR")
+                batch_valid = False
 
             row = sub.row(align=True)
             row.scale_y = 1.5
-            row.operator("mesh.batch_3d", icon="PLAY")
+            generate_row = row.row(align=True)
+            generate_row.enabled = batch_valid
+            generate_row.operator("mesh.batch_3d", icon="PLAY")
             row.operator("mesh.clear_batch_3d", text="", icon="TRASH")
 
             sub.prop(batchprops, "batch_stl_directory")
-            sub.operator("mesh.export_batch_3d_stl", text="Exporter les STL du batch", icon="EXPORT")
+            sub.operator("mesh.export_batch_3d_glb", text="Exporter les GLB du batch", icon="EXPORT")
+
+            quadra_box = sub.box()
+            quadra_box.label(text="GLB QuadraRoom (sans textures)", icon="MATERIAL")
+            quadra_box.prop(batchprops, "quadra_glb_directory")
+            quadra_box.label(text="Matériaux : wood, fabric")
+            quadra_box.operator("mesh.export_batch_3d_quadraroom_glb", text="Exporter GLB QuadraRoom", icon="EXPORT")
 
             # Presets Batch
             sub.separator()
@@ -671,7 +683,7 @@ class Diffuseur_SideBar(Panel):
                         obj
                         for c in sorted(bpy.data.collections, key=lambda c: c.name)
                         if c.name.startswith("Batch_3D_")
-                        for obj in c.objects
+                        for obj in sorted(c.objects, key=_batch_sort_key)
                         if obj.type == 'MESH'
                     ]
                     nb_models = len(batch_objs)

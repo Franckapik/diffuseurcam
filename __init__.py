@@ -8,7 +8,7 @@ bl_info = {
     "description": "Génération de plans de diffuseurs",
     "author": "Franckapik",
     "version": (1, 0, 0),
-    "blender": (2, 80, 0),
+    "blender": (5, 1, 0),
     "location": "View3D",
     "support": "COMMUNITY",
     "category": "Generic",
@@ -21,7 +21,7 @@ except ImportError:
     __version__ = "1.0.0"
     __version_info__ = (1, 0, 0)
 
-modulesNames = ["ops", "ui", "props"]
+modulesNames = ["quadraroom_glb", "ops", "ui", "props"]
 
 modulesFullNames = {}
 for currentModuleName in modulesNames:
@@ -79,4 +79,3 @@ def unregister():
 
 if __name__ == "__main__":
     register()
-

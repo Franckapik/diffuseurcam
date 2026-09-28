@@ -11,23 +11,86 @@ from .cutlist import build_cutlist, write_cutlist_csv
 import math
 import os
 import re
+import tempfile
 import time
-from mathutils import Vector
+from pathlib import Path
+from mathutils import Matrix, Vector
+from .quadraroom_glb import is_product_reference, product_stem, read_glb, validate_quadraroom_glb
 
 
 def _batch_sort_key(obj):
     """Clé de tri numérique pour les objets batch.
-    Format attendu : D{dim}N{type}W{largeur}P{profondeur}L{longueur}E{epaisseur}[.suffix]
-    Exemples : D1N7W50P5L1E5, D2N11W50P10L2E5.001
-    Ordre : D1 < D2, puis N7 < N11 < N13, puis P5 < P10 < P15 < P20, etc."""
+    Diffuseurs D1/D2 d'abord, puis absorbeurs A0W...P...L... ."""
     m = re.match(r'D(\d+)N(\d+)W(\d+)P(\d+)L(\d+)E(\d+)', obj.name)
     if m:
         return tuple(int(x) for x in m.groups()) + (obj.name,)
+    absorber = re.match(r'A(\d+)W(\d+(?:p\d+)?)P(\d+(?:p\d+)?)L(\d+(?:p\d+)?)', obj.name)
+    if absorber:
+        absorber_type, width, depth, ratio = (float(value.replace('p', '.')) for value in absorber.groups())
+        return (3, absorber_type, width, depth, ratio, 0, obj.name)
+    # Anciens noms d'absorbeurs : conserver leur tri dans les scènes existantes.
+    absorber = re.match(r'ABS_W(\d+(?:p\d+)?)_P(\d+(?:p\d+)?)_L(\d+(?:p\d+)?)_E(\d+(?:p\d+)?)', obj.name)
+    if absorber:
+        width, depth, length, thickness = (float(value.replace('p', '.')) for value in absorber.groups())
+        return (4, 0, width, depth, length, thickness, obj.name)
     # Fallback : noms sans préfixe D (anciens objets)
     m2 = re.match(r'N(\d+)W(\d+)P(\d+)L(\d+)E(\d+)', obj.name)
     if m2:
         return (9999,) + tuple(int(x) for x in m2.groups()) + (obj.name,)
     return (9999, 9999, 9999, 9999, 9999, 9999, obj.name)
+
+
+def _parse_batch_numbers(raw, label, minimum, maximum, integer=False):
+    """Lit une liste séparée par des virgules et valide chaque valeur."""
+    values = []
+    for token in raw.split(','):
+        token = token.strip()
+        if not token:
+            continue
+        try:
+            value = int(token) if integer else float(token)
+        except ValueError:
+            raise ValueError(f"{label} : valeur invalide « {token} »") from None
+        if not math.isfinite(value) or not minimum <= value <= maximum:
+            raise ValueError(f"{label} : {value} hors plage ({minimum}–{maximum})")
+        values.append(value)
+    if not values:
+        raise ValueError(f"{label} : indiquez au moins une valeur")
+    return values
+
+
+def batch_3d_configuration(batch_props, difprops):
+    """Retourne les dimensions validées et le nombre de modèles prévus."""
+    if batch_props.batch_product_type == '3':
+        depths = _parse_batch_numbers(batch_props.batch_profondeurs, 'Profondeurs', 50, 500)
+        ratios = _parse_batch_numbers(batch_props.batch_longueurs, 'Ratios de longueur', 0.5, 2)
+        width = difprops.largeur_diffuseur
+        thickness = difprops.epaisseur
+        if not math.isfinite(width) or not math.isfinite(thickness) or thickness <= 0:
+            raise ValueError("Largeur ou épaisseur du cadre invalide")
+        lengths = [width * ratio for ratio in ratios]
+        if min(lengths) < 0.05 or max(lengths) > 5:
+            raise ValueError("La longueur calculée doit être comprise entre 50 et 5000 mm")
+        if 2 * thickness >= min(width, *lengths):
+            raise ValueError("L'épaisseur du cadre doit être inférieure à la moitié de la largeur et de la longueur")
+        return {'kind': 'absorber', 'width': width, 'ratios': ratios,
+                'depths': depths, 'count': len(ratios) * len(depths)}
+
+    types = _parse_batch_numbers(batch_props.batch_types, 'Types', 6, 13, integer=True)
+    depths = _parse_batch_numbers(batch_props.batch_profondeurs, 'Profondeurs', 50, 500)
+    lengths = _parse_batch_numbers(batch_props.batch_longueurs, 'Longueurs', 0.5, 2)
+    product_types = ['0', '1'] if batch_props.batch_product_type == '2' else [batch_props.batch_product_type]
+    return {'kind': 'diffuser', 'product_types': product_types, 'types': types,
+            'depths': depths, 'lengths': lengths,
+            'count': len(product_types) * len(types) * len(depths) * len(lengths)}
+
+
+def _batch_absorber_name(width_m, depth_mm, ratio):
+    """Nomenclature A0W{largeur_cm}P{profondeur_cm}L{ratio}."""
+    def part(value):
+        return f"{value:.4f}".rstrip('0').rstrip('.').replace('.', 'p')
+
+    return f"A0W{part(width_m * 100)}P{part(depth_mm / 10)}L{part(ratio)}"
 
 
 class AddCadreMortaise(bpy.types.Operator, AddObjectHelper):
@@ -818,62 +881,28 @@ class Add3DModel(bpy.types.Operator, AddObjectHelper):
             f = bm.faces.new(fd)
             f.material_index = mat_index
 
-    def _load_material_from_blend(self):
-        """Charge le matériau 'ctp' depuis le fichier materials.blend."""
-        import os
+    def _load_materials_from_blend(self):
+        """Charge les deux matériaux du catalogue une fois par session Blender."""
+        names = ("wood", "fabric")
+        existing = {name: bpy.data.materials.get(name) for name in names}
+        missing = [name for name in names if existing[name] is None]
+        if not missing:
+            return existing
+
         addon_dir = os.path.dirname(__file__)
         blend_path = os.path.join(addon_dir, "materials.blend")
-        
         if not os.path.exists(blend_path):
-            print(f"⚠️ Fichier {blend_path} introuvable, matériau par défaut créé")
-            return None
-        
+            raise RuntimeError(f"Fichier de matériaux introuvable : {blend_path}")
+
         try:
-            # Charger le matériau depuis le fichier .blend
             with bpy.data.libraries.load(blend_path) as (data_from, data_to):
-                if "ctp" in data_from.materials:
-                    data_to.materials.append("ctp")
-            
-            # Récupérer le matériau chargé
-            mat = bpy.data.materials.get("ctp")
-            if mat:
-                print(f"✅ Matériau 'ctp' chargé depuis {blend_path}")
-                return mat
-            else:
-                print(f"⚠️ Matériau 'ctp' non trouvé après chargement")
-                return None
-                
-        except Exception as e:
-            print(f"⚠️ Erreur lors du chargement du matériau: {e}")
-            return None
-
-    def _get_or_create_material(self, name, color):
-        """Récupère ou crée un matériau PBR bois avec la couleur donnée."""
-        mat = bpy.data.materials.get(name)
-        if mat is None:
-            mat = bpy.data.materials.new(name=name)
-            mat.use_nodes = True
-            bsdf = mat.node_tree.nodes.get("Principled BSDF")
-            if bsdf:
-                bsdf.inputs["Base Color"].default_value = color
-                if "Roughness" in bsdf.inputs:
-                    bsdf.inputs["Roughness"].default_value = 0.75
-        return mat
-
-    def _get_or_create_fabric_material(self, name, color):
-        """Récupère ou crée un matériau tissu noir avec la couleur donnée."""
-        mat = bpy.data.materials.get(name)
-        if mat is None:
-            mat = bpy.data.materials.new(name=name)
-            mat.use_nodes = True
-            bsdf = mat.node_tree.nodes.get("Principled BSDF")
-            if bsdf:
-                bsdf.inputs["Base Color"].default_value = color
-                if "Roughness" in bsdf.inputs:
-                    bsdf.inputs["Roughness"].default_value = 0.9
-                if "Sheen Weight" in bsdf.inputs:
-                    bsdf.inputs["Sheen Weight"].default_value = 0.3
-        return mat
+                unavailable = [name for name in missing if name not in data_from.materials]
+                if unavailable:
+                    raise RuntimeError(f"Matériaux absents de {blend_path} : {', '.join(unavailable)}")
+                data_to.materials = missing
+        except OSError as exc:
+            raise RuntimeError(f"Impossible de lire {blend_path} : {exc}") from exc
+        return {name: bpy.data.materials[name] for name in names}
 
     def _create_plane(self, bm, x, y, z, sx, sy, mat_index=0):
         """Crée un plan (face unique) dans le bmesh.
@@ -899,23 +928,24 @@ class Add3DModel(bpy.types.Operator, AddObjectHelper):
             return {"CANCELLED"}
 
         # ── Matériaux communs (bois) ──────────────────────────────────────
-        mat_ctp = self._load_material_from_blend()
-        if mat_ctp:
-            mat_cadre = mat_ctp
-        else:
-            mat_cadre = self._get_or_create_material("DIF_Cadre", (0.40, 0.24, 0.10, 1.0))
+        try:
+            materials = self._load_materials_from_blend()
+        except RuntimeError as exc:
+            self.report({'ERROR'}, str(exc))
+            return {'CANCELLED'}
+        mat_cadre = materials["wood"]
 
         # ── Branche Absorbeur ─────────────────────────────────────────────
         if product_type == "2":
             W = difprops.largeur_diffuseur   # largeur
             L = difprops.longueur_absorbeur  # longueur
             D = difprops.profondeur          # profondeur (épaisseur du cadre)
-            ec = difprops.getEpaisseurCadre()
+            ec = difprops.epaisseur
 
             MAT_CADRE = 0    # bois (même matériau que les diffuseurs)
             MAT_TISSU = 1    # tissu noir
 
-            mat_tissu = self._get_or_create_fabric_material("ABS_Tissu", (0.02, 0.02, 0.02, 1.0))
+            mat_tissu = materials["fabric"]
 
             bm = bmesh.new()
 
@@ -991,21 +1021,13 @@ class Add3DModel(bpy.types.Operator, AddObjectHelper):
         num_cols = N
         num_rows = 1 if is_1d else round(N * difprops.longueur_diffuseur)
 
-        # ── Matériaux diffuseur (3 teintes bois) ────────────────────────
-        MAT_CADRE = 0       # Cadres (chêne foncé)
-        MAT_PEIGNE = 1      # Peignes (chêne moyen)
-        MAT_CARREAU = 2     # Carreaux (chêne clair)
+        # ── Groupes de faces du diffuseur, tous avec le même bois ───────
+        MAT_CADRE = 0       # Slots séparés pour conserver les groupes de faces
+        MAT_PEIGNE = 1
+        MAT_CARREAU = 2
 
-        if mat_ctp:
-            mat_peigne = mat_ctp
-            mat_carreau = mat_ctp
-        else:
-            mat_cadre = self._get_or_create_material(
-                "DIF_Cadre", (0.40, 0.24, 0.10, 1.0))
-            mat_peigne = self._get_or_create_material(
-                "DIF_Peigne", (0.58, 0.40, 0.20, 1.0))
-            mat_carreau = self._get_or_create_material(
-                "DIF_Carreau", (0.76, 0.56, 0.35, 1.0))
+        mat_peigne = mat_cadre
+        mat_carreau = mat_cadre
 
         bm = bmesh.new()
 
@@ -1968,8 +1990,7 @@ def unregister_keymaps():
 
 
 class Batch3DGenerate(bpy.types.Operator):
-    """Génère un batch de modèles 3D avec toutes les combinaisons de type, profondeur et longueur,
-    disposés en quadrillage pour une vue d'ensemble"""
+    """Génère les combinaisons de modèles 3D en quadrillage."""
     bl_idname = "mesh.batch_3d"
     bl_label = "Générer Batch 3D"
     bl_options = {"REGISTER", "UNDO"}
@@ -1980,50 +2001,27 @@ class Batch3DGenerate(bpy.types.Operator):
         scene = context.scene
         batch_props = scene.batch_3d_props
         difprops = scene.dif_props
-
-        # Parse des valeurs depuis les champs texte
         try:
-            types = [int(x.strip()) for x in batch_props.batch_types.split(",") if x.strip()]
-            profondeurs = [float(x.strip()) / 1000 for x in batch_props.batch_profondeurs.split(",") if x.strip()]
-            longueurs = [float(x.strip()) for x in batch_props.batch_longueurs.split(",") if x.strip()]
-        except ValueError:
-            self.report({"ERROR"}, "Format invalide. Utilisez des nombres séparés par des virgules.")
-            return {"CANCELLED"}
+            config = batch_3d_configuration(batch_props, difprops)
+        except ValueError as exc:
+            self.report({'ERROR'}, str(exc))
+            return {'CANCELLED'}
 
-        if not types or not profondeurs or not longueurs:
-            self.report({"ERROR"}, "Spécifiez au moins une valeur pour chaque variable.")
-            return {"CANCELLED"}
-
-        # Validation des plages
-        for t in types:
-            if t < 6 or t > 13:
-                self.report({"ERROR"}, f"Type {t} invalide (doit être entre 6 et 13).")
-                return {"CANCELLED"}
-        for p in profondeurs:
-            if p < 0.05 or p > 0.5:
-                self.report({"ERROR"}, f"Profondeur {p*1000:.0f}mm invalide (50-500mm).")
-                return {"CANCELLED"}
-        for l in longueurs:
-            if l < 0.5 or l > 2:
-                self.report({"ERROR"}, f"Longueur {l} invalide (0.5-2).")
-                return {"CANCELLED"}
-
-        # Sauvegarder les valeurs originales
-        orig_type = difprops.type
-        orig_profondeur = difprops.profondeur
-        orig_longueur = difprops.longueur_diffuseur
-        orig_product_type = scene.product_props.product_type
-        orig_moule_type = difprops.moule_type
-
-        # Déterminer les types de produits à générer
-        if batch_props.batch_product_type == "2":
-            product_types = ["0", "1"]
+        if config['kind'] == 'absorber':
+            combinations = list(iterproduct(config['depths'], config['ratios']))
         else:
-            product_types = [batch_props.batch_product_type]
+            combinations = list(iterproduct(config['product_types'], config['types'],
+                                            config['depths'], config['lengths']))
+        total = config['count']
 
-        # Toutes les combinaisons (product_type, type, profondeur, longueur)
-        combinations = list(iterproduct(product_types, types, profondeurs, longueurs))
-        total = len(combinations)
+        originals = {
+            'type': difprops.type,
+            'profondeur': difprops.profondeur,
+            'longueur_diffuseur': difprops.longueur_diffuseur,
+            'longueur_absorbeur': difprops.longueur_absorbeur,
+            'product_type': scene.product_props.product_type,
+            'moule_type': difprops.moule_type,
+        }
 
         # Créer une collection dédiée au batch
         batch_name = f"Batch_3D_{total}x"
@@ -2036,32 +2034,53 @@ class Batch3DGenerate(bpy.types.Operator):
 
         print(f"\n{'='*50}")
         print(f"BATCH 3D : {total} modèles à générer")
-        print(f"Types: {types} | Profondeurs(mm): {[p*1000 for p in profondeurs]} | Longueurs: {longueurs}")
+        print(f"Configuration: {config}")
         print(f"{'='*50}")
 
-        for i, (pt, t, p, l) in enumerate(combinations):
-            # Appliquer les paramètres de cette combinaison
-            scene.product_props.product_type = pt
-            difprops.moule_type = "1d" if pt == "1" else "2d"
-            difprops.type = t
-            difprops.profondeur = p
-            difprops.longueur_diffuseur = l
+        try:
+            for i, combination in enumerate(combinations):
+                if config['kind'] == 'absorber':
+                    depth_mm, length_ratio = combination
+                    scene.product_props.product_type = '2'
+                    difprops.profondeur = depth_mm / 1000
+                    difprops.longueur_absorbeur = config['width'] * length_ratio
+                    name = _batch_absorber_name(config['width'], depth_mm, length_ratio)
+                else:
+                    pt, t, depth_mm, length_factor = combination
+                    scene.product_props.product_type = pt
+                    difprops.moule_type = '1d' if pt == '1' else '2d'
+                    difprops.type = t
+                    difprops.profondeur = depth_mm / 1000
+                    difprops.longueur_diffuseur = length_factor
+                    name = difprops.getDifName(scene)
 
-            # Générer le modèle 3D
-            bpy.ops.mesh.simulation()
+                active_before = context.active_object
+                result = bpy.ops.mesh.simulation()
+                obj = context.active_object
+                if 'FINISHED' not in result or obj is None or obj == active_before:
+                    raise RuntimeError(f"La génération du modèle {i + 1} a échoué")
+                obj.name = name
 
-            obj = context.active_object
-            if obj:
-                # Utiliser la nomenclature centralisée (D1/D2 + paramètres)
-                obj.name = difprops.getDifName(scene)
-
-                # Déplacer dans la collection batch
                 for coll in list(obj.users_collection):
                     coll.objects.unlink(obj)
                 batch_collection.objects.link(obj)
 
                 generated_objects.append(obj)
                 print(f"  [{i+1}/{total}] {obj.name} — {obj.dimensions.x*1000:.0f}×{obj.dimensions.y*1000:.0f}×{obj.dimensions.z*1000:.0f}mm")
+
+        except Exception as exc:
+            bpy.data.collections.remove(batch_collection, do_unlink=True)
+            for obj in generated_objects:
+                bpy.data.objects.remove(obj, do_unlink=True)
+            self.report({'ERROR'}, f"Batch 3D interrompu : {exc}")
+            return {'CANCELLED'}
+        finally:
+            difprops.type = originals['type']
+            difprops.profondeur = originals['profondeur']
+            difprops.longueur_diffuseur = originals['longueur_diffuseur']
+            difprops.longueur_absorbeur = originals['longueur_absorbeur']
+            scene.product_props.product_type = originals['product_type']
+            difprops.moule_type = originals['moule_type']
 
         # Positionner en quadrillage
         if generated_objects:
@@ -2078,16 +2097,13 @@ class Batch3DGenerate(bpy.types.Operator):
             for i, obj in enumerate(generated_objects):
                 row_idx = i // num_cols
                 col_idx = i % num_cols
-                x = sum(col_widths.get(c, 0) + gap for c in range(col_idx))
-                y = -sum(row_heights.get(r, 0) + gap for r in range(row_idx))
+                # Préserver l'ancrage (0, 0) du premier modèle et séparer les
+                # centres selon les dimensions maximales de chaque cellule.
+                x = (sum(col_widths[c] + gap for c in range(col_idx))
+                     + (col_widths[col_idx] - col_widths[0]) / 2)
+                y = -(sum(row_heights[r] + gap for r in range(row_idx))
+                      + (row_heights[row_idx] - row_heights[0]) / 2)
                 obj.location = (x, y, 0)
-
-        # Restaurer les valeurs originales
-        difprops.type = orig_type
-        difprops.profondeur = orig_profondeur
-        difprops.longueur_diffuseur = orig_longueur
-        scene.product_props.product_type = orig_product_type
-        difprops.moule_type = orig_moule_type
 
         # Sélectionner tous les objets générés
         bpy.ops.object.select_all(action="DESELECT")
@@ -2137,10 +2153,10 @@ def _batch_3d_meshes(scene):
     return objects
 
 
-class ExportBatch3DSTL(bpy.types.Operator):
-    """Exporte chaque produit du batch dans son propre fichier STL, en millimètres"""
-    bl_idname = "mesh.export_batch_3d_stl"
-    bl_label = "Exporter les STL du batch"
+class ExportBatch3DGLB(bpy.types.Operator):
+    """Exporte chaque produit du batch en GLB avec ses matériaux"""
+    bl_idname = "mesh.export_batch_3d_glb"
+    bl_label = "Exporter les GLB du batch"
     bl_options = {"REGISTER"}
 
     @classmethod
@@ -2148,48 +2164,39 @@ class ExportBatch3DSTL(bpy.types.Operator):
         return context.scene is not None and context.mode == 'OBJECT' and bool(_batch_3d_meshes(context.scene))
 
     def execute(self, context):
+        # Le nom RNA historique conserve les chemins enregistrés dans les fichiers .blend.
         raw_directory = context.scene.batch_3d_props.batch_stl_directory.strip()
         if not raw_directory:
-            self.report({'ERROR'}, "Choisissez un dossier de destination pour les STL")
+            self.report({'ERROR'}, "Choisissez un dossier de destination pour les GLB")
             return {'CANCELLED'}
 
-        # Utiliser l'exporteur STL intégré s'il est disponible, sinon l'ancien addon io_mesh_stl.
         try:
-            properties = {prop.identifier for prop in bpy.ops.wm.stl_export.get_rna_type().properties}
-            exporter = bpy.ops.wm.stl_export
-            options = {
-                'export_selected_objects': True,
-                'apply_modifiers': True,
-                'ascii_format': False,
-                'use_batch': False,
-            }
-            selection_option = 'export_selected_objects'
+            properties = {prop.identifier for prop in bpy.ops.export_scene.gltf.get_rna_type().properties}
         except (KeyError, RuntimeError):
-            try:
-                properties = {prop.identifier for prop in bpy.ops.export_mesh.stl.get_rna_type().properties}
-            except (KeyError, RuntimeError):
-                self.report({'ERROR'}, "Export STL indisponible dans cette version de Blender")
-                return {'CANCELLED'}
-            exporter = bpy.ops.export_mesh.stl
-            options = {
-                'use_selection': True,
-                'use_mesh_modifiers': True,
-                'ascii': False,
-                'batch_mode': 'OFF',
-            }
-            selection_option = 'use_selection'
-
-        if selection_option not in properties or 'global_scale' not in properties:
-            self.report({'ERROR'}, "L'exporteur STL ne permet pas l'export individuel en millimètres")
+            self.report({'ERROR'}, "Export glTF/GLB indisponible dans cette version de Blender")
             return {'CANCELLED'}
-        options = {key: value for key, value in options.items() if key in properties}
-        options.update(global_scale=1000.0, use_scene_unit=False)
+        if not {'export_format', 'use_selection', 'export_materials'} <= properties:
+            self.report({'ERROR'}, "L'exporteur glTF ne permet pas l'export GLB individuel avec matériaux")
+            return {'CANCELLED'}
+        options = {
+            'export_format': 'GLB',
+            'use_selection': True,
+            'export_materials': 'EXPORT',
+        }
+        for key, value in (
+            ('export_apply', True),
+            ('export_animations', False),
+            ('export_cameras', False),
+            ('export_lights', False),
+        ):
+            if key in properties:
+                options[key] = value
 
         directory = os.path.abspath(bpy.path.abspath(raw_directory))
         try:
             os.makedirs(directory, exist_ok=True)
         except OSError as exc:
-            self.report({'ERROR'}, f"Impossible de créer le dossier STL : {exc}")
+            self.report({'ERROR'}, f"Impossible de créer le dossier GLB : {exc}")
             return {'CANCELLED'}
 
         objects = _batch_3d_meshes(context.scene)
@@ -2209,13 +2216,14 @@ class ExportBatch3DSTL(bpy.types.Operator):
                     filename = f"{base_name}_{suffix}"
                     suffix += 1
                 used_names.add(filename.casefold())
-                filepath = os.path.join(directory, filename + '.stl')
+                filepath = os.path.join(directory, filename + '.glb')
 
                 # Une copie temporaire garde intacts le placement en grille et la visibilité du modèle.
                 export_obj = obj.copy()
                 try:
                     context.scene.collection.objects.link(export_obj)
                     export_obj.hide_viewport = False
+                    export_obj.hide_render = False
                     export_obj.hide_select = False
                     matrix = obj.matrix_world.copy()
                     matrix.translation = (0, 0, 0)
@@ -2224,9 +2232,9 @@ class ExportBatch3DSTL(bpy.types.Operator):
                     context.view_layer.objects.active = export_obj
                     context.view_layer.update()
 
-                    result = exporter(filepath=filepath, **options)
+                    result = bpy.ops.export_scene.gltf(filepath=filepath, **options)
                     if 'FINISHED' not in result:
-                        raise RuntimeError(f"L'exporteur STL a échoué pour {obj.name}")
+                        raise RuntimeError(f"L'exporteur GLB a échoué pour {obj.name}")
                     exported += 1
                 finally:
                     bpy.data.objects.remove(export_obj, do_unlink=True)
@@ -2239,10 +2247,193 @@ class ExportBatch3DSTL(bpy.types.Operator):
             context.view_layer.objects.active = active_before
 
         if error:
-            self.report({'ERROR'}, f"{exported}/{len(objects)} STL exportés : {error}")
+            self.report({'ERROR'}, f"{exported}/{len(objects)} GLB exportés : {error}")
             return {'CANCELLED'}
-        self.report({'INFO'}, f"{exported} STL exportés dans {directory}")
+        self.report({'INFO'}, f"{exported} GLB exportés dans {directory}")
         return {'FINISHED'}
+
+
+_QUADRAROOM_MATERIALS = frozenset({"wood", "fabric"})
+
+
+def _quadraroom_face_materials(obj, allowed_materials, depsgraph):
+    """Valide chaque face évaluée et retourne son matériau par slot."""
+    evaluated = obj.evaluated_get(depsgraph)
+    mesh = evaluated.to_mesh()
+    try:
+        if not mesh.polygons:
+            raise ValueError(f"{obj.name} : le modèle ne contient aucune face")
+        if not mesh.uv_layers:
+            raise ValueError(f"{obj.name} : aucune couche UV pour les textures QuadraRoom")
+        slots = {}
+        for face in mesh.polygons:
+            index = face.material_index
+            if index in slots:
+                continue
+            if index >= len(evaluated.material_slots) or evaluated.material_slots[index].material is None:
+                raise ValueError(f"{obj.name} : la face {face.index} utilise le slot {index} sans matériau")
+            source = evaluated.material_slots[index].material.name
+            if source not in allowed_materials:
+                raise ValueError(f"{obj.name} : la face {face.index} utilise le matériau non associé « {source} »")
+            slots[index] = source
+        return slots
+    finally:
+        evaluated.to_mesh_clear()
+
+
+class ExportBatch3DQuadraRoomGLB(bpy.types.Operator):
+    """Exporte un GLB par référence, avec UV et IDs de matériaux, sans images"""
+    bl_idname = "mesh.export_batch_3d_quadraroom_glb"
+    bl_label = "Exporter GLB QuadraRoom"
+    bl_options = {"REGISTER"}
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene is not None and context.mode == 'OBJECT' and any(
+            is_product_reference(obj.name)
+            for obj in _batch_3d_meshes(context.scene)
+        )
+
+    def execute(self, context):
+        scene = context.scene
+        batch_props = scene.batch_3d_props
+        raw_directory = batch_props.quadra_glb_directory.strip()
+        if not raw_directory:
+            self.report({'ERROR'}, "Choisissez un dossier GLB QuadraRoom")
+            return {'CANCELLED'}
+        try:
+            properties = {prop.identifier: prop for prop in bpy.ops.export_scene.gltf.get_rna_type().properties}
+            required = {'export_format', 'export_materials', 'use_selection',
+                        'export_texcoords', 'export_normals', 'export_yup'}
+            if not required <= properties.keys():
+                raise ValueError("Cette version de l'exporteur glTF ne prend pas en charge tous les paramètres QuadraRoom")
+            material_modes = {item.identifier for item in properties['export_materials'].enum_items}
+            if 'VIEWPORT' not in material_modes:
+                raise ValueError("Cette version de l'exporteur glTF ne prend pas en charge VIEWPORT")
+            options = {
+                'export_format': 'GLB',
+                'export_materials': 'VIEWPORT',
+                'use_selection': True,
+                'export_texcoords': True,
+                'export_normals': True,
+                # Les modèles Blender sont déjà X=largeur, Y=hauteur, Z=profondeur.
+                'export_yup': False,
+            }
+            if 'export_image_format' in properties:
+                image_modes = {item.identifier for item in properties['export_image_format'].enum_items}
+                if 'NONE' in image_modes:
+                    options['export_image_format'] = 'NONE'
+            for key, value in (
+                ('export_apply', True),
+                ('export_animations', False),
+                ('export_cameras', False),
+                ('export_lights', False),
+                ('export_extras', False),
+                ('export_unused_images', False),
+                ('export_unused_textures', False),
+            ):
+                if key in properties:
+                    options[key] = value
+
+            # Vérifier tout le batch avant de créer le premier fichier.
+            depsgraph = context.evaluated_depsgraph_get()
+            products = []
+            references = set()
+            for obj in _batch_3d_meshes(scene):
+                stem = product_stem(obj.name, scene.dif_props.epaisseur)
+                if stem is not None:
+                    if stem.casefold() in references:
+                        raise ValueError(f"Référence produit présente plusieurs fois dans le batch : {stem}")
+                    references.add(stem.casefold())
+                    products.append((obj, stem, _quadraroom_face_materials(
+                        obj, _QUADRAROOM_MATERIALS, depsgraph)))
+            if not products:
+                raise ValueError("Aucune référence produit trouvée dans les collections Batch_3D_*")
+            directory = os.path.abspath(bpy.path.abspath(raw_directory))
+            os.makedirs(directory, exist_ok=True)
+        except (ValueError, OSError, KeyError, RuntimeError) as exc:
+            self.report({'ERROR'}, str(exc))
+            return {'CANCELLED'}
+
+        selected_before = tuple(context.selected_objects)
+        active_before = context.view_layer.objects.active
+        exported = 0
+        error = None
+        try:
+            bpy.ops.object.select_all(action='DESELECT')
+            for obj, stem, face_materials in products:
+                filename = bpy.path.clean_name(stem)
+                filepath = os.path.join(directory, filename + '.glb')
+                temp_fd, temp_path = tempfile.mkstemp(prefix=".quadra_", suffix=".glb", dir=directory)
+                os.close(temp_fd)
+                export_obj = None
+                export_mesh = None
+                try:
+                    export_obj = obj.copy()
+                    export_mesh = obj.data.copy()
+                    export_obj.data = export_mesh
+                    scene.collection.objects.link(export_obj)
+                    export_obj.parent = None
+                    export_obj.hide_viewport = False
+                    export_obj.hide_render = False
+                    export_obj.hide_select = False
+                    export_obj.hide_set(False)
+                    evaluated = obj.evaluated_get(depsgraph)
+                    world_matrix = evaluated.matrix_world.copy()
+                    corners = [world_matrix @ Vector(corner) for corner in evaluated.bound_box]
+                    center = Vector(tuple(
+                        (min(point[axis] for point in corners) + max(point[axis] for point in corners)) / 2
+                        for axis in range(3)
+                    ))
+                    export_obj.matrix_world = Matrix.Translation(-center) @ world_matrix
+                    export_obj.select_set(True)
+                    context.view_layer.objects.active = export_obj
+                    context.view_layer.update()
+
+                    result = bpy.ops.export_scene.gltf(filepath=temp_path, **options)
+                    if 'FINISHED' not in result:
+                        raise RuntimeError(f"L'exporteur glTF a échoué pour {obj.name}")
+                    document, _ = read_glb(Path(temp_path))
+                    validate_quadraroom_glb(document, set(face_materials.values()))
+                    os.replace(temp_path, filepath)
+                    exported += 1
+                finally:
+                    if export_obj is not None:
+                        bpy.data.objects.remove(export_obj, do_unlink=True)
+                    if export_mesh is not None:
+                        bpy.data.meshes.remove(export_mesh, do_unlink=True)
+                    if os.path.exists(temp_path):
+                        os.remove(temp_path)
+        except Exception as exc:
+            error = str(exc)
+        finally:
+            bpy.ops.object.select_all(action='DESELECT')
+            for obj in selected_before:
+                obj.select_set(True)
+            context.view_layer.objects.active = active_before
+
+        if error:
+            self.report({'ERROR'}, f"{exported}/{len(products)} GLB QuadraRoom exportés : {error}")
+            return {'CANCELLED'}
+        self.report({'INFO'}, f"{exported} GLB QuadraRoom exportés dans {directory}")
+        return {'FINISHED'}
+
+
+_BATCH_PRESET_FIELDS = {
+    'product_type': 'batch_product_type',
+    'types': 'batch_types',
+    'profondeurs': 'batch_profondeurs',
+    'longueurs': 'batch_longueurs',
+    'grid_gap': 'batch_grid_gap',
+    'stl_directory': 'batch_stl_directory',
+}
+
+
+def _copy_batch_preset(source, target, to_preset):
+    for preset_field, batch_field in _BATCH_PRESET_FIELDS.items():
+        source_field = batch_field if to_preset else preset_field
+        target_field = preset_field if to_preset else batch_field
+        setattr(target, target_field, getattr(source, source_field))
 
 
 class AddBatchPreset(bpy.types.Operator):
@@ -2255,9 +2446,7 @@ class AddBatchPreset(bpy.types.Operator):
         batch_props = context.scene.batch_3d_props
         preset = context.scene.batch_presets.add()
         preset.name = batch_props.preset_name
-        preset.types = batch_props.batch_types
-        preset.profondeurs = batch_props.batch_profondeurs
-        preset.longueurs = batch_props.batch_longueurs
+        _copy_batch_preset(batch_props, preset, to_preset=True)
         batch_props.active_preset_index = len(context.scene.batch_presets) - 1
         self.report({"INFO"}, f"Preset '{preset.name}' ajouté")
         return {"FINISHED"}
@@ -2299,9 +2488,7 @@ class LoadBatchPreset(bpy.types.Operator):
         index = batch_props.active_preset_index
         if 0 <= index < len(context.scene.batch_presets):
             preset = context.scene.batch_presets[index]
-            batch_props.batch_types = preset.types
-            batch_props.batch_profondeurs = preset.profondeurs
-            batch_props.batch_longueurs = preset.longueurs
+            _copy_batch_preset(preset, batch_props, to_preset=False)
             self.report({"INFO"}, f"Preset '{preset.name}' chargé")
         return {"FINISHED"}
 
@@ -2321,9 +2508,7 @@ class SaveBatchPreset(bpy.types.Operator):
         index = batch_props.active_preset_index
         if 0 <= index < len(context.scene.batch_presets):
             preset = context.scene.batch_presets[index]
-            preset.types = batch_props.batch_types
-            preset.profondeurs = batch_props.batch_profondeurs
-            preset.longueurs = batch_props.batch_longueurs
+            _copy_batch_preset(batch_props, preset, to_preset=True)
             self.report({"INFO"}, f"Preset '{preset.name}' mis à jour")
         return {"FINISHED"}
 
@@ -3696,7 +3881,8 @@ classes = [
     PositionSelected,
     Batch3DGenerate,
     ClearBatch3D,
-    ExportBatch3DSTL,
+    ExportBatch3DGLB,
+    ExportBatch3DQuadraRoomGLB,
     AddBatchPreset,
     RemoveBatchPreset,
     LoadBatchPreset,
