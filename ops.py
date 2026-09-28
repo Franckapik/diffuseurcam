@@ -2123,6 +2123,128 @@ class ClearBatch3D(bpy.types.Operator):
         return {"FINISHED"}
 
 
+def _batch_3d_meshes(scene):
+    """Retourne une seule fois chaque mesh des collections batch de la scène."""
+    objects = []
+    seen = set()
+    for collection in sorted(scene.collection.children_recursive, key=lambda coll: coll.name):
+        if not collection.name.startswith("Batch_3D_"):
+            continue
+        for obj in sorted(collection.objects, key=_batch_sort_key):
+            if obj.type == 'MESH' and obj.as_pointer() not in seen:
+                seen.add(obj.as_pointer())
+                objects.append(obj)
+    return objects
+
+
+class ExportBatch3DSTL(bpy.types.Operator):
+    """Exporte chaque produit du batch dans son propre fichier STL, en millimètres"""
+    bl_idname = "mesh.export_batch_3d_stl"
+    bl_label = "Exporter les STL du batch"
+    bl_options = {"REGISTER"}
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene is not None and context.mode == 'OBJECT' and bool(_batch_3d_meshes(context.scene))
+
+    def execute(self, context):
+        raw_directory = context.scene.batch_3d_props.batch_stl_directory.strip()
+        if not raw_directory:
+            self.report({'ERROR'}, "Choisissez un dossier de destination pour les STL")
+            return {'CANCELLED'}
+
+        # Utiliser l'exporteur STL intégré s'il est disponible, sinon l'ancien addon io_mesh_stl.
+        try:
+            properties = {prop.identifier for prop in bpy.ops.wm.stl_export.get_rna_type().properties}
+            exporter = bpy.ops.wm.stl_export
+            options = {
+                'export_selected_objects': True,
+                'apply_modifiers': True,
+                'ascii_format': False,
+                'use_batch': False,
+            }
+            selection_option = 'export_selected_objects'
+        except (KeyError, RuntimeError):
+            try:
+                properties = {prop.identifier for prop in bpy.ops.export_mesh.stl.get_rna_type().properties}
+            except (KeyError, RuntimeError):
+                self.report({'ERROR'}, "Export STL indisponible dans cette version de Blender")
+                return {'CANCELLED'}
+            exporter = bpy.ops.export_mesh.stl
+            options = {
+                'use_selection': True,
+                'use_mesh_modifiers': True,
+                'ascii': False,
+                'batch_mode': 'OFF',
+            }
+            selection_option = 'use_selection'
+
+        if selection_option not in properties or 'global_scale' not in properties:
+            self.report({'ERROR'}, "L'exporteur STL ne permet pas l'export individuel en millimètres")
+            return {'CANCELLED'}
+        options = {key: value for key, value in options.items() if key in properties}
+        options.update(global_scale=1000.0, use_scene_unit=False)
+
+        directory = os.path.abspath(bpy.path.abspath(raw_directory))
+        try:
+            os.makedirs(directory, exist_ok=True)
+        except OSError as exc:
+            self.report({'ERROR'}, f"Impossible de créer le dossier STL : {exc}")
+            return {'CANCELLED'}
+
+        objects = _batch_3d_meshes(context.scene)
+        selected_before = tuple(context.selected_objects)
+        active_before = context.view_layer.objects.active
+        used_names = set()
+        exported = 0
+        error = None
+
+        try:
+            bpy.ops.object.select_all(action='DESELECT')
+            for obj in objects:
+                base_name = bpy.path.clean_name(obj.name) or "Produit"
+                filename = base_name
+                suffix = 2
+                while filename.casefold() in used_names:
+                    filename = f"{base_name}_{suffix}"
+                    suffix += 1
+                used_names.add(filename.casefold())
+                filepath = os.path.join(directory, filename + '.stl')
+
+                # Une copie temporaire garde intacts le placement en grille et la visibilité du modèle.
+                export_obj = obj.copy()
+                try:
+                    context.scene.collection.objects.link(export_obj)
+                    export_obj.hide_viewport = False
+                    export_obj.hide_select = False
+                    matrix = obj.matrix_world.copy()
+                    matrix.translation = (0, 0, 0)
+                    export_obj.matrix_world = matrix
+                    export_obj.select_set(True)
+                    context.view_layer.objects.active = export_obj
+                    context.view_layer.update()
+
+                    result = exporter(filepath=filepath, **options)
+                    if 'FINISHED' not in result:
+                        raise RuntimeError(f"L'exporteur STL a échoué pour {obj.name}")
+                    exported += 1
+                finally:
+                    bpy.data.objects.remove(export_obj, do_unlink=True)
+        except Exception as exc:
+            error = str(exc)
+        finally:
+            bpy.ops.object.select_all(action='DESELECT')
+            for obj in selected_before:
+                obj.select_set(True)
+            context.view_layer.objects.active = active_before
+
+        if error:
+            self.report({'ERROR'}, f"{exported}/{len(objects)} STL exportés : {error}")
+            return {'CANCELLED'}
+        self.report({'INFO'}, f"{exported} STL exportés dans {directory}")
+        return {'FINISHED'}
+
+
 class AddBatchPreset(bpy.types.Operator):
     """Sauvegarde la configuration batch actuelle comme nouveau preset"""
     bl_idname = "mesh.add_batch_preset"
@@ -3574,6 +3696,7 @@ classes = [
     PositionSelected,
     Batch3DGenerate,
     ClearBatch3D,
+    ExportBatch3DSTL,
     AddBatchPreset,
     RemoveBatchPreset,
     LoadBatchPreset,

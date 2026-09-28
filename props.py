@@ -1477,6 +1477,12 @@ def _batch_render_load_post(dummy):
 
 class Batch3DProps(bpy.types.PropertyGroup):
     """Propriétés pour la génération batch de modèles 3D"""
+    batch_stl_directory: StringProperty(
+        name="Dossier STL",
+        description="Dossier de destination des STL individuels (dimensions exportées en mm)",
+        subtype='DIR_PATH',
+        default="",
+    )
     batch_types: StringProperty(
         name="Types",
         description="Types de diffuseur séparés par des virgules (ex: 7,11,13)",

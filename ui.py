@@ -522,6 +522,9 @@ class Diffuseur_SideBar(Panel):
             row.operator("mesh.batch_3d", icon="PLAY")
             row.operator("mesh.clear_batch_3d", text="", icon="TRASH")
 
+            sub.prop(batchprops, "batch_stl_directory")
+            sub.operator("mesh.export_batch_3d_stl", text="Exporter les STL du batch", icon="EXPORT")
+
             # Presets Batch
             sub.separator()
             sub.label(text="Presets", icon="PRESET")
