@@ -44,6 +44,14 @@ class GeneratedAbsorberTest(unittest.TestCase):
                        if collection.name.startswith('Batch_3D_') for obj in collection.objects)
         source_materials = [material.name for material in product.data.materials]
         self.assertEqual(source_materials, ['wood', 'fabric'])
+        fabric_faces = [face for face in product.data.polygons if face.material_index == 1]
+        self.assertEqual(len(fabric_faces), 2)
+        for face, expected_z, expected_normal in zip(
+                sorted(fabric_faces, key=lambda face: face.center.z),
+                (-0.075, 0.075), (-1.0, 1.0)):
+            self.assertAlmostEqual(face.center.z, expected_z, places=5)
+            self.assertAlmostEqual(face.normal.z, expected_normal, places=5)
+            self.assertEqual(len(face.vertices), 4)
 
         with tempfile.TemporaryDirectory() as directory:
             batch.quadra_glb_directory = directory

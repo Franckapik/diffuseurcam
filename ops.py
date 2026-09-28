@@ -904,17 +904,18 @@ class Add3DModel(bpy.types.Operator, AddObjectHelper):
             raise RuntimeError(f"Impossible de lire {blend_path} : {exc}") from exc
         return {name: bpy.data.materials[name] for name in names}
 
-    def _create_plane(self, bm, x, y, z, sx, sy, mat_index=0):
+    def _create_plane(self, bm, x, y, z, sx, sy, mat_index=0, reverse_normal=False):
         """Crée un plan (face unique) dans le bmesh.
         Position (x, y, z) = coin inférieur-gauche.
-        Dimensions (sx, sy) = taille selon X, Y."""
+        Dimensions (sx, sy) = taille selon X, Y.
+        La normale pointe vers Z+, ou vers Z- si reverse_normal est vrai."""
         verts = [
             bm.verts.new((x, y, z)),
             bm.verts.new((x + sx, y, z)),
             bm.verts.new((x + sx, y + sy, z)),
             bm.verts.new((x, y + sy, z)),
         ]
-        f = bm.faces.new(verts)
+        f = bm.faces.new(verts[::-1] if reverse_normal else verts)
         f.material_index = mat_index
 
     def execute(self, context):
@@ -959,8 +960,10 @@ class Add3DModel(bpy.types.Operator, AddObjectHelper):
             # Planche haute
             self._create_box(bm, ec, L - ec, 0, W - 2 * ec, ec, D, MAT_CADRE)
 
-            # Tissu noir : plan en façade (Z = D), zone interne du cadre
+            # Tissu noir sur les deux faces de la zone interne du cadre.
             self._create_plane(bm, ec, ec, D, W - 2 * ec, L - 2 * ec, MAT_TISSU)
+            self._create_plane(bm, ec, ec, 0, W - 2 * ec, L - 2 * ec,
+                               MAT_TISSU, reverse_normal=True)
 
             mesh_name = (
                 "3D_ABS"
@@ -1001,7 +1004,7 @@ class Add3DModel(bpy.types.Operator, AddObjectHelper):
 
             print(f"✅ Modèle 3D Absorbeur généré: {mesh_name}")
             print(f"   Dimensions: {W*1000:.0f} × {L*1000:.0f} × {D*1000:.0f} mm")
-            print(f"   Pièces: 4 planches bois + 1 tissu noir en façade")
+            print(f"   Pièces: 4 planches bois + 2 faces en tissu noir")
             return {"FINISHED"}
 
         # ── Paramètres du diffuseur ──────────────────────────────────────
