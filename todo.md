@@ -1,4 +1,4 @@
-Il faudra uniformiser le placeme,nt des trous de percage des fonds moules pour que le distances soient plus "propres". De plus les accessoires imprimés en 3D devraient avoir des tailles plus standard et générées par l'addon.
+Il faudra uniformiser le placeme,nt des trous de percage des fonds moules pour que le distances soient plus "propres". De plus les accessoires imprimés en 3D devraient avoir des tailles plus standard et générées par l'addon. Voilà :)
 
 ## 📐 COMPRENDRE LA LONGUEUR DU CADRE MORTAISE (975mm vs 1000mm)
 
