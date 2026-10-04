@@ -625,7 +625,11 @@ class AddFondMoule(bpy.types.Operator, AddObjectHelper):
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
-        vertex, edges, name = add_fond_moule(scene.dif_props, scene.product_props, scene.usinage_props)
+        try:
+            vertex, edges, name = add_fond_moule(scene.dif_props, scene.product_props, scene.usinage_props)
+        except ValueError as exc:
+            self.report({"ERROR"}, str(exc))
+            return {"CANCELLED"}
 
         arrayprops = scene.array_props
 
@@ -1236,9 +1240,13 @@ class AddPilierMoule(bpy.types.Operator, AddObjectHelper):
         scene = context.scene
         difprops = scene.dif_props
         arrayprops = scene.array_props
-        vertex, edges, name = add_pilier_moule(
-            scene.dif_props, scene.product_props, scene.usinage_props, scene.array_props
-        )
+        try:
+            vertex, edges, name = add_pilier_moule(
+                scene.dif_props, scene.product_props, scene.usinage_props, scene.array_props
+            )
+        except ValueError as exc:
+            self.report({"ERROR"}, str(exc))
+            return {"CANCELLED"}
 
         arrayprops = scene.array_props
 
@@ -1285,7 +1293,7 @@ class AddPilierMoule(bpy.types.Operator, AddObjectHelper):
             mesh_obj.rotation_euler = [0, 0, math.radians(90)]
 
         # --- Codage par trous traversants (mono-piliers uniquement) ---
-        if difprops.type_moule == "mono" and getattr(difprops, "pilier_codage", False):
+        if difprops.type_moule in {"mono", "mono_v2"} and getattr(difprops, "pilier_codage", False):
             circles = get_codage_monopilier_circles(difprops, arrayprops)
 
             curve_data = bpy.data.curves.new("Codage_Piliers", type='CURVE')
@@ -1564,6 +1572,14 @@ class AddMoule(bpy.types.Operator, AddObjectHelper):
 
     def execute(self, context):
         print("🔧 [DEBUG] Génération complète du moule...")
+        if context.scene.dif_props.type_moule == "mono_v2":
+            try:
+                add_fond_moule(context.scene.dif_props, context.scene.product_props, context.scene.usinage_props)
+                add_pilier_moule(context.scene.dif_props, context.scene.product_props,
+                                 context.scene.usinage_props, context.scene.array_props)
+            except ValueError as exc:
+                self.report({"ERROR"}, str(exc))
+                return {"CANCELLED"}
         AddCadreMoule.execute(self, context)
         AddFondMoule.execute(self, context)
         AddPilierMoule.execute(self, context)

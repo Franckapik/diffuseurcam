@@ -139,7 +139,7 @@ class Diffuseur_SideBar(Panel):
             if productprops.product_type != "2":
                 box.label(text=f"Rang : ≈ {difprops.getRang() * 1000:.1f} mm")
                 # Affichage différencié pour mode pyramidal (mono uniquement)
-                if (productprops.product_type in ("0", "1") and difprops.type_moule == "mono" and
+                if (productprops.product_type in ("0", "1") and difprops.type_moule in {"mono", "mono_v2"} and
                     hasattr(difprops, 'pilier_pyramidal') and difprops.pilier_pyramidal):
                     box.label(text=f"Pilier base : {round(difprops.getLargeurPilier() * 1000 , 3)} mm")
                     box.label(text=f"Pilier haut : {round(difprops.getLargeurPilierHaut() * 1000 , 3)} mm")

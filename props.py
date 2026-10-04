@@ -430,6 +430,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
             ("stable", "Stable - 2 epaisseurs", ""),
             ("eco", "Eco - 1 epaisseur", ""),
             ("mono", "Mono-Pilier", ""),
+            ("mono_v2", "Mono-pilier v2", "Fond compact avec perçages et base de piliers à créneaux"),
         ),
     )
     renfort_central: EnumProperty(
@@ -586,7 +587,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
 
     def getLargeurPilier(self):
         if (hasattr(self, 'pilier_pyramidal') and self.pilier_pyramidal and 
-            hasattr(self, 'type_moule') and self.type_moule == "mono"):
+            hasattr(self, 'type_moule') and self.type_moule in {"mono", "mono_v2"}):
             # Mode pyramidal uniquement pour mono : retourner la largeur de base (non réduite)
             largeur_pilier = self.getRang() - self.epaisseur
         else:
@@ -597,7 +598,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
     def getLargeurPilierHaut(self):
         """Retourne la largeur du pilier au sommet (utile pour le mode pyramidal)"""
         if (hasattr(self, 'pilier_pyramidal') and self.pilier_pyramidal and 
-            hasattr(self, 'type_moule') and self.type_moule == "mono"):
+            hasattr(self, 'type_moule') and self.type_moule in {"mono", "mono_v2"}):
             # Mode pyramidal uniquement pour mono : largeur réduite au sommet
             largeur_base = self.getRang() - self.epaisseur
             largeur_haut = largeur_base * (1 - float(self.pilier_reduction))
@@ -860,23 +861,23 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                 ]
 
                 # Réduction pyramidale uniquement pour mono-piliers
-                if self.type_moule == "mono":
+                if self.type_moule in {"mono", "mono_v2"}:
                     attributes.append("pilier_pyramidal")
 
                 # Encoches pour stable et mono seulement (pas eco)
-                if self.type_moule == "stable" or self.type_moule == "mono":
+                if self.type_moule in {"stable", "mono", "mono_v2"}:
                     attributes.append("pilier_encoches")
                 
-                # Réduction mortaises pour mono-piliers uniquement
+                # La largeur des créneaux v2 suit celle du fond, sans réduction.
                 if self.type_moule == "mono":
                     attributes.append("monopilier_mortaise_reduction")
 
                 # Épaisseur pilier pour stable et mono
-                if self.type_moule == "stable" or self.type_moule == "mono":
+                if self.type_moule in {"stable", "mono", "mono_v2"}:
                     attributes.append("epaisseur_pilier")
 
                 # Codage par trous pour mono-piliers uniquement
-                if self.type_moule == "mono":
+                if self.type_moule in {"mono", "mono_v2"}:
                     attributes.append("pilier_codage")
                     if self.pilier_codage:
                         attributes.append("hole_diam_codage")

@@ -2,6 +2,49 @@ from .pattern import *
 import math
 
 
+# Distances moyennes des centres aux bords, mesurées sur Fond600 puis
+# symétrisées. Elles restent fixes quand la taille du fond change.
+MONO_V2_CORNER_MARGIN = 0.03578
+MONO_V2_MID_SIDE_MARGIN = 0.03505
+MONO_V2_NEAR_EDGE_MARGIN = 0.00877
+MONO_V2_NEAR_CORNER_MARGIN = 0.06001
+MONO_V2_HOLE_DIAMETER = 0.008
+MONO_V2_HOLE_SEGMENTS = 32
+MONO_V2_PILIER_STEP_WIDTH = 0.020
+MONO_V2_PILIER_EXTRA_DEPTH = 0.002
+
+
+def _mono_v2_hole_centers(width, length):
+    """Les 16 perçages du fond mono-pilier v2, en coordonnées du fond."""
+    if min(width, length) <= 2 * (MONO_V2_NEAR_CORNER_MARGIN + MONO_V2_HOLE_DIAMETER / 2):
+        raise ValueError("Fond mono-pilier v2 trop petit pour les perçages périphériques")
+
+    corner = MONO_V2_CORNER_MARGIN
+    mid_side = MONO_V2_MID_SIDE_MARGIN
+    near_edge = MONO_V2_NEAR_EDGE_MARGIN
+    near_corner = MONO_V2_NEAR_CORNER_MARGIN
+    centers = [(x, y) for x in (corner, width - corner)
+               for y in (corner, length - corner)]
+    centers.extend((x, length / 2) for x in (mid_side, width - mid_side))
+    centers.extend((width / 2, y) for y in (mid_side, length - mid_side))
+    centers.extend((x, y) for x in (near_edge, width - near_edge)
+                   for y in (near_corner, length - near_corner))
+    centers.extend((x, y) for x in (near_corner, width - near_corner)
+                   for y in (near_edge, length - near_edge))
+    return centers
+
+
+def _append_mono_v2_holes(vertices, edges, width, length):
+    radius = MONO_V2_HOLE_DIAMETER / 2
+    for cx, cy in _mono_v2_hole_centers(width, length):
+        start = len(vertices)
+        for i in range(MONO_V2_HOLE_SEGMENTS):
+            angle = 2 * math.pi * i / MONO_V2_HOLE_SEGMENTS
+            vertices.append((cx + radius * math.cos(angle),
+                             cy + radius * math.sin(angle), 0))
+            edges.append((start + i, start + (i + 1) % MONO_V2_HOLE_SEGMENTS))
+
+
 def add_cadre_mortaise(difprops, productprops, usinageprops):
     epaisseur = difprops.epaisseur
     ec = difprops.getEpaisseurCadre()
@@ -1009,6 +1052,7 @@ def add_renfort_angle(difprops, productprops, usinageprops):
 
 
 def add_fond_moule(difprops, productprops, usinageprops):
+    fond_mono_v2 = difprops.type_moule == "mono_v2"
     product_type = productprops.product_type
     epaisseur = difprops.epaisseur
     rang = difprops.getRang()
@@ -1017,7 +1061,7 @@ def add_fond_moule(difprops, productprops, usinageprops):
     longueur_diffuseur = difprops.longueur_diffuseur
     tenon_cadre = largeur_diffuseur / 8
     longueurTotale = difprops.getLongueur()
-    debord_moule = 0.010
+    debord_moule = 0 if fond_mono_v2 else 0.010
     type = difprops.type
     largeur_monopilier = rang * type - epaisseur
     ratio = difprops.getMotif("ratio")
@@ -1055,14 +1099,14 @@ def add_fond_moule(difprops, productprops, usinageprops):
 
                 x0 += rang2 + epaisseur
 
-        if difprops.type_moule == "mono":
+        if difprops.type_moule in {"mono", "mono_v2"}:
             """depart bas/haut"""
             y0 = rang2 / 2 + ec + epaisseur_moule + debord_moule
             """ depart gauche/droite """
             x0 = ec + epaisseur_moule + debord_moule
 
             # Espacement sans réduction pour le fond du moule
-            mortaise_spacing_base = largeur_monopilier / 5
+            mortaise_spacing_base = difprops.getMonopilierMortaiseSpacing()
 
             for k in range(0, round(N * longueur_diffuseur * 2)):
                 if k % (round(N * longueur_diffuseur)) == 0 and k != 0:
@@ -1093,7 +1137,7 @@ def add_fond_moule(difprops, productprops, usinageprops):
             ),
         ]
 
-        vertsMortaiseCadre = [
+        vertsMortaiseCadre = [] if fond_mono_v2 else [
             *mortaise_bas_fond_moule(
                 debord_moule,
                 debord_moule,
@@ -1132,7 +1176,7 @@ def add_fond_moule(difprops, productprops, usinageprops):
     i = 0
 
     for k in range(len(vertsCadre), len(vertsCadre) + len(vertsMortaisesInt)):
-        if difprops.type_moule == "eco" or difprops.type_moule == "mono":
+        if difprops.type_moule in {"eco", "mono", "mono_v2"}:
             i += 1
             if i == 4 or k == len(vertsCadre):
                 i = 0
@@ -1179,6 +1223,11 @@ def add_fond_moule(difprops, productprops, usinageprops):
 
     verts = [*list(vertsCadre), *list(vertsMortaisesInt), *list(vertsMortaiseCadre)]
     edges = [*list(edgesCadre), *list(edgesMortaisesInt), *list(edgesMortaiseCadre)]
+
+    if fond_mono_v2:
+        width = largeur_diffuseur + 2 * epaisseur_moule
+        length = longueurTotale + 2 * epaisseur_moule
+        _append_mono_v2_holes(verts, edges, width, length)
 
     return verts, edges, "Fond moule"
 
@@ -1441,7 +1490,7 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
                         (i + 3, i),
                     ]
 
-        if difprops.type_moule == "mono":
+        if difprops.type_moule in {"mono", "mono_v2"}:
             y0 = 0
             largeur_monopilier = rang * type - epaisseur
             rangee_end_indices = []  # Pour tracker les fins de rangées
@@ -1451,7 +1500,10 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
                     start_idx = len(vertsCadre)  # Index de début de cette rangée
                     
                     mortaise_spacing = difprops.getMonopilierMortaiseSpacing()
-                    mortaise_largeur = difprops.getMonopilierMortaiseLargeur()
+                    # Le fond mono-pilier conserve des mortaises de pleine largeur.
+                    # Les créneaux v2 doivent reprendre cette largeur pour s'y ajuster.
+                    mortaise_largeur = (mortaise_spacing if difprops.type_moule == "mono_v2"
+                                        else difprops.getMonopilierMortaiseLargeur())
                     
                     # Centre géométrique de la pièce
                     centre_piece = largeur_monopilier / 2
@@ -1466,17 +1518,41 @@ def add_pilier_moule(difprops, productprops, usinageprops, arrayprops):
                         *monopilier_profondeurs(x0, y0 + socle_monopilier, difprops, i, cross_monopilier_min),
                         (largeur_monopilier + ec, y0 + socle_monopilier, 0),
                         (largeur_monopilier + ec, y0, 0),
-                        # Contour bas avec encoches des mortaises (de droite à gauche)
-                        (centre_mortaise_droite + mortaise_largeur / 2, y0, 0),
-                        (centre_mortaise_droite + mortaise_largeur / 2, y0 - epaisseur_moule, 0),
-                        (centre_mortaise_droite - mortaise_largeur / 2, y0 - epaisseur_moule, 0),
-                        (centre_mortaise_droite - mortaise_largeur / 2, y0, 0),
-                        (centre_mortaise_gauche + mortaise_largeur / 2, y0, 0),
-                        (centre_mortaise_gauche + mortaise_largeur / 2, y0 - epaisseur_moule, 0),
-                        (centre_mortaise_gauche - mortaise_largeur / 2, y0 - epaisseur_moule, 0),
-                        (centre_mortaise_gauche - mortaise_largeur / 2, y0, 0),
-                        (x0 - ec, y0, 0),
                     ]
+
+                    if difprops.type_moule == "mono_v2":
+                        # Deux créneaux identiques, de droite à gauche. Le palier
+                        # est 2 mm plus profond que l'épaisseur du moule ; le fond
+                        # descend encore d'une épaisseur de moule.
+                        if mortaise_largeur <= MONO_V2_PILIER_STEP_WIDTH:
+                            raise ValueError("Mortaises mono-pilier v2 trop étroites pour le créneau de 20 mm")
+                        palier_y = y0 - epaisseur_moule - MONO_V2_PILIER_EXTRA_DEPTH
+                        fond_y = palier_y - epaisseur_moule
+                        for centre in (centre_mortaise_droite, centre_mortaise_gauche):
+                            gauche = centre - mortaise_largeur / 2
+                            droite = centre + mortaise_largeur / 2
+                            vertsCadre += [
+                                (droite - MONO_V2_PILIER_STEP_WIDTH, y0, 0),
+                                (droite - MONO_V2_PILIER_STEP_WIDTH, fond_y, 0),
+                                (gauche - MONO_V2_PILIER_STEP_WIDTH, fond_y, 0),
+                                (gauche - MONO_V2_PILIER_STEP_WIDTH, palier_y, 0),
+                                (gauche, palier_y, 0),
+                                (gauche, y0, 0),
+                            ]
+                        vertsCadre.append((x0 - ec, y0, 0))
+                    else:
+                        # Contour bas mono d'origine.
+                        vertsCadre += [
+                            (centre_mortaise_droite + mortaise_largeur / 2, y0, 0),
+                            (centre_mortaise_droite + mortaise_largeur / 2, y0 - epaisseur_moule, 0),
+                            (centre_mortaise_droite - mortaise_largeur / 2, y0 - epaisseur_moule, 0),
+                            (centre_mortaise_droite - mortaise_largeur / 2, y0, 0),
+                            (centre_mortaise_gauche + mortaise_largeur / 2, y0, 0),
+                            (centre_mortaise_gauche + mortaise_largeur / 2, y0 - epaisseur_moule, 0),
+                            (centre_mortaise_gauche - mortaise_largeur / 2, y0 - epaisseur_moule, 0),
+                            (centre_mortaise_gauche - mortaise_largeur / 2, y0, 0),
+                            (x0 - ec, y0, 0),
+                        ]
                     
                     rangee_end_indices.append(len(vertsCadre) - 1)  # Marquer la fin de cette rangée
 
@@ -1677,7 +1753,7 @@ def add_contre_pilier_moule(difprops, productprops, usinageprops, arrayprops):
                     (i + 3, i),
                 ]
 
-        elif difprops.type_moule == "mono":
+        elif difprops.type_moule in {"mono", "mono_v2"}:
             largeur_monopilier = rang * type - epaisseur
             rangee_end_indices = []  # Pour tracker les fins de rangées
 
