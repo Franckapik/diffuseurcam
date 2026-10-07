@@ -433,6 +433,17 @@ class DiffuseurProps(bpy.types.PropertyGroup):
             ("mono_v2", "Mono-pilier v2", "Fond compact avec perçages et base de piliers à créneaux"),
         ),
     )
+    mono_v2_corner_motif: EnumProperty(
+        name="Motif des coins",
+        description="Motif répété aux quatre coins du fond mono-pilier v2",
+        items=(
+            ("one_screw", "1 vis", "Cercle central de chaque coin"),
+            ("two_screws", "2 vis", "Deux cercles extérieurs de chaque coin"),
+            ("no_screws", "Aucune vis", "Trois pattes rectangulaires par coin"),
+            ("all", "Tous les motifs", "Trois cercles et trois pattes par coin"),
+        ),
+        default="all",
+    )
     renfort_central: EnumProperty(
         name="Renfort central",
         items=(
@@ -859,6 +870,9 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "longueur_diffuseur",
                     "socle_monopilier",
                 ]
+
+                if self.type_moule == "mono_v2":
+                    attributes.insert(1, "mono_v2_corner_motif")
 
                 # Réduction pyramidale uniquement pour mono-piliers
                 if self.type_moule in {"mono", "mono_v2"}:

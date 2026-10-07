@@ -89,7 +89,7 @@ class PilierMouleV2Test(unittest.TestCase):
                                  {-0.014, -0.026})
                 deep_x = sorted(v[0] for v in vertices if abs(v[1] + 0.026) < 1e-7)
                 fond_vertices, _, _ = shapes.add_fond_moule(self.dif, self.product, self.usinage)
-                fond_mortaise = fond_vertices[4:8]
+                fond_mortaise = fond_vertices[44:48]
                 fond_width = max(v[0] for v in fond_mortaise) - min(v[0] for v in fond_mortaise)
                 self.assertAlmostEqual(fond_width * 1000, expected_mm, places=3)
                 self.assertAlmostEqual(deep_x[1] - deep_x[0], fond_width, places=5)
