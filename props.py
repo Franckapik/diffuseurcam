@@ -439,8 +439,8 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         items=(
             ("one_screw", "1 vis", "Cercle central de chaque coin"),
             ("two_screws", "2 vis", "Deux cercles extérieurs de chaque coin"),
-            ("no_screws", "Aucune vis", "Trois pattes rectangulaires par coin"),
-            ("all", "Tous les motifs", "Trois cercles et trois pattes par coin"),
+            ("no_screws", "Aucune vis", "Deux cercles et deux pattes rectangulaires par coin"),
+            ("all", "Tous les motifs", "Tous les cercles et deux pattes par coin"),
         ),
         default="all",
     )

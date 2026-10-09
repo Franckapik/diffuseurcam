@@ -10,19 +10,20 @@ MONO_V2_NEAR_EDGE_MARGIN = 0.00877
 MONO_V2_NEAR_CORNER_MARGIN = 0.06001
 MONO_V2_HOLE_DIAMETER = 0.008
 MONO_V2_HOLE_SEGMENTS = 32
+# Nouveau (BelleIlev1.6.blend) : cercle supplémentaire du coin +X +Y.
+MONO_V2_NEW_HOLE_MARGIN = 0.0251734
+MONO_V2_NEW_HOLE_DIAMETER = 0.010
 MONO_V2_OUTER_MARGIN = 0.010
 MONO_V2_CORNER_RADIUS = 0.030
 MONO_V2_CORNER_SEGMENTS = 10
-# Les trois pattes du coin supérieur droit de Moulev4 (asup.blend),
-# exprimées par rapport au centre de son ancien fond de 620 mm.
-MONO_V2_TAB_REFERENCE_HALF_WIDTH = 0.310
-MONO_V2_TABS_TOP_RIGHT = (
-    ((0.2812166, 0.2871969), (0.2755166, 0.2871969),
-     (0.2755166, 0.3084021), (0.2812166, 0.3084021)),
-    ((0.2976092, 0.2936831), (0.2935787, 0.2977135),
-     (0.3036779, 0.3078128), (0.3077084, 0.3037823)),
-    ((0.2870925, 0.2756445), (0.2870925, 0.2813445),
-     (0.3082977, 0.2813445), (0.3082977, 0.2756445)),
+# Rectangles du coin +X +Y de Nouveauv2 (BelleIlev1.6.blend).
+# Chaque point est une distance aux anciennes limites du fond, avant son
+# agrandissement de 10 mm par bord. Les autres coins sont des miroirs.
+MONO_V2_TABS_TOP_RIGHT_INSETS = (
+    ((0.0185748, 0.0106926), (0.0397800, 0.0106926),
+     (0.0397800, 0.0156926), (0.0185748, 0.0156926)),
+    ((0.0106441, 0.0185398), (0.0156441, 0.0185398),
+     (0.0156441, 0.0397450), (0.0106441, 0.0397450)),
 )
 MONO_V2_PILIER_STEP_WIDTH = 0.020
 MONO_V2_PILIER_EXTRA_DEPTH = 0.002
@@ -38,7 +39,7 @@ def _mono_v2_hole_centers(width, length, corner_motif="all"):
     near_edge = MONO_V2_NEAR_EDGE_MARGIN
     near_corner = MONO_V2_NEAR_CORNER_MARGIN
     centers = []
-    if corner_motif in {"one_screw", "all"}:
+    if corner_motif in {"one_screw", "no_screws", "all"}:
         centers.extend((x, y) for x in (corner, width - corner)
                        for y in (corner, length - corner))
     # Ces quatre perçages sont au milieu des côtés, hors des motifs de coin.
@@ -52,15 +53,28 @@ def _mono_v2_hole_centers(width, length, corner_motif="all"):
     return centers
 
 
-def _append_mono_v2_holes(vertices, edges, width, length, corner_motif):
-    radius = MONO_V2_HOLE_DIAMETER / 2
-    for cx, cy in _mono_v2_hole_centers(width, length, corner_motif):
+def _append_mono_v2_circles(vertices, edges, centers, diameter):
+    radius = diameter / 2
+    for cx, cy in centers:
         start = len(vertices)
         for i in range(MONO_V2_HOLE_SEGMENTS):
             angle = 2 * math.pi * i / MONO_V2_HOLE_SEGMENTS
             vertices.append((cx + radius * math.cos(angle),
                              cy + radius * math.sin(angle), 0))
             edges.append((start + i, start + (i + 1) % MONO_V2_HOLE_SEGMENTS))
+
+
+def _append_mono_v2_holes(vertices, edges, width, length, corner_motif):
+    _append_mono_v2_circles(
+        vertices, edges,
+        _mono_v2_hole_centers(width, length, corner_motif),
+        MONO_V2_HOLE_DIAMETER,
+    )
+    if corner_motif in {"no_screws", "all"}:
+        margin = MONO_V2_NEW_HOLE_MARGIN
+        centers = ((x, y) for x in (margin, width - margin)
+                   for y in (margin, length - margin))
+        _append_mono_v2_circles(vertices, edges, centers, MONO_V2_NEW_HOLE_DIAMETER)
 
 
 def _mono_v2_rounded_outline(width, length):
@@ -84,14 +98,12 @@ def _mono_v2_rounded_outline(width, length):
 
 
 def _append_mono_v2_tabs(vertices, edges, width, length):
-    """Réplique les trois pattes de Moulev4 à distance fixe des anciens bords."""
+    """Réplique les deux pattes de Nouveauv2 aux quatre coins."""
     for right in (False, True):
         for top in (False, True):
-            for tab in MONO_V2_TABS_TOP_RIGHT:
+            for tab in MONO_V2_TABS_TOP_RIGHT_INSETS:
                 start = len(vertices)
-                for x_ref, y_ref in tab:
-                    dx = MONO_V2_TAB_REFERENCE_HALF_WIDTH - x_ref
-                    dy = MONO_V2_TAB_REFERENCE_HALF_WIDTH - y_ref
+                for dx, dy in tab:
                     vertices.append((width - dx if right else dx,
                                      length - dy if top else dy, 0))
                 edges.extend((start + i, start + (i + 1) % 4) for i in range(4))
