@@ -1,7 +1,7 @@
 from bpy.types import Panel, Menu, Operator
 import bpy
 from .ops import classes, batch_3d_configuration, _batch_sort_key, product_reference
-from .gammes import DIFFUSEURS, GAMMES, GAMME_NAMES, cam_product_type, trapik_section
+from .gammes import DIFFUSEURS, GAMMES, GAMME_NAMES, cam_product_type
 from bl_operators.presets import AddPresetBase
 from math import ceil
 from collections import Counter
@@ -86,13 +86,36 @@ def _draw_cloudik(box, cloudik):
         sub.prop(cloudik, att)
 
 
-def _draw_trapik(box, trapik, difprops):
-    box.label(text="Placeholder en attendant les fichiers Trapik", icon="INFO")
-    box.prop(difprops, "epaisseur")
-    for att in ("cote_a", "cote_b", "hauteur"):
-        box.prop(trapik, att)
-    front, depth, _corner = trapik_section(trapik.cote_a, trapik.cote_b)
-    box.label(text=f"Face avant : {front * 1000:.0f} mm · profondeur : {depth * 1000:.0f} mm")
+def _draw_trapik(box, trapik):
+    box.prop(trapik, "cote")
+    box.prop(trapik, "hauteur")
+
+    slats = box.box()
+    slats.label(text="Tasseaux", icon="MOD_ARRAY")
+    slats.prop(trapik, "largeur_tasseau")
+    slats.prop(trapik, "epaisseur_tasseau")
+    row = slats.row()
+    row.enabled = not trapik.nombre_manuel
+    row.prop(trapik, "pourcentage_ajoure")
+    slats.prop(trapik, "nombre_manuel")
+    if trapik.nombre_manuel:
+        slats.prop(trapik, "nombre_tasseaux")
+
+    structure = box.box()
+    structure.label(text="Structure", icon="MOD_BUILD")
+    for att in ("epaisseur_cote", "epaisseur_plateau", "epaisseur_finition",
+                "epaisseur_cerce", "largeur_cerce", "nombre_cerces"):
+        structure.prop(trapik, att)
+
+    try:
+        geo = trapik.layout()
+    except ValueError as exc:
+        box.label(text=str(exc), icon="ERROR")
+        return
+    slats.label(text=f"{geo['n']} tasseaux · ajouré {geo['ajoure']:.1f} % (au tissu)", icon="INFO")
+    slats.label(text=f"Vide : {geo['vide'] * 1000:.1f} mm au tissu · {geo['vide_facade'] * 1000:.1f} mm en façade")
+    box.label(text=f"Emprise au mur : {geo['emprise'] * 1000:.0f} mm · profondeur : {geo['profondeur'] * 1000:.0f} mm",
+              icon="INFO")
 
 
 def _dimension_label(scene):
@@ -186,7 +209,7 @@ class Diffuseur_SideBar(Panel):
             row2.prop(productprops, "product_type", expand=True)
             box.label(text=f"{GAMME_NAMES[pt]} : {GAMME_DESCRIPTIONS[pt]}")
             if pt == "5":
-                _draw_trapik(box, scene.trapik_props, difprops)
+                _draw_trapik(box, scene.trapik_props)
             else:
                 if pt == "7":
                     box.prop(scene.cloudik_props, "epaisseur_cadre")
@@ -580,10 +603,10 @@ class Diffuseur_SideBar(Panel):
                 if batch_pt == "7":
                     sub.label(text="Cadre et suspension : onglet Cloudik", icon="INFO")
             elif batch_pt == "5":
-                sub.label(text=f"Epaisseur actuelle : {difprops.epaisseur * 1000:g} mm", icon="INFO")
-                sub.prop(batchprops, "batch_trapik_a")
-                sub.prop(batchprops, "batch_trapik_b")
+                sub.prop(batchprops, "batch_trapik_cotes")
                 sub.prop(batchprops, "batch_trapik_h")
+                sub.prop(batchprops, "batch_ajoures")
+                sub.label(text="Tasseaux et structure : onglet Trapik", icon="INFO")
             else:
                 sub.prop(batchprops, "batch_types")
                 sub.prop(batchprops, "batch_profondeurs")

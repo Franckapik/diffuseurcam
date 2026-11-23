@@ -22,7 +22,6 @@ from .gammes import (
     GAMME_NAMES,
     panel_reference,
     trapik_reference,
-    trapik_section,
 )
 
 
@@ -49,9 +48,9 @@ def _batch_sort_key(obj):
     if panel:
         letter, *values = panel.groups()
         return (_PANEL_SORT_ORDER[letter], *(_dim(value) for value in values), obj.name)
-    trapik = re.match(rf'T(\d+)A{_DIM}B{_DIM}H{_DIM}', obj.name)
+    trapik = re.match(rf'T(\d+)A{_DIM}B{_DIM}H{_DIM}(?:G{_DIM})?', obj.name)
     if trapik:
-        return (6, *(_dim(value) for value in trapik.groups()), 0, obj.name)
+        return (6, *(_dim(value) for value in trapik.groups()), obj.name)
     # Anciens noms d'absorbeurs : conserver leur tri dans les scènes existantes.
     absorber = re.match(r'ABS_W(\d+(?:p\d+)?)_P(\d+(?:p\d+)?)_L(\d+(?:p\d+)?)_E(\d+(?:p\d+)?)', obj.name)
     if absorber:
@@ -117,15 +116,16 @@ def batch_3d_configuration(batch_props, difprops):
                 'depths': depths, 'gaps': gaps, 'count': len(ratios) * len(depths) * len(gaps)}
 
     if batch_props.batch_product_type == '5':
-        sides_a = _parse_batch_numbers(batch_props.batch_trapik_a, 'Côtés A (mm)', 50, 3000)
-        sides_b = _parse_batch_numbers(batch_props.batch_trapik_b, 'Côtés B (mm)', 50, 3000)
-        heights = _parse_batch_numbers(batch_props.batch_trapik_h, 'Hauteurs (mm)', 50, 5000)
-        thickness = difprops.epaisseur
-        for a in sides_a:
-            for b in sides_b:
-                _check_trapik(a / 1000, b / 1000, min(heights) / 1000, thickness)
-        return {'kind': 'trapik', 'product_type': '5', 'sides_a': sides_a, 'sides_b': sides_b,
-                'heights': heights, 'count': len(sides_a) * len(sides_b) * len(heights)}
+        sides = _parse_batch_numbers(batch_props.batch_trapik_cotes, 'Côtés (mm)', 100, 3000)
+        heights = _parse_batch_numbers(batch_props.batch_trapik_h, 'Hauteurs (mm)', 200, 5000)
+        gaps = _parse_batch_numbers(batch_props.batch_ajoures, 'Ajourés (%)', 0, 90)
+        trapik = scene.trapik_props
+        for side in sides:
+            for height in heights:
+                for gap in gaps:
+                    trapik.layout(cote=side / 1000, hauteur=height / 1000, pourcentage=gap)
+        return {'kind': 'trapik', 'product_type': '5', 'sides': sides, 'heights': heights,
+                'gaps': gaps, 'count': len(sides) * len(heights) * len(gaps)}
 
     types = _parse_batch_numbers(batch_props.batch_types, 'Types', 6, 13, integer=True)
     depths = _parse_batch_numbers(batch_props.batch_profondeurs, 'Profondeurs', 50, 500)
@@ -159,13 +159,6 @@ def _cloudik_inscribed_radius(side):
     return side * (2 - math.sqrt(2)) / 2
 
 
-def _check_trapik(a, b, height, thickness):
-    """Vérifie que les bordures bois laissent une zone de tissu."""
-    front, _depth, _corner = trapik_section(a, b)
-    if 2 * thickness >= min(front, height):
-        raise ValueError("Trapik trop petit pour l'épaisseur du modèle")
-
-
 def product_reference(scene):
     """Référence catalogue du produit courant (onglet actif)."""
     product = scene.product_props.product_type
@@ -173,8 +166,7 @@ def product_reference(scene):
     if product in DIFFUSEURS:
         return difprops.getDifName(scene)
     if product == '5':
-        trapik = scene.trapik_props
-        return trapik_reference(trapik.cote_a, trapik.cote_b, trapik.hauteur)
+        return scene.trapik_props.reference()
     width = difprops.largeur_diffuseur
     ratio = difprops.longueur_absorbeur / width
     gap = None
@@ -1058,7 +1050,7 @@ class Add3DModel(bpy.types.Operator, AddObjectHelper):
         bmesh.ops.recalc_face_normals(bm, faces=new_faces)
 
     def _create_prism(self, bm, polygon, z0, z1, mat_index=0):
-        """Extrude un polygone convexe du plan XY entre z0 et z1."""
+        """Extrude un polygone simple (convexe ou non) du plan XY entre z0 et z1."""
         n = len(polygon)
         points = [(x, y, z0) for x, y in polygon] + [(x, y, z1) for x, y in polygon]
         faces = [list(range(n)), list(range(n, 2 * n))]
@@ -1125,25 +1117,115 @@ class Add3DModel(bpy.types.Operator, AddObjectHelper):
                 diagonal, (0, 0, -1), major, minor, mat_index,
             )
 
-    def _build_trapik(self, bm, a, b, H, e, mat_bois=0, mat_tissu=1):
-        """Prisme d'angle : face avant (hypoténuse) vers +Z, bordée de bois sur une largeur e.
+    def _create_grid_solid(self, bm, us, vs, solid, point, thickness, mat_index=0):
+        """Plaque d'épaisseur ``thickness`` découpée sur une grille (u, v).
 
-        X = largeur de la face avant, Y = hauteur, Z = profondeur (coin à l'arrière, Z = 0).
+        ``solid(i, j)`` indique si la cellule [us[i], us[i+1]] × [vs[j], vs[j+1]] est
+        pleine ; ``point(u, v, w)`` donne les coordonnées 3D, w allant de 0 à thickness.
+        Les sommets sont partagés : le solide est fermé, sans faces internes.
         """
-        c, h, xc = trapik_section(a, b)
-        section = [(0, h), (e, h), (c - e, h), (c, h), (xc, 0)]   # (x, z)
-        levels = [0, e, H - e, H]
-        n = len(section)
-        points = [(x, y, z) for y in levels for x, z in section]
-        faces = [list(range(n)), list(range(3 * n, 4 * n))]           # chapeaux bas/haut
-        mats = [mat_bois, mat_bois]
-        for band in range(3):
-            for k in range(n):
-                k2 = (k + 1) % n
-                faces.append((band * n + k, band * n + k2, (band + 1) * n + k2, (band + 1) * n + k))
-                # Arête 1 → 2 : centre de la face avant ; bande 1 : entre les bordures hautes et basses.
-                mats.append(mat_tissu if (band == 1 and k == 1) else mat_bois)
-        self._create_solid(bm, points, faces, mats)
+        verts = {}
+
+        def vert(i, j, k):
+            key = (i, j, k)
+            if key not in verts:
+                verts[key] = bm.verts.new(point(us[i], vs[j], k * thickness))
+            return verts[key]
+
+        def full(i, j):
+            return 0 <= i < len(us) - 1 and 0 <= j < len(vs) - 1 and solid(i, j)
+
+        quads = []
+        for i in range(len(us) - 1):
+            for j in range(len(vs) - 1):
+                if not solid(i, j):
+                    continue
+                for k in (0, 1):
+                    quads.append(((i, j, k), (i + 1, j, k), (i + 1, j + 1, k), (i, j + 1, k)))
+                if not full(i - 1, j):
+                    quads.append(((i, j, 0), (i, j + 1, 0), (i, j + 1, 1), (i, j, 1)))
+                if not full(i + 1, j):
+                    quads.append(((i + 1, j, 0), (i + 1, j + 1, 0), (i + 1, j + 1, 1), (i + 1, j, 1)))
+                if not full(i, j - 1):
+                    quads.append(((i, j, 0), (i + 1, j, 0), (i + 1, j, 1), (i, j, 1)))
+                if not full(i, j + 1):
+                    quads.append(((i, j + 1, 0), (i + 1, j + 1, 0), (i + 1, j + 1, 1), (i, j + 1, 1)))
+        faces = []
+        for quad in quads:
+            face = bm.faces.new([vert(*key) for key in quad])
+            face.material_index = mat_index
+            faces.append(face)
+        bmesh.ops.recalc_face_normals(bm, faces=faces)
+
+    def _create_trapik_cote(self, bm, geo, side, mat_index=0):
+        """Côté contre le mur : doigts dans l'angle et mortaises traversantes des cerces.
+
+        side = "A" (mur y = 0) ou "B" (mur x = 0) ; u court le long du mur depuis le coin.
+        """
+        e = geo["epaisseur_cote"]
+        z0, z1 = geo["niveaux"]["interieur"]
+        t0, t1 = geo["tenon"]
+
+        def breaks(values):
+            result = []
+            for value in sorted(values):
+                if not result or value - result[-1] > 1e-7:
+                    result.append(value)
+            return result
+
+        us = breaks([0.0, e, t0, t1, geo["cote"]])
+        vs = breaks([z0, z1] + [z for lo, hi, _owner in geo["doigts"] for z in (lo, hi)]
+                    + [z for cerce in geo["cerces"] for z in cerce])
+
+        def solid(i, j):
+            u, v = (us[i] + us[i + 1]) / 2, (vs[j] + vs[j + 1]) / 2
+            if u < e:
+                return any(lo < v < hi and owner == side for lo, hi, owner in geo["doigts"])
+            if t0 < u < t1:
+                return not any(lo < v < hi for lo, hi in geo["cerces"])
+            return True
+
+        if side == "A":
+            point = lambda u, v, w: (u, w, v)  # noqa: E731
+        else:
+            point = lambda u, v, w: (w, u, v)  # noqa: E731
+        self._create_grid_solid(bm, us, vs, solid, point, e, mat_index)
+
+    def _create_trapik_tissu(self, bm, points, z0, z1, mat_index=1):
+        """Tissu tendu derrière les tasseaux : surface lissée, normale vers la pièce."""
+        bottom = [bm.verts.new((x, y, z0)) for x, y in points]
+        top = [bm.verts.new((x, y, z1)) for x, y in points]
+        for k in range(len(points) - 1):
+            # Points dans le sens trigonométrique autour du centre de l'arc : normale sortante.
+            face = bm.faces.new((bottom[k], bottom[k + 1], top[k + 1], top[k]))
+            face.material_index = mat_index
+            face.smooth = True
+
+    def _build_trapik(self, bm, geo, mat_bois=0, mat_tissu=1):
+        """Bass trap d'angle décrit par ``gammes.trapik_layout``.
+
+        Construit dans le repère du plan (coin à l'origine, murs x = 0 et y = 0), puis
+        tourné : X = largeur, Y = hauteur, Z = profondeur selon la bissectrice, avec le
+        coin à l'arrière et la façade vers +Z.
+        """
+        levels = geo["niveaux"]
+        for key in ("finition_bas", "finition_haut"):
+            self._create_prism(bm, geo["finition"], *levels[key], mat_tissu)
+        for key in ("plateau_bas", "plateau_haut"):
+            self._create_prism(bm, geo["plateau"], *levels[key], mat_bois)
+        for polygon in geo["tasseaux"]:
+            # Les tasseaux traversent les mortaises des plateaux jusqu'aux finitions.
+            self._create_prism(bm, polygon, *levels["tasseaux"], mat_bois)
+        z0, z1 = levels["interieur"]
+        for bottom, top in geo["cerces"]:
+            self._create_prism(bm, geo["cerce"], bottom, top, mat_bois)
+        for side in ("A", "B"):
+            self._create_trapik_cote(bm, geo, side, mat_bois)
+        self._create_trapik_tissu(bm, geo["tissu"], z0, z1, mat_tissu)
+
+        s = math.sqrt(0.5)
+        to_product = Matrix(((-s, s, 0, 0), (0, 0, 1, 0), (s, s, 0, 0), (0, 0, 0, 1)))
+        bmesh.ops.transform(bm, matrix=to_product, verts=bm.verts)
 
     def _finalize_object(self, bm, mesh_name, materials, epaisseur_ref):
         """Crée l'objet, centre son origine et déplie les UV comme pour les diffuseurs."""
@@ -1194,10 +1276,13 @@ class Add3DModel(bpy.types.Operator, AddObjectHelper):
         try:
             if product_type == "5":
                 trapik = scene.trapik_props
-                _check_trapik(trapik.cote_a, trapik.cote_b, trapik.hauteur, e)
-                self._build_trapik(bm, trapik.cote_a, trapik.cote_b, trapik.hauteur, e)
-                mesh_name = "3D_" + product_reference(scene)
-                details = "prisme d'angle (placeholder) : bordures bois + face avant en tissu"
+                geo = trapik.layout()
+                self._build_trapik(bm, geo)
+                e = trapik.epaisseur_cote
+                mesh_name = "3D_" + trapik.reference(geo)
+                details = (f"2 côtés à doigts, 2 plateaux à mortaises, {len(geo['cerces'])} cerces à tenons,"
+                           f" {geo['n']} tasseaux (vide {geo['vide'] * 1000:.1f} mm au tissu,"
+                           f" ajouré {geo['ajoure']:.1f} %), tissu et 2 finitions")
             elif product_type == "7":
                 cloudik = scene.cloudik_props
                 e = cloudik.epaisseur_cadre
@@ -2291,7 +2376,7 @@ class Batch3DGenerate(bpy.types.Operator):
         if config['kind'] == 'absorber':
             combinations = list(iterproduct(config['depths'], config['ratios'], config['gaps']))
         elif config['kind'] == 'trapik':
-            combinations = list(iterproduct(config['sides_a'], config['sides_b'], config['heights']))
+            combinations = list(iterproduct(config['sides'], config['heights'], config['gaps']))
         else:
             combinations = list(iterproduct(config['product_types'], config['types'],
                                             config['depths'], config['lengths']))
@@ -2304,7 +2389,8 @@ class Batch3DGenerate(bpy.types.Operator):
             (difprops, 'type'), (difprops, 'profondeur'), (difprops, 'longueur_diffuseur'),
             (difprops, 'longueur_absorbeur'), (scene.product_props, 'product_type'),
             (difprops, 'moule_type'), (stratik, 'pourcentage_ajoure'), (stratik, 'nombre_manuel'),
-            (trapik, 'cote_a'), (trapik, 'cote_b'), (trapik, 'hauteur'),
+            (trapik, 'cote'), (trapik, 'hauteur'), (trapik, 'pourcentage_ajoure'),
+            (trapik, 'nombre_manuel'),
         ]
         originals = [(group, attr, getattr(group, attr)) for group, attr in touched]
 
@@ -2336,12 +2422,13 @@ class Batch3DGenerate(bpy.types.Operator):
                     name = panel_reference(product, config['width'], depth_mm / 1000,
                                            length_ratio, gap_percent)
                 elif config['kind'] == 'trapik':
-                    a_mm, b_mm, h_mm = combination
+                    side_mm, h_mm, gap_percent = combination
                     scene.product_props.product_type = '5'
-                    trapik.cote_a = a_mm / 1000
-                    trapik.cote_b = b_mm / 1000
+                    trapik.cote = side_mm / 1000
                     trapik.hauteur = h_mm / 1000
-                    name = trapik_reference(a_mm / 1000, b_mm / 1000, h_mm / 1000)
+                    trapik.pourcentage_ajoure = gap_percent
+                    trapik.nombre_manuel = False
+                    name = trapik_reference(side_mm / 1000, h_mm / 1000, gap_percent)
                 else:
                     pt, t, depth_mm, length_factor = combination
                     scene.product_props.product_type = pt
@@ -2719,8 +2806,7 @@ _BATCH_PRESET_FIELDS = {
     'profondeurs': 'batch_profondeurs',
     'longueurs': 'batch_longueurs',
     'ajoures': 'batch_ajoures',
-    'trapik_a': 'batch_trapik_a',
-    'trapik_b': 'batch_trapik_b',
+    'trapik_cotes': 'batch_trapik_cotes',
     'trapik_h': 'batch_trapik_h',
     'grid_gap': 'batch_grid_gap',
     'stl_directory': 'batch_stl_directory',

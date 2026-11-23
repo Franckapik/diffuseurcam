@@ -14,7 +14,7 @@ from bpy.props import (
     StringProperty,
 )
 
-from .gammes import GAMMES, stratik_layout
+from .gammes import GAMMES, stratik_layout, trapik_layout, trapik_reference
 
 # Le 4e élément fixe la valeur stockée dans les .blend : l'ordre des onglets
 # peut changer sans modifier le produit des fichiers existants.
@@ -1559,33 +1559,144 @@ class StratikProps(bpy.types.PropertyGroup):
 
 
 class TrapikProps(bpy.types.PropertyGroup):
-    """Bass trap d'angle : prisme dont deux faces sont contre les murs."""
-    cote_a: FloatProperty(
-        name="Côté A",
-        description="Largeur de la face posée contre le premier mur",
-        default=0.30,
-        min=0.05,
-        max=3.0,
-        unit="LENGTH",
-        precision=4,
-    )
-    cote_b: FloatProperty(
-        name="Côté B",
-        description="Largeur de la face posée contre le second mur",
-        default=0.30,
-        min=0.05,
+    """Bass trap d'angle polycylindrique : façade en arc de tasseaux devant un tissu."""
+    cote: FloatProperty(
+        name="Côté (A = B)",
+        description="Largeur de chacun des deux côtés bois posés contre les murs",
+        default=0.42,
+        min=0.1,
         max=3.0,
         unit="LENGTH",
         precision=4,
     )
     hauteur: FloatProperty(
         name="Hauteur",
+        description="Hauteur hors tout, finitions comprises",
         default=1.20,
-        min=0.05,
+        min=0.2,
         max=5.0,
         unit="LENGTH",
         precision=4,
     )
+    largeur_tasseau: FloatProperty(
+        name="Largeur tasseau (façade)",
+        description="Cote vue de face, utilisée pour le calcul du % ajouré",
+        default=0.044,
+        min=0.005,
+        max=0.2,
+        unit="LENGTH",
+        precision=4,
+    )
+    epaisseur_tasseau: FloatProperty(
+        name="Epaisseur tasseau",
+        description="Saillie du tasseau devant le tissu",
+        default=0.023,
+        min=0.005,
+        max=0.2,
+        unit="LENGTH",
+        precision=4,
+    )
+    pourcentage_ajoure: FloatProperty(
+        name="Ajouré",
+        description="Part de vide visée le long de l'arc du tissu ; le nombre de tasseaux en découle",
+        default=50.0,
+        min=0.0,
+        max=90.0,
+        precision=1,
+        subtype="PERCENTAGE",
+    )
+    nombre_manuel: BoolProperty(
+        name="Forcer le nombre de tasseaux",
+        description="Impose le nombre de tasseaux au lieu de le calculer depuis le % ajouré",
+        default=False,
+    )
+    nombre_tasseaux: IntProperty(
+        name="Nombre de tasseaux",
+        default=8,
+        min=2,
+        max=200,
+    )
+    epaisseur_cote: FloatProperty(
+        name="Epaisseur côtés",
+        description="Épaisseur des deux côtés contre les murs (suffixe E de la référence)",
+        default=0.018,
+        min=0.003,
+        max=0.05,
+        unit="LENGTH",
+        precision=4,
+    )
+    epaisseur_plateau: FloatProperty(
+        name="Epaisseur plateaux",
+        description="Épaisseur des plateaux crénelés haut et bas",
+        default=0.020,
+        min=0.003,
+        max=0.08,
+        unit="LENGTH",
+        precision=4,
+    )
+    epaisseur_finition: FloatProperty(
+        name="Epaisseur finition",
+        description="Épaisseur du tissu de finition collé sur chaque plateau",
+        default=0.002,
+        min=0.0005,
+        max=0.03,
+        unit="LENGTH",
+        precision=4,
+    )
+    epaisseur_cerce: FloatProperty(
+        name="Epaisseur cerces",
+        description="Épaisseur des cerces qui portent le tissu et les tasseaux",
+        default=0.013,
+        min=0.003,
+        max=0.05,
+        unit="LENGTH",
+        precision=4,
+    )
+    largeur_cerce: FloatProperty(
+        name="Largeur cerces",
+        description="Largeur des cerces au droit des côtés (le tenon en occupe le tiers central)",
+        default=0.075,
+        min=0.01,
+        max=0.5,
+        unit="LENGTH",
+        precision=4,
+    )
+    nombre_cerces: IntProperty(
+        name="Nombre de cerces",
+        description="Cerces réparties sur la hauteur, les deux extrêmes contre les plateaux",
+        default=4,
+        min=2,
+        max=30,
+    )
+
+    def layout(self, cote=None, hauteur=None, pourcentage=None):
+        """Géométrie du Trapik ; les arguments remplacent les valeurs de l'onglet (batch).
+
+        Un ``pourcentage`` imposé ignore le nombre forcé de tasseaux.
+        """
+        forced = self.nombre_tasseaux if (self.nombre_manuel and pourcentage is None) else 0
+        return trapik_layout(
+            self.cote if cote is None else cote,
+            self.hauteur if hauteur is None else hauteur,
+            largeur_tasseau=self.largeur_tasseau,
+            epaisseur_tasseau=self.epaisseur_tasseau,
+            pourcentage=self.pourcentage_ajoure if pourcentage is None else pourcentage,
+            nombre_force=forced,
+            epaisseur_cote=self.epaisseur_cote,
+            epaisseur_plateau=self.epaisseur_plateau,
+            epaisseur_finition=self.epaisseur_finition,
+            epaisseur_cerce=self.epaisseur_cerce,
+            largeur_cerce=self.largeur_cerce,
+            nombre_cerces=self.nombre_cerces,
+        )
+
+    def reference(self, layout=None):
+        """Référence catalogue : % visé, ou % obtenu (arrondi) si le nombre est forcé."""
+        if self.nombre_manuel:
+            gap = round((layout or self.layout())["ajoure"])
+        else:
+            gap = self.pourcentage_ajoure
+        return trapik_reference(self.cote, self.hauteur, gap)
 
 
 class CloudikProps(bpy.types.PropertyGroup):
@@ -1645,8 +1756,7 @@ class BatchPresetItem(bpy.types.PropertyGroup):
     profondeurs: StringProperty(name="Profondeurs (mm)", default="50,100,150,200")
     longueurs: StringProperty(name="Longueurs", default="1,2")
     ajoures: StringProperty(name="Ajourés (%)", default="20,30,40")
-    trapik_a: StringProperty(name="Côtés A (mm)", default="300")
-    trapik_b: StringProperty(name="Côtés B (mm)", default="300")
+    trapik_cotes: StringProperty(name="Côtés (mm)", default="420")
     trapik_h: StringProperty(name="Hauteurs (mm)", default="1200")
     grid_gap: FloatProperty(name="Espacement grille", default=0.1)
     stl_directory: StringProperty(name="Dossier GLB", default="")
@@ -1708,18 +1818,13 @@ class Batch3DProps(bpy.types.PropertyGroup):
     )
     batch_ajoures: StringProperty(
         name="Ajourés (%)",
-        description="Stratik : % de vide en façade séparés par des virgules (ex: 20,30,40)",
+        description="Stratik et Trapik : % de vide visés, séparés par des virgules (ex: 20,30,40)",
         default="20,30,40",
     )
-    batch_trapik_a: StringProperty(
-        name="Côtés A (mm)",
-        description="Trapik : côtés contre le premier mur, en mm, séparés par des virgules",
-        default="300",
-    )
-    batch_trapik_b: StringProperty(
-        name="Côtés B (mm)",
-        description="Trapik : côtés contre le second mur, en mm, séparés par des virgules",
-        default="300",
+    batch_trapik_cotes: StringProperty(
+        name="Côtés (mm)",
+        description="Trapik : côtés contre les murs (A = B), en mm, séparés par des virgules",
+        default="420",
     )
     batch_trapik_h: StringProperty(
         name="Hauteurs (mm)",
