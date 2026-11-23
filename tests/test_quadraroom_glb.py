@@ -129,7 +129,8 @@ class QuadraRoomGLBTest(unittest.TestCase):
         self.assertEqual(product_stem('D1N7W50P5L1E5.001', 0.005), 'D1N7W50P5L1E5')
 
     def test_only_direct_material_names_are_accepted(self):
-        self.assertEqual(ops._QUADRAROOM_MATERIALS, {'wood', 'fabric'})
+        # metal : goussets et œillets Cloudik.
+        self.assertEqual(ops._QUADRAROOM_MATERIALS, {'wood', 'fabric', 'metal'})
 
     def test_old_fallback_material_is_refused(self):
         self.product.data.materials[0].name = 'DIF_Cadre'

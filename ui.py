@@ -1,9 +1,13 @@
 from bpy.types import Panel, Menu, Operator
 import bpy
-from .ops import classes, batch_3d_configuration, _batch_sort_key
+from .ops import classes, batch_3d_configuration, _batch_sort_key, product_reference
+from .gammes import DIFFUSEURS, GAMMES, GAMME_NAMES, cam_product_type, trapik_section
 from bl_operators.presets import AddPresetBase
 from math import ceil
 from collections import Counter
+
+
+GAMME_DESCRIPTIONS = {identifier: description for identifier, _name, description in GAMMES}
 
 
 class DIF_MT_Presets(Menu):
@@ -31,6 +35,9 @@ class OT_AddMyPreset(AddPresetBase, Operator):
         "scene.prep_props",
         "scene.product_props",
         "scene.usinage_props",
+        "scene.stratik_props",
+        "scene.trapik_props",
+        "scene.cloudik_props",
     ]
     # Directory to store the presets
     preset_subdir = "object/display"
@@ -46,6 +53,56 @@ class DIF_UL_BatchPresets(bpy.types.UIList):
         elif self.layout_type in {'GRID'}:
             layout.alignment = 'CENTER'
             layout.label(text=item.name, icon="PRESET")
+
+
+def _draw_stratik(box, stratik, difprops):
+    sub = box.box()
+    sub.label(text="Tasseaux", icon="MOD_ARRAY")
+    sub.row().prop(stratik, "orientation", expand=True)
+    sub.prop(stratik, "largeur_tasseau")
+    sub.prop(stratik, "saillie_tasseau")
+    row = sub.row()
+    row.enabled = not stratik.nombre_manuel
+    row.prop(stratik, "pourcentage_ajoure")
+    sub.prop(stratik, "nombre_manuel")
+    if stratik.nombre_manuel:
+        sub.prop(stratik, "nombre_tasseaux")
+    try:
+        layout = stratik.layout(difprops)
+    except ValueError as exc:
+        sub.label(text=str(exc), icon="ERROR")
+        return
+    sub.label(
+        text=f"{layout['n']} tasseaux · vide {layout['vide'] * 1000:.1f} mm · ajouré {layout['ajoure']:.1f} %",
+        icon="INFO",
+    )
+    sub.label(text=f"Profondeur hors tout : {(difprops.profondeur + stratik.saillie_tasseau) * 1000:.0f} mm")
+
+
+def _draw_cloudik(box, cloudik):
+    sub = box.box()
+    sub.label(text="Suspension", icon="MESH_CONE")
+    for att in ("gousset_taille", "gousset_epaisseur", "oeillet_diametre", "oeillet_fil"):
+        sub.prop(cloudik, att)
+
+
+def _draw_trapik(box, trapik, difprops):
+    box.label(text="Placeholder en attendant les fichiers Trapik", icon="INFO")
+    box.prop(difprops, "epaisseur")
+    for att in ("cote_a", "cote_b", "hauteur"):
+        box.prop(trapik, att)
+    front, depth, _corner = trapik_section(trapik.cote_a, trapik.cote_b)
+    box.label(text=f"Face avant : {front * 1000:.0f} mm · profondeur : {depth * 1000:.0f} mm")
+
+
+def _dimension_label(scene):
+    pt = scene.product_props.product_type
+    if pt in ("0", "1", "2"):
+        return ("D2" if pt == "0" else ("D1" if pt == "1" else "A")) + scene.dif_props.getDifName()
+    try:
+        return product_reference(scene)
+    except ValueError:
+        return GAMME_NAMES[pt]
 
 
 class Diffuseur_SideBar(Panel):
@@ -117,18 +174,28 @@ class Diffuseur_SideBar(Panel):
         layout.separator()
         box = layout.box()
         row = box.row()
-        dim_label = "Dimensions : " + (
-            "D2" if productprops.product_type == "0" else
-            ("D1" if productprops.product_type == "1" else "A")
-        ) + difprops.getDifName()
+        pt = productprops.product_type
+        cam_pt = cam_product_type(pt)
+        nb_pieces = (arrayprops.nbPieces(cam_pt) if cam_pt else 0) or 0
+        dim_label = "Dimensions : " + _dimension_label(scene)
         row.prop(uistate, "show_dimensions",
                  icon='TRIA_DOWN' if uistate.show_dimensions else 'TRIA_RIGHT',
                  emboss=False, text=dim_label)
         if uistate.show_dimensions:
             row2 = box.row()
             row2.prop(productprops, "product_type", expand=True)
-            for att in (x for x in difprops.listAttributes(productprops.product_type)):
-                box.prop(difprops, att)
+            box.label(text=f"{GAMME_NAMES[pt]} : {GAMME_DESCRIPTIONS[pt]}")
+            if pt == "5":
+                _draw_trapik(box, scene.trapik_props, difprops)
+            else:
+                if pt == "7":
+                    box.prop(scene.cloudik_props, "epaisseur_cadre")
+                for att in difprops.listAttributes(pt):
+                    box.prop(difprops, att)
+            if pt == "4":
+                _draw_stratik(box, scene.stratik_props, difprops)
+            if pt == "7":
+                _draw_cloudik(box, scene.cloudik_props)
 
             if productprops.product_type in ("0", "1") and difprops.cadre_epais:
                 box.prop(difprops, "epaisseur_cadre")
@@ -136,7 +203,7 @@ class Diffuseur_SideBar(Panel):
             if productprops.product_type in ("0", "1") and difprops.type_tenon_peigne != "0":
                 box.prop(difprops, "profondeur_tenon_peigne")
 
-            if productprops.product_type != "2":
+            if pt in DIFFUSEURS:
                 box.label(text=f"Rang : ≈ {difprops.getRang() * 1000:.1f} mm")
                 # Affichage différencié pour mode pyramidal (mono uniquement)
                 if (productprops.product_type in ("0", "1") and difprops.type_moule in {"mono", "mono_v2"} and
@@ -146,7 +213,7 @@ class Diffuseur_SideBar(Panel):
                 else:
                     box.label(text=f"Pilier : {round(difprops.getLargeurPilier() * 1000 , 3)} mm")
             
-            if productprops.product_type == "2":
+            if cam_pt == "2":
                 is_splitted = True if difprops.longueur_absorbeur > difprops.split and difprops.split != 0 else False
                 box.label(text=f"Splitted : {is_splitted}")
 
@@ -178,7 +245,9 @@ class Diffuseur_SideBar(Panel):
         row.prop(uistate, "show_array",
                  icon='TRIA_DOWN' if uistate.show_array else 'TRIA_RIGHT',
                  emboss=False, text="Array")
-        if uistate.show_array:
+        if uistate.show_array and cam_pt is None:
+            box.label(text=f"Pièces CAM pas encore disponibles pour {GAMME_NAMES[pt]}", icon="INFO")
+        elif uistate.show_array:
             row2 = box.row()
             row2.label(text="Option")
             split = row2.split()
@@ -204,7 +273,7 @@ class Diffuseur_SideBar(Panel):
 
             # Pièces du diffuseur
             diff_attrs = [
-                x for x in arrayprops.listAttributes(productprops.product_type)
+                x for x in arrayprops.listAttributes(cam_pt)
                 if x != "array_offset"
             ]
             for arr in diff_attrs:
@@ -231,9 +300,7 @@ class Diffuseur_SideBar(Panel):
                     if arr[-1] == "y":
                         col2.prop(arrayprops, arr)
 
-            box.label(
-                text=f"Nombre de pièces : {arrayprops.nbPieces(productprops.product_type)}"
-            )
+            box.label(text=f"Nombre de pièces : {nb_pieces}")
 
         # Generateur
         layout.separator()
@@ -250,13 +317,17 @@ class Diffuseur_SideBar(Panel):
         else:
             cursor = bpy.context.scene.cursor.location
 
-        if uistate.show_generateur:
+        if uistate.show_generateur and cam_pt is None:
+            box.label(text=f"Pièces CAM pas encore disponibles pour {GAMME_NAMES[pt]}", icon="INFO")
+        elif uistate.show_generateur:
+            if pt == "4":
+                box.label(text="Pièces du cadre Organik (tasseaux non inclus)", icon="INFO")
             box.label(
                 text=f"{'Mesh selectionné' if bpy.context.selected_objects else 'Cursor 3D'} : X{round(cursor[0], 2)}  Y{round(cursor[1], 2)}  Z{round(cursor[2], 2)}"
             )
 
             # Pièces du produit courant + pièces moule pour les diffuseurs D2/D1
-            pieces_list = list(posprops.listAttributes(productprops.product_type))
+            pieces_list = list(posprops.listAttributes(cam_pt))
             if productprops.product_type in ("0", "1"):
                 pieces_list += posprops.listAttributes("3")
 
@@ -278,13 +349,10 @@ class Diffuseur_SideBar(Panel):
                     operator_name = f"mesh.{piece.replace('_position', '')}"
                     row.operator(operator_name, text="", icon="ADD")
 
-            match productprops.product_type:
-                case "0":
-                    box.operator("mesh.add_diffuseur")
-                case "1":
-                    box.operator("mesh.add_diffuseur")
-                case "2":
-                    box.operator("mesh.add_absorbeur")
+            if cam_pt in DIFFUSEURS:
+                box.operator("mesh.add_diffuseur")
+            elif cam_pt == "2":
+                box.operator("mesh.add_absorbeur", text=f"Générer {GAMME_NAMES[pt]}")
 
             box.operator("mesh.no_overlap")
 
@@ -407,16 +475,16 @@ class Diffuseur_SideBar(Panel):
 
             col4.label(text="--- Piece ---")
             col4.label(
-                text=f"Prix du Diffuseur : {ceil(ceil(devisprops.getTTCPiece(arrayprops.nbPieces(productprops.product_type), ceil(qtyPanel) )) / devisprops.qtyDif)} € "
+                text=f"Prix du Diffuseur : {ceil(ceil(devisprops.getTTCPiece(nb_pieces, ceil(qtyPanel) )) / devisprops.qtyDif)} € "
             )
             col4.label(
-                text=f"Prix Total : {ceil(devisprops.getTTCPiece(arrayprops.nbPieces(productprops.product_type), ceil(qtyPanel) ))} € "
+                text=f"Prix Total : {ceil(devisprops.getTTCPiece(nb_pieces, ceil(qtyPanel) ))} € "
             )
             col4.label(
-                text=f"Dont Urssaf : {ceil(devisprops.getTTCPiece(arrayprops.nbPieces(productprops.product_type), ceil(qtyPanel) ) * devisprops.urssaf/100)} € "
+                text=f"Dont Urssaf : {ceil(devisprops.getTTCPiece(nb_pieces, ceil(qtyPanel) ) * devisprops.urssaf/100)} € "
             )
             col4.label(
-                text=f"Bénéfice : {ceil(devisprops.getBenefPiece(arrayprops.nbPieces(productprops.product_type)) )} € "
+                text=f"Bénéfice : {ceil(devisprops.getBenefPiece(nb_pieces) )} € "
             )
 
             box.operator("mesh.add_list")
@@ -427,14 +495,15 @@ class Diffuseur_SideBar(Panel):
                 oprm = row.operator("mesh.remove_list", icon="X")
                 oprm.item = i
 
-        # Motif
-        layout.separator()
-        box = layout.box()
-        row = box.row()
-        row.prop(uistate, "show_motif",
-                 icon='TRIA_DOWN' if uistate.show_motif else 'TRIA_RIGHT',
-                 emboss=False, text="Motif")
-        if uistate.show_motif:
+        # Motif (diffuseurs ; affiché aussi pour Organik comme auparavant)
+        if pt in ("0", "1", "2"):
+            layout.separator()
+            box = layout.box()
+            row = box.row()
+            row.prop(uistate, "show_motif",
+                     icon='TRIA_DOWN' if uistate.show_motif else 'TRIA_RIGHT',
+                     emboss=False, text="Motif")
+        if pt in ("0", "1", "2") and uistate.show_motif:
             row2 = box.row(align=True)
             row2.prop(productprops, "motif_display", expand=True)
 
@@ -487,13 +556,11 @@ class Diffuseur_SideBar(Panel):
                  icon='TRIA_DOWN' if uistate.show_modele_3d else 'TRIA_RIGHT',
                  emboss=False, text="Modèle 3D")
         if uistate.show_modele_3d:
-            if productprops.product_type in ("0", "1"):
+            if pt in DIFFUSEURS:
                 box.prop(difprops, "invert_depth")
                 box.operator("mesh.simulation")
-            elif productprops.product_type == "2":
-                box.operator("mesh.simulation", text="Générer Modèle 3D Absorbeur")
             else:
-                box.label(text="Disponible pour Diffuseur 1D/2D et Absorbeur", icon="INFO")
+                box.operator("mesh.simulation", text=f"Générer Modèle 3D {GAMME_NAMES[pt]}")
 
             # Batch 3D
             box.separator()
@@ -502,10 +569,21 @@ class Diffuseur_SideBar(Panel):
 
             batchprops = scene.batch_3d_props
             sub.prop(batchprops, "batch_product_type", text="Produit")
-            if batchprops.batch_product_type == "3":
+            batch_pt = batchprops.batch_product_type
+            if batch_pt in ("3", "4", "6", "7"):
                 sub.label(text=f"Largeur actuelle : {difprops.largeur_diffuseur * 1000:g} mm", icon="INFO")
                 sub.prop(batchprops, "batch_profondeurs")
                 sub.prop(batchprops, "batch_longueurs", text="Ratios de longueur")
+                if batch_pt == "4":
+                    sub.prop(batchprops, "batch_ajoures")
+                    sub.label(text="Tasseaux et sens : onglet Stratik", icon="INFO")
+                if batch_pt == "7":
+                    sub.label(text="Cadre et suspension : onglet Cloudik", icon="INFO")
+            elif batch_pt == "5":
+                sub.label(text=f"Epaisseur actuelle : {difprops.epaisseur * 1000:g} mm", icon="INFO")
+                sub.prop(batchprops, "batch_trapik_a")
+                sub.prop(batchprops, "batch_trapik_b")
+                sub.prop(batchprops, "batch_trapik_h")
             else:
                 sub.prop(batchprops, "batch_types")
                 sub.prop(batchprops, "batch_profondeurs")
@@ -534,7 +612,7 @@ class Diffuseur_SideBar(Panel):
             quadra_box = sub.box()
             quadra_box.label(text="GLB QuadraRoom (sans textures)", icon="MATERIAL")
             quadra_box.prop(batchprops, "quadra_glb_directory")
-            quadra_box.label(text="Matériaux : wood, fabric")
+            quadra_box.label(text="Matériaux : wood, fabric, metal")
             quadra_box.operator("mesh.export_batch_3d_quadraroom_glb", text="Exporter GLB QuadraRoom", icon="EXPORT")
 
             # Presets Batch

@@ -16,18 +16,42 @@ import time
 from pathlib import Path
 from mathutils import Matrix, Vector
 from .quadraroom_glb import is_product_reference, product_stem, read_glb, validate_quadraroom_glb
+from .gammes import (
+    DIFFUSEURS,
+    FAMILLE_ORGANIK,
+    GAMME_NAMES,
+    panel_reference,
+    trapik_reference,
+    trapik_section,
+)
+
+
+_DIM = r'(\d+(?:p\d+)?)'
+# Rang de tri des gammes après les diffuseurs (1, 2), Organik (3) et l'ancien format ABS (4).
+_PANEL_SORT_ORDER = {'S': 5, 'K': 7, 'C': 8}
+
+
+def _dim(value):
+    return float(value.replace('p', '.')) if value else 0.0
 
 
 def _batch_sort_key(obj):
     """Clé de tri numérique pour les objets batch.
-    Diffuseurs D1/D2 d'abord, puis absorbeurs A0W...P...L... ."""
+    Diffuseurs D1/D2 d'abord, puis Organik A0, Stratik S0, Trapik T0, Mobilik K0, Cloudik C0."""
     m = re.match(r'D(\d+)N(\d+)W(\d+)P(\d+)L(\d+)E(\d+)', obj.name)
     if m:
         return tuple(int(x) for x in m.groups()) + (obj.name,)
-    absorber = re.match(r'A(\d+)W(\d+(?:p\d+)?)P(\d+(?:p\d+)?)L(\d+(?:p\d+)?)', obj.name)
+    absorber = re.match(rf'A(\d+)W{_DIM}P{_DIM}L{_DIM}', obj.name)
     if absorber:
-        absorber_type, width, depth, ratio = (float(value.replace('p', '.')) for value in absorber.groups())
+        absorber_type, width, depth, ratio = (_dim(value) for value in absorber.groups())
         return (3, absorber_type, width, depth, ratio, 0, obj.name)
+    panel = re.match(rf'([SKC])(\d+)W{_DIM}P{_DIM}L{_DIM}(?:G{_DIM})?', obj.name)
+    if panel:
+        letter, *values = panel.groups()
+        return (_PANEL_SORT_ORDER[letter], *(_dim(value) for value in values), obj.name)
+    trapik = re.match(rf'T(\d+)A{_DIM}B{_DIM}H{_DIM}', obj.name)
+    if trapik:
+        return (6, *(_dim(value) for value in trapik.groups()), 0, obj.name)
     # Anciens noms d'absorbeurs : conserver leur tri dans les scènes existantes.
     absorber = re.match(r'ABS_W(\d+(?:p\d+)?)_P(\d+(?:p\d+)?)_L(\d+(?:p\d+)?)_E(\d+(?:p\d+)?)', obj.name)
     if absorber:
@@ -59,13 +83,22 @@ def _parse_batch_numbers(raw, label, minimum, maximum, integer=False):
     return values
 
 
+# Produit du batch → product_type des panneaux de la famille Organik.
+# "3" désigne Organik dans le batch pour rester compatible avec les fichiers existants.
+_BATCH_PANEL_PRODUCTS = {'3': '2', '4': '4', '6': '6', '7': '7'}
+
+
 def batch_3d_configuration(batch_props, difprops):
     """Retourne les dimensions validées et le nombre de modèles prévus."""
-    if batch_props.batch_product_type == '3':
+    scene = batch_props.id_data
+    product = _BATCH_PANEL_PRODUCTS.get(batch_props.batch_product_type)
+    if product is not None:
         depths = _parse_batch_numbers(batch_props.batch_profondeurs, 'Profondeurs', 50, 500)
         ratios = _parse_batch_numbers(batch_props.batch_longueurs, 'Ratios de longueur', 0.5, 2)
+        gaps = ([None] if product != '4' else
+                _parse_batch_numbers(batch_props.batch_ajoures, 'Ajourés (%)', 0, 90))
         width = difprops.largeur_diffuseur
-        thickness = difprops.epaisseur
+        thickness = scene.cloudik_props.epaisseur_cadre if product == '7' else difprops.epaisseur
         if not math.isfinite(width) or not math.isfinite(thickness) or thickness <= 0:
             raise ValueError("Largeur ou épaisseur du cadre invalide")
         lengths = [width * ratio for ratio in ratios]
@@ -73,8 +106,26 @@ def batch_3d_configuration(batch_props, difprops):
             raise ValueError("La longueur calculée doit être comprise entre 50 et 5000 mm")
         if 2 * thickness >= min(width, *lengths):
             raise ValueError("L'épaisseur du cadre doit être inférieure à la moitié de la largeur et de la longueur")
-        return {'kind': 'absorber', 'width': width, 'ratios': ratios,
-                'depths': depths, 'count': len(ratios) * len(depths)}
+        if product == '4':
+            stratik = scene.stratik_props
+            spans = [width] if stratik.orientation == 'V' else lengths
+            if min(spans) < 2 * stratik.largeur_tasseau:
+                raise ValueError("Panneau trop étroit pour deux tasseaux")
+        if product == '7':
+            _check_cloudik(scene.cloudik_props, width, min(lengths))
+        return {'kind': 'absorber', 'product_type': product, 'width': width, 'ratios': ratios,
+                'depths': depths, 'gaps': gaps, 'count': len(ratios) * len(depths) * len(gaps)}
+
+    if batch_props.batch_product_type == '5':
+        sides_a = _parse_batch_numbers(batch_props.batch_trapik_a, 'Côtés A (mm)', 50, 3000)
+        sides_b = _parse_batch_numbers(batch_props.batch_trapik_b, 'Côtés B (mm)', 50, 3000)
+        heights = _parse_batch_numbers(batch_props.batch_trapik_h, 'Hauteurs (mm)', 50, 5000)
+        thickness = difprops.epaisseur
+        for a in sides_a:
+            for b in sides_b:
+                _check_trapik(a / 1000, b / 1000, min(heights) / 1000, thickness)
+        return {'kind': 'trapik', 'product_type': '5', 'sides_a': sides_a, 'sides_b': sides_b,
+                'heights': heights, 'count': len(sides_a) * len(sides_b) * len(heights)}
 
     types = _parse_batch_numbers(batch_props.batch_types, 'Types', 6, 13, integer=True)
     depths = _parse_batch_numbers(batch_props.batch_profondeurs, 'Profondeurs', 50, 500)
@@ -87,10 +138,50 @@ def batch_3d_configuration(batch_props, difprops):
 
 def _batch_absorber_name(width_m, depth_mm, ratio):
     """Nomenclature A0W{largeur_cm}P{profondeur_cm}L{ratio}."""
-    def part(value):
-        return f"{value:.4f}".rstrip('0').rstrip('.').replace('.', 'p')
+    return panel_reference('2', width_m, depth_mm / 1000, ratio)
 
-    return f"A0W{part(width_m * 100)}P{part(depth_mm / 10)}L{part(ratio)}"
+
+def _check_cloudik(cloudik, width, length):
+    """Vérifie que les goussets et les œillets tiennent dans le cadre."""
+    if 2 * cloudik.epaisseur_cadre >= min(width, length):
+        raise ValueError("L'épaisseur du cadre Cloudik doit être inférieure à la moitié du panneau")
+    if 2 * cloudik.gousset_taille > min(width, length):
+        raise ValueError("Goussets trop grands : deux goussets se chevauchent")
+    if cloudik.oeillet_fil >= cloudik.oeillet_diametre / 2:
+        raise ValueError("Le fil de l'œillet doit être plus fin que son rayon")
+    # L'anneau est centré sur le cercle inscrit du gousset et reste au-dessus de la tôle.
+    if cloudik.oeillet_diametre / 2 > _cloudik_inscribed_radius(cloudik.gousset_taille):
+        raise ValueError("Œillet trop grand pour le gousset")
+
+
+def _cloudik_inscribed_radius(side):
+    """Rayon du cercle inscrit d'un gousset triangulaire rectangle isocèle."""
+    return side * (2 - math.sqrt(2)) / 2
+
+
+def _check_trapik(a, b, height, thickness):
+    """Vérifie que les bordures bois laissent une zone de tissu."""
+    front, _depth, _corner = trapik_section(a, b)
+    if 2 * thickness >= min(front, height):
+        raise ValueError("Trapik trop petit pour l'épaisseur du modèle")
+
+
+def product_reference(scene):
+    """Référence catalogue du produit courant (onglet actif)."""
+    product = scene.product_props.product_type
+    difprops = scene.dif_props
+    if product in DIFFUSEURS:
+        return difprops.getDifName(scene)
+    if product == '5':
+        trapik = scene.trapik_props
+        return trapik_reference(trapik.cote_a, trapik.cote_b, trapik.hauteur)
+    width = difprops.largeur_diffuseur
+    ratio = difprops.longueur_absorbeur / width
+    gap = None
+    if product == '4':
+        stratik = scene.stratik_props
+        gap = stratik.reference_gap(stratik.layout(difprops))
+    return panel_reference(product, width, difprops.profondeur, ratio, gap)
 
 
 class AddCadreMortaise(bpy.types.Operator, AddObjectHelper):
@@ -922,14 +1013,240 @@ class Add3DModel(bpy.types.Operator, AddObjectHelper):
         f = bm.faces.new(verts[::-1] if reverse_normal else verts)
         f.material_index = mat_index
 
+    def _metal_material(self):
+        """Matériau `metal` des goussets Cloudik : celui de materials.blend s'il existe,
+        sinon un métal procédural sans image (compatible export QuadraRoom)."""
+        material = bpy.data.materials.get("metal")
+        if material is not None:
+            return material
+        blend_path = os.path.join(os.path.dirname(__file__), "materials.blend")
+        if os.path.exists(blend_path):
+            try:
+                with bpy.data.libraries.load(blend_path) as (data_from, data_to):
+                    if "metal" in data_from.materials:
+                        data_to.materials = ["metal"]
+            except OSError:
+                pass
+            material = bpy.data.materials.get("metal")
+            if material is not None:
+                return material
+
+        material = bpy.data.materials.new("metal")
+        color = (0.56, 0.57, 0.58, 1.0)
+        # Propriétés « viewport » : ce sont elles que l'export QuadraRoom (VIEWPORT) conserve.
+        material.diffuse_color = color
+        material.metallic = 1.0
+        material.roughness = 0.35
+        if hasattr(material, "use_nodes") and not material.use_nodes:
+            material.use_nodes = True
+        tree = material.node_tree
+        bsdf = next((node for node in tree.nodes if node.type == 'BSDF_PRINCIPLED'), None) if tree else None
+        if bsdf is not None:
+            bsdf.inputs["Base Color"].default_value = color
+            bsdf.inputs["Metallic"].default_value = 1.0
+            bsdf.inputs["Roughness"].default_value = 0.35
+        return material
+
+    def _create_solid(self, bm, points, faces, mat_indices):
+        """Ajoute un solide fermé (indices de faces sur `points`) avec normales sortantes."""
+        verts = [bm.verts.new(point) for point in points]
+        new_faces = []
+        for face_indices, mat_index in zip(faces, mat_indices):
+            face = bm.faces.new([verts[i] for i in face_indices])
+            face.material_index = mat_index
+            new_faces.append(face)
+        bmesh.ops.recalc_face_normals(bm, faces=new_faces)
+
+    def _create_prism(self, bm, polygon, z0, z1, mat_index=0):
+        """Extrude un polygone convexe du plan XY entre z0 et z1."""
+        n = len(polygon)
+        points = [(x, y, z0) for x, y in polygon] + [(x, y, z1) for x, y in polygon]
+        faces = [list(range(n)), list(range(n, 2 * n))]
+        faces += [(k, (k + 1) % n, n + (k + 1) % n, n + k) for k in range(n)]
+        self._create_solid(bm, points, faces, [mat_index] * len(faces))
+
+    def _create_torus(self, bm, center, axis_u, axis_v, major, minor, mat_index=0,
+                      segments=24, ring_segments=8):
+        """Anneau dans le plan (axis_u, axis_v), unitaires et orthogonaux."""
+        center, axis_u, axis_v = Vector(center), Vector(axis_u), Vector(axis_v)
+        normal = axis_u.cross(axis_v)
+        points = []
+        for i in range(segments):
+            theta = 2 * math.pi * i / segments
+            radial = math.cos(theta) * axis_u + math.sin(theta) * axis_v
+            for j in range(ring_segments):
+                phi = 2 * math.pi * j / ring_segments
+                points.append(center + (major + minor * math.cos(phi)) * radial
+                              + minor * math.sin(phi) * normal)
+        faces = []
+        for i in range(segments):
+            for j in range(ring_segments):
+                a = i * ring_segments + j
+                b = ((i + 1) % segments) * ring_segments + j
+                c = ((i + 1) % segments) * ring_segments + (j + 1) % ring_segments
+                d = i * ring_segments + (j + 1) % ring_segments
+                faces.append((a, b, c, d))
+        self._create_solid(bm, points, faces, [mat_index] * len(faces))
+
+    def _build_organik(self, bm, W, L, D, ec, mat_cadre=0, mat_tissu=1):
+        """Cadre bois de 4 planches et tissu sur les deux faces de la zone interne."""
+        self._create_box(bm, 0, 0, 0, ec, L, D, mat_cadre)               # planche gauche
+        self._create_box(bm, W - ec, 0, 0, ec, L, D, mat_cadre)          # planche droite
+        self._create_box(bm, ec, 0, 0, W - 2 * ec, ec, D, mat_cadre)     # planche basse
+        self._create_box(bm, ec, L - ec, 0, W - 2 * ec, ec, D, mat_cadre)  # planche haute
+        self._create_plane(bm, ec, ec, D, W - 2 * ec, L - 2 * ec, mat_tissu)
+        self._create_plane(bm, ec, ec, 0, W - 2 * ec, L - 2 * ec,
+                           mat_tissu, reverse_normal=True)
+
+    def _build_stratik(self, bm, stratik, layout, W, L, D, mat_index=0):
+        """Tasseaux posés sur la face avant (Z = D), un à chaque bord."""
+        w = stratik.largeur_tasseau
+        s = stratik.saillie_tasseau
+        for position in layout["positions"]:
+            if stratik.orientation == "V":
+                self._create_box(bm, position, 0, D, w, L, s, mat_index)
+            else:
+                self._create_box(bm, 0, position, D, W, w, s, mat_index)
+
+    def _build_cloudik_hardware(self, bm, cloudik, W, L, mat_index):
+        """Quatre goussets triangulaires sur la face arrière (Z < 0) avec un œillet chacun."""
+        g = cloudik.gousset_taille
+        t = cloudik.gousset_epaisseur
+        minor = cloudik.oeillet_fil / 2
+        major = cloudik.oeillet_diametre / 2 - minor
+        inscrit = _cloudik_inscribed_radius(g)
+        for cx, cy, sx, sy in ((0, 0, 1, 1), (W, 0, -1, 1), (W, L, -1, -1), (0, L, 1, -1)):
+            self._create_prism(bm, [(cx, cy), (cx + sx * g, cy), (cx, cy + sy * g)], -t, 0, mat_index)
+            # Anneau vertical dans le plan de la bissectrice, posé sur la tôle.
+            diagonal = Vector((sx, sy, 0)).normalized()
+            self._create_torus(
+                bm,
+                (cx + sx * inscrit, cy + sy * inscrit, -t - major),
+                diagonal, (0, 0, -1), major, minor, mat_index,
+            )
+
+    def _build_trapik(self, bm, a, b, H, e, mat_bois=0, mat_tissu=1):
+        """Prisme d'angle : face avant (hypoténuse) vers +Z, bordée de bois sur une largeur e.
+
+        X = largeur de la face avant, Y = hauteur, Z = profondeur (coin à l'arrière, Z = 0).
+        """
+        c, h, xc = trapik_section(a, b)
+        section = [(0, h), (e, h), (c - e, h), (c, h), (xc, 0)]   # (x, z)
+        levels = [0, e, H - e, H]
+        n = len(section)
+        points = [(x, y, z) for y in levels for x, z in section]
+        faces = [list(range(n)), list(range(3 * n, 4 * n))]           # chapeaux bas/haut
+        mats = [mat_bois, mat_bois]
+        for band in range(3):
+            for k in range(n):
+                k2 = (k + 1) % n
+                faces.append((band * n + k, band * n + k2, (band + 1) * n + k2, (band + 1) * n + k))
+                # Arête 1 → 2 : centre de la face avant ; bande 1 : entre les bordures hautes et basses.
+                mats.append(mat_tissu if (band == 1 and k == 1) else mat_bois)
+        self._create_solid(bm, points, faces, mats)
+
+    def _finalize_object(self, bm, mesh_name, materials, epaisseur_ref):
+        """Crée l'objet, centre son origine et déplie les UV comme pour les diffuseurs."""
+        mesh = bpy.data.meshes.new(mesh_name)
+        bm.to_mesh(mesh)
+        bm.free()
+        mesh.update()
+
+        obj = bpy.data.objects.new(mesh.name, mesh)
+        for material in materials:
+            obj.data.materials.append(material)
+        # Épaisseur ajoutée en suffixe E… par l'export QuadraRoom.
+        obj["epaisseur_ref"] = epaisseur_ref
+
+        bpy.context.collection.objects.link(obj)
+        bpy.types.Scene.dif_parts.append(obj.name)
+
+        bpy.ops.object.select_all(action="DESELECT")
+        obj.select_set(True)
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
+
+        bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.mesh.select_all(action='SELECT')
+        bpy.ops.uv.smart_project(margin_method='SCALED')
+        bm = bmesh.from_edit_mesh(obj.data)
+        uv_layer = bm.loops.layers.uv.active
+        if uv_layer:
+            for face in bm.faces:
+                for loop in face.loops:
+                    loop[uv_layer].uv *= 3
+        bmesh.update_edit_mesh(obj.data)
+        bpy.ops.object.mode_set(mode='OBJECT')
+        return obj
+
+    def _execute_gamme(self, scene, product_type, materials):
+        """Modèles 3D des gammes hors diffuseurs (Organik, Stratik, Trapik, Mobilik, Cloudik)."""
+        difprops = scene.dif_props
+        wood, fabric = materials["wood"], materials["fabric"]
+        W = difprops.largeur_diffuseur
+        L = difprops.longueur_absorbeur
+        D = difprops.profondeur
+        e = difprops.epaisseur
+        slots = [wood, fabric]
+        details = "4 planches bois + 2 faces en tissu"
+
+        bm = bmesh.new()
+        try:
+            if product_type == "5":
+                trapik = scene.trapik_props
+                _check_trapik(trapik.cote_a, trapik.cote_b, trapik.hauteur, e)
+                self._build_trapik(bm, trapik.cote_a, trapik.cote_b, trapik.hauteur, e)
+                mesh_name = "3D_" + product_reference(scene)
+                details = "prisme d'angle (placeholder) : bordures bois + face avant en tissu"
+            elif product_type == "7":
+                cloudik = scene.cloudik_props
+                e = cloudik.epaisseur_cadre
+                _check_cloudik(cloudik, W, L)
+                self._build_organik(bm, W, L, D, e)
+                self._build_cloudik_hardware(bm, cloudik, W, L, mat_index=2)
+                slots.append(self._metal_material())
+                mesh_name = "3D_" + product_reference(scene)
+                details += " + 4 goussets métal avec œillets"
+            else:
+                if 2 * e >= min(W, L):
+                    raise ValueError("L'épaisseur du cadre doit être inférieure à la moitié du panneau")
+                self._build_organik(bm, W, L, D, e)
+                if product_type == "4":
+                    stratik = scene.stratik_props
+                    layout = stratik.layout(difprops)
+                    self._build_stratik(bm, stratik, layout, W, L, D)
+                    details += (f" + {layout['n']} tasseaux (vide {layout['vide'] * 1000:.1f} mm,"
+                                f" ajouré {layout['ajoure']:.1f} %)")
+                if product_type == "2":
+                    mesh_name = (
+                        "3D_ABS"
+                        + "_W" + str(round(W * 100))
+                        + "_P" + str(round(D * 100))
+                        + "_L" + str(round(L * 100))
+                        + "_E" + str(round(e * 1000))
+                    )
+                else:
+                    mesh_name = "3D_" + product_reference(scene)
+        except ValueError as exc:
+            bm.free()
+            self.report({'ERROR'}, str(exc))
+            return {'CANCELLED'}
+
+        obj = self._finalize_object(bm, mesh_name, slots, e)
+        dims = obj.dimensions
+        print(f"✅ Modèle 3D {GAMME_NAMES[product_type]} généré: {mesh_name}")
+        print(f"   Dimensions: {dims.x*1000:.0f} × {dims.y*1000:.0f} × {dims.z*1000:.0f} mm")
+        print(f"   Pièces: {details}")
+        return {"FINISHED"}
+
     def execute(self, context):
         scene = context.scene
         difprops = scene.dif_props
         product_type = scene.product_props.product_type
         invert_depth = difprops.invert_depth
 
-        if product_type not in ("0", "1", "2"):
-            self.report({"WARNING"}, "Le modèle 3D est disponible pour les diffuseurs 1D/2D et les absorbeurs")
+        if product_type not in GAMME_NAMES:
+            self.report({"WARNING"}, "Aucun modèle 3D pour ce type de produit")
             return {"CANCELLED"}
 
         # ── Matériaux communs (bois) ──────────────────────────────────────
@@ -940,76 +1257,9 @@ class Add3DModel(bpy.types.Operator, AddObjectHelper):
             return {'CANCELLED'}
         mat_cadre = materials["wood"]
 
-        # ── Branche Absorbeur ─────────────────────────────────────────────
-        if product_type == "2":
-            W = difprops.largeur_diffuseur   # largeur
-            L = difprops.longueur_absorbeur  # longueur
-            D = difprops.profondeur          # profondeur (épaisseur du cadre)
-            ec = difprops.epaisseur
-
-            MAT_CADRE = 0    # bois (même matériau que les diffuseurs)
-            MAT_TISSU = 1    # tissu noir
-
-            mat_tissu = materials["fabric"]
-
-            bm = bmesh.new()
-
-            # Cadre bois (4 planches)
-            # Planche gauche
-            self._create_box(bm, 0, 0, 0, ec, L, D, MAT_CADRE)
-            # Planche droite
-            self._create_box(bm, W - ec, 0, 0, ec, L, D, MAT_CADRE)
-            # Planche basse
-            self._create_box(bm, ec, 0, 0, W - 2 * ec, ec, D, MAT_CADRE)
-            # Planche haute
-            self._create_box(bm, ec, L - ec, 0, W - 2 * ec, ec, D, MAT_CADRE)
-
-            # Tissu noir sur les deux faces de la zone interne du cadre.
-            self._create_plane(bm, ec, ec, D, W - 2 * ec, L - 2 * ec, MAT_TISSU)
-            self._create_plane(bm, ec, ec, 0, W - 2 * ec, L - 2 * ec,
-                               MAT_TISSU, reverse_normal=True)
-
-            mesh_name = (
-                "3D_ABS"
-                + "_W" + str(round(W * 100))
-                + "_P" + str(round(D * 100))
-                + "_L" + str(round(L * 100))
-                + "_E" + str(round(ec * 1000))
-            )
-            mesh = bpy.data.meshes.new(mesh_name)
-            bm.to_mesh(mesh)
-            bm.free()
-            mesh.update()
-
-            obj = bpy.data.objects.new(mesh.name, mesh)
-            obj.data.materials.append(mat_cadre)
-            obj.data.materials.append(mat_tissu)
-
-            bpy.context.collection.objects.link(obj)
-            bpy.types.Scene.dif_parts.append(obj.name)
-
-            bpy.ops.object.select_all(action="DESELECT")
-            obj.select_set(True)
-            bpy.context.view_layer.objects.active = obj
-            bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
-
-            bpy.ops.object.mode_set(mode='EDIT')
-            bpy.ops.mesh.select_all(action='SELECT')
-            bpy.ops.uv.smart_project(margin_method='SCALED')
-            mesh = obj.data
-            bm = bmesh.from_edit_mesh(mesh)
-            uv_layer = bm.loops.layers.uv.active
-            if uv_layer:
-                for face in bm.faces:
-                    for loop in face.loops:
-                        loop[uv_layer].uv *= 3
-            bmesh.update_edit_mesh(mesh)
-            bpy.ops.object.mode_set(mode='OBJECT')
-
-            print(f"✅ Modèle 3D Absorbeur généré: {mesh_name}")
-            print(f"   Dimensions: {W*1000:.0f} × {L*1000:.0f} × {D*1000:.0f} mm")
-            print(f"   Pièces: 4 planches bois + 2 faces en tissu noir")
-            return {"FINISHED"}
+        # ── Gammes hors diffuseurs (Organik et dérivés, Trapik) ──────────
+        if product_type not in DIFFUSEURS:
+            return self._execute_gamme(scene, product_type, materials)
 
         # ── Paramètres du diffuseur ──────────────────────────────────────
         e = difprops.epaisseur              # Épaisseur du bois peignes/carreaux (ex: 3mm)
@@ -1355,6 +1605,7 @@ class AddContrePilierMoule(bpy.types.Operator, AddObjectHelper):
             print(f"❌ [DEBUG] ERREUR dans add_contre_pilier_moule: {e}")
             import traceback
             traceback.print_exc()
+            self.report({"ERROR"}, str(e))
             return {"CANCELLED"}
 
         arrayprops = scene.array_props
@@ -1389,13 +1640,19 @@ class AddContrePilierMoule(bpy.types.Operator, AddObjectHelper):
             posprops.contre_pilier_moule_position[0],
         )
 
+        if difprops.contrepilier_eco:
+            array_width = max(v[0] for v in vertex) - min(v[0] for v in vertex)
+            array_height = max(v[1] for v in vertex) - min(v[1] for v in vertex)
+        else:
+            array_width = (difprops.getLargeurPilier() + arrayprops.array_offset) * (difprops.type + 1)
+            array_height = difprops.longueur_diffuseur
         difArray(
             mesh_obj,
             arrayprops.array_offset,
             arrayprops.contre_pilier_moule_x,
             arrayprops.contre_pilier_moule_y,
-            (difprops.getLargeurPilier() + arrayprops.array_offset) * (difprops.type + 1),
-            difprops.longueur_diffuseur,  # calcul à faire sur l'addition des ratios
+            array_width,
+            array_height,
         )
 
         if posprops.contre_pilier_moule_rotation:
@@ -1572,18 +1829,22 @@ class AddMoule(bpy.types.Operator, AddObjectHelper):
 
     def execute(self, context):
         print("🔧 [DEBUG] Génération complète du moule...")
-        if context.scene.dif_props.type_moule == "mono_v2":
-            try:
+        try:
+            if context.scene.dif_props.type_moule == "mono_v2":
                 add_fond_moule(context.scene.dif_props, context.scene.product_props, context.scene.usinage_props)
                 add_pilier_moule(context.scene.dif_props, context.scene.product_props,
                                  context.scene.usinage_props, context.scene.array_props)
-            except ValueError as exc:
-                self.report({"ERROR"}, str(exc))
-                return {"CANCELLED"}
+            if context.scene.dif_props.contrepilier_eco:
+                add_contre_pilier_moule(context.scene.dif_props, context.scene.product_props,
+                                        context.scene.usinage_props, context.scene.array_props)
+        except ValueError as exc:
+            self.report({"ERROR"}, str(exc))
+            return {"CANCELLED"}
         AddCadreMoule.execute(self, context)
         AddFondMoule.execute(self, context)
         AddPilierMoule.execute(self, context)
-        AddContrePilierMoule.execute(self, context)  # AJOUT DES CONTRE-PILIERS
+        if AddContrePilierMoule.execute(self, context) == {"CANCELLED"}:
+            return {"CANCELLED"}
         AddCadreMouleLong.execute(self, context)
         print("✅ [DEBUG] Génération complète du moule terminée!")
 
@@ -1632,10 +1893,11 @@ class ExportCutlistCSV(bpy.types.Operator, ExportHelper):
     filter_glob: StringProperty(default="*.csv", options={"HIDDEN"})
 
     def invoke(self, context, event):
-        if context.scene.product_props.product_type == "2":
-            basename = "Absorbeur"
-        else:
+        product = context.scene.product_props.product_type
+        if product in DIFFUSEURS:
             basename = context.scene.dif_props.getDifName(context.scene)
+        else:
+            basename = GAMME_NAMES[product]
         self.filepath = f"{basename}_debit.csv"
         return super().invoke(context, event)
 
@@ -2027,20 +2289,24 @@ class Batch3DGenerate(bpy.types.Operator):
             return {'CANCELLED'}
 
         if config['kind'] == 'absorber':
-            combinations = list(iterproduct(config['depths'], config['ratios']))
+            combinations = list(iterproduct(config['depths'], config['ratios'], config['gaps']))
+        elif config['kind'] == 'trapik':
+            combinations = list(iterproduct(config['sides_a'], config['sides_b'], config['heights']))
         else:
             combinations = list(iterproduct(config['product_types'], config['types'],
                                             config['depths'], config['lengths']))
         total = config['count']
 
-        originals = {
-            'type': difprops.type,
-            'profondeur': difprops.profondeur,
-            'longueur_diffuseur': difprops.longueur_diffuseur,
-            'longueur_absorbeur': difprops.longueur_absorbeur,
-            'product_type': scene.product_props.product_type,
-            'moule_type': difprops.moule_type,
-        }
+        stratik = scene.stratik_props
+        trapik = scene.trapik_props
+        # (groupe de propriétés, attribut) modifiés par le batch puis restaurés.
+        touched = [
+            (difprops, 'type'), (difprops, 'profondeur'), (difprops, 'longueur_diffuseur'),
+            (difprops, 'longueur_absorbeur'), (scene.product_props, 'product_type'),
+            (difprops, 'moule_type'), (stratik, 'pourcentage_ajoure'), (stratik, 'nombre_manuel'),
+            (trapik, 'cote_a'), (trapik, 'cote_b'), (trapik, 'hauteur'),
+        ]
+        originals = [(group, attr, getattr(group, attr)) for group, attr in touched]
 
         # Créer une collection dédiée au batch
         batch_name = f"Batch_3D_{total}x"
@@ -2059,11 +2325,23 @@ class Batch3DGenerate(bpy.types.Operator):
         try:
             for i, combination in enumerate(combinations):
                 if config['kind'] == 'absorber':
-                    depth_mm, length_ratio = combination
-                    scene.product_props.product_type = '2'
+                    depth_mm, length_ratio, gap_percent = combination
+                    product = config['product_type']
+                    scene.product_props.product_type = product
                     difprops.profondeur = depth_mm / 1000
                     difprops.longueur_absorbeur = config['width'] * length_ratio
-                    name = _batch_absorber_name(config['width'], depth_mm, length_ratio)
+                    if gap_percent is not None:
+                        stratik.pourcentage_ajoure = gap_percent
+                        stratik.nombre_manuel = False
+                    name = panel_reference(product, config['width'], depth_mm / 1000,
+                                           length_ratio, gap_percent)
+                elif config['kind'] == 'trapik':
+                    a_mm, b_mm, h_mm = combination
+                    scene.product_props.product_type = '5'
+                    trapik.cote_a = a_mm / 1000
+                    trapik.cote_b = b_mm / 1000
+                    trapik.hauteur = h_mm / 1000
+                    name = trapik_reference(a_mm / 1000, b_mm / 1000, h_mm / 1000)
                 else:
                     pt, t, depth_mm, length_factor = combination
                     scene.product_props.product_type = pt
@@ -2094,12 +2372,9 @@ class Batch3DGenerate(bpy.types.Operator):
             self.report({'ERROR'}, f"Batch 3D interrompu : {exc}")
             return {'CANCELLED'}
         finally:
-            difprops.type = originals['type']
-            difprops.profondeur = originals['profondeur']
-            difprops.longueur_diffuseur = originals['longueur_diffuseur']
-            difprops.longueur_absorbeur = originals['longueur_absorbeur']
-            scene.product_props.product_type = originals['product_type']
-            difprops.moule_type = originals['moule_type']
+            # product_type avant moule_type : son callback réécrit moule_type.
+            for group, attr, value in originals:
+                setattr(group, attr, value)
 
         # Positionner en quadrillage
         if generated_objects:
@@ -2272,7 +2547,7 @@ class ExportBatch3DGLB(bpy.types.Operator):
         return {'FINISHED'}
 
 
-_QUADRAROOM_MATERIALS = frozenset({"wood", "fabric"})
+_QUADRAROOM_MATERIALS = frozenset({"wood", "fabric", "metal"})
 
 
 def _quadraroom_face_materials(obj, allowed_materials, depsgraph):
@@ -2359,7 +2634,7 @@ class ExportBatch3DQuadraRoomGLB(bpy.types.Operator):
             products = []
             references = set()
             for obj in _batch_3d_meshes(scene):
-                stem = product_stem(obj.name, scene.dif_props.epaisseur)
+                stem = product_stem(obj.name, obj.get("epaisseur_ref", scene.dif_props.epaisseur))
                 if stem is not None:
                     if stem.casefold() in references:
                         raise ValueError(f"Référence produit présente plusieurs fois dans le batch : {stem}")
@@ -2443,6 +2718,10 @@ _BATCH_PRESET_FIELDS = {
     'types': 'batch_types',
     'profondeurs': 'batch_profondeurs',
     'longueurs': 'batch_longueurs',
+    'ajoures': 'batch_ajoures',
+    'trapik_a': 'batch_trapik_a',
+    'trapik_b': 'batch_trapik_b',
+    'trapik_h': 'batch_trapik_h',
     'grid_gap': 'batch_grid_gap',
     'stl_directory': 'batch_stl_directory',
 }

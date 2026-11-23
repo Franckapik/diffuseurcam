@@ -6,6 +6,7 @@ import unicodedata
 from collections import defaultdict
 
 from . import shapes
+from .gammes import cam_product_type
 
 
 # Le nom vient de la même fonction que celle utilisée par les opérateurs de génération.
@@ -67,7 +68,8 @@ def _part_geometry(part_key, generator, scene):
 
 def build_cutlist(scene):
     """Retourne (label, nom, longueur_mm, largeur_mm, épaisseur_mm, quantité)."""
-    product = scene.product_props.product_type
+    # Stratik reprend les pièces d'Organik ; les autres nouvelles gammes n'en ont pas encore.
+    product = cam_product_type(scene.product_props.product_type)
     if product not in PRODUCT_PARTS:
         raise ValueError("Type de produit non pris en charge")
 

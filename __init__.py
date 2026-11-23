@@ -21,7 +21,7 @@ except ImportError:
     __version__ = "1.0.0"
     __version_info__ = (1, 0, 0)
 
-modulesNames = ["quadraroom_glb", "ops", "ui", "props"]
+modulesNames = ["gammes", "quadraroom_glb", "ops", "ui", "props"]
 
 modulesFullNames = {}
 for currentModuleName in modulesNames:

@@ -6,10 +6,14 @@ import re
 import struct
 
 
+_DIM = r"\d+(?:p\d+)?"
+# D1/D2 Indik/Woodik, A Organik, S Stratik (G = % de vide), K Mobilik, C Cloudik, T Trapik.
 _PRODUCT_NAME = re.compile(
-    r"(?:D[12]N\d+W\d+(?:p\d+)?P\d+(?:p\d+)?L\d+(?:p\d+)?"
-    r"|A\d+W\d+(?:p\d+)?P\d+(?:p\d+)?L\d+(?:p\d+)?)"
-    r"(?:E\d+(?:p\d+)?)?"
+    rf"(?:D[12]N\d+W{_DIM}P{_DIM}L{_DIM}"
+    rf"|[AKC]\d+W{_DIM}P{_DIM}L{_DIM}"
+    rf"|S\d+W{_DIM}P{_DIM}L{_DIM}(?:G{_DIM})?"
+    rf"|T\d+A{_DIM}B{_DIM}H{_DIM})"
+    rf"(?:E{_DIM})?"
 )
 
 

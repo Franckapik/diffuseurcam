@@ -1,5 +1,12 @@
 from .pattern import *
+from .gammes import cam_product_type
 import math
+
+
+def _cam_type(productprops):
+    """Type de produit des pièces CAM : Stratik utilise les pièces d'Organik."""
+    product_type = productprops.product_type
+    return cam_product_type(product_type) or product_type
 
 
 # Distances moyennes des centres aux bords, mesurées sur Fond600 puis
@@ -119,7 +126,7 @@ def add_cadre_mortaise(difprops, productprops, usinageprops):
     tenon_peigne = difprops.tenon_peigne
     longueur_diffuseur = difprops.longueur_diffuseur
     largeur_accroche = difprops.largeur_accroche
-    product_type = productprops.product_type
+    product_type = _cam_type(productprops)
     startup = ec - epaisseur / 2
     N = difprops.type
     rang = difprops.getRang()
@@ -309,7 +316,7 @@ def add_cadre_tenon(difprops, productprops, usinageprops):
     largeur_diffuseur = difprops.largeur_diffuseur
     tenon_peigne = difprops.tenon_peigne
     startup = ec - epaisseur / 2
-    product_type = productprops.product_type
+    product_type = _cam_type(productprops)
     largeur_accroche = difprops.largeur_accroche
     type_tenon_cadre = difprops.type_tenon_cadre
     type_tenon_peigne = difprops.type_tenon_peigne
@@ -778,7 +785,7 @@ def add_renfort_central(difprops, productprops, usinageprops):
 
 
 def add_accroche(difprops, productprops, usinageprops, invert):
-    product_type = productprops.product_type
+    product_type = _cam_type(productprops)
     rang = difprops.getRang()
     epaisseur = difprops.epaisseur
     largeur_accroche = difprops.largeur_accroche
@@ -991,7 +998,7 @@ def add_accroche(difprops, productprops, usinageprops, invert):
 
 
 def add_renfort_angle(difprops, productprops, usinageprops):
-    product_type = productprops.product_type
+    product_type = _cam_type(productprops)
     epaisseur = difprops.epaisseur
     largeur_accroche = difprops.largeur_accroche
     largeur_diffuseur = difprops.largeur_diffuseur
@@ -1743,7 +1750,116 @@ def get_codage_monopilier_circles(difprops, arrayprops):
 create_circle("MyCircle", diameter=5, segments=32) """
 
 
+CONTREPILIER_ECO_HEIGHT = 0.060
+CONTREPILIER_ECO_SLOT_LEVEL = 0.030
+CONTREPILIER_ECO_SIDE_MARGIN = 0.035
+CONTREPILIER_ECO_SLOT_CLEARANCE = 0.0005
+CONTREPILIER_ECO_EDGE_CLEARANCE = 0.0005
+# Fente décentrée sur le bord droit de la cellule centrale de NouveauCtp.
+CONTREPILIER_ECO_KEY_RIGHT_INSET = 0.008
+CONTREPILIER_ECO_KEY_TOP_WIDTH = 0.006005
+CONTREPILIER_ECO_KEY_BOTTOM_WIDTH = 0.005004
+
+
+def _contre_pilier_eco_profile(difprops, heights, y0):
+    """Contour d'une rangée, avec les fentes de NouveauCtp ajustées au pas."""
+    count = difprops.type
+    thickness = difprops.epaisseur
+    pitch = difprops.getRang()
+    base_width = pitch - thickness
+    if count < 1 or base_width <= 0:
+        raise ValueError("Pas insuffisant pour les fentes du contrepilier eco")
+
+    reduction = float(difprops.pilier_reduction)
+    shoulder = base_width * reduction / 2
+    inner_start = CONTREPILIER_ECO_SIDE_MARGIN + thickness
+    width = 2 * inner_start + count * pitch - thickness
+    low = y0 + CONTREPILIER_ECO_SLOT_LEVEL
+    high = y0 + CONTREPILIER_ECO_HEIGHT
+    heights = [min(CONTREPILIER_ECO_HEIGHT - CONTREPILIER_ECO_SLOT_LEVEL,
+                   max(0, h - thickness)) for h in heights]
+    heights = [0 if height < 1e-7 else height for height in heights]
+    if len(heights) != count:
+        raise ValueError("Nombre de hauteurs incorrect pour le contrepilier eco")
+
+    edge_clearance = CONTREPILIER_ECO_EDGE_CLEARANCE
+    vertices = [
+        (0, y0, 0),
+        (0, high, 0),
+        (CONTREPILIER_ECO_SIDE_MARGIN, high, 0),
+        (CONTREPILIER_ECO_SIDE_MARGIN - edge_clearance, low, 0),
+        (inner_start + edge_clearance, low, 0),
+    ]
+    center_index = count // 2
+    for i, height in enumerate(heights):
+        base_left = inner_start + i * pitch
+        base_right = base_left + base_width
+        top_left = base_left + shoulder
+        top_right = base_right - shoulder
+        top_y = low + height
+        vertices.append((top_left, top_y, 0))
+        if i == center_index and difprops.contrepilier_eco_fente_assemblage:
+            key_top_right = top_right - CONTREPILIER_ECO_KEY_RIGHT_INSET
+            key_top_left = key_top_right - CONTREPILIER_ECO_KEY_TOP_WIDTH
+            key_center = (key_top_left + key_top_right) / 2
+            key_bottom_left = key_center - CONTREPILIER_ECO_KEY_BOTTOM_WIDTH / 2
+            key_bottom_right = key_center + CONTREPILIER_ECO_KEY_BOTTOM_WIDTH / 2
+            key_bottom_y = low + difprops.epaisseur_pilier
+            if key_top_left <= top_left or key_bottom_y >= top_y:
+                raise ValueError("La cellule centrale est trop basse ou trop étroite pour la fente décentrée")
+            vertices.extend([
+                (key_top_left, top_y, 0),
+                (key_bottom_left, key_bottom_y, 0),
+                (key_bottom_right, key_bottom_y, 0),
+                (key_top_right, top_y, 0),
+            ])
+        vertices.append((top_right, top_y, 0))
+        if i + 1 < count:
+            clearance = (CONTREPILIER_ECO_SLOT_CLEARANCE / 2
+                         if height > 0 and heights[i + 1] > 0 else 0)
+            vertices.extend([
+                (base_right - clearance, low, 0),
+                (base_left + pitch + clearance, low, 0),
+            ])
+    last_base_right = inner_start + count * pitch - thickness
+    right_shoulder = width - CONTREPILIER_ECO_SIDE_MARGIN
+    vertices.extend([
+        (last_base_right - edge_clearance, low, 0),
+        (right_shoulder + edge_clearance, low, 0),
+        (right_shoulder, high, 0),
+        (width, high, 0),
+        (width, y0, 0),
+    ])
+    return vertices
+
+
+def _add_contre_pilier_eco(difprops, arrayprops):
+    heights = difprops.getMotif("height")
+    count = difprops.type
+    # Stable/Eco génèrent actuellement une pièce par cellule ; Mono, une pièce
+    # en 1D ou une pièce par hauteur distincte en 2D.
+    if difprops.type_moule in {"stable", "eco"}:
+        piece_count = len(heights)
+    elif difprops.moule_type == "1d":
+        piece_count = 1
+    else:
+        piece_count = len(set(heights))
+    row = heights[:count]
+    vertices = []
+    edges = []
+    row_pitch = CONTREPILIER_ECO_HEIGHT + arrayprops.array_offset
+    for row_number in range(piece_count):
+        start = len(vertices)
+        profile = _contre_pilier_eco_profile(difprops, row, row_number * row_pitch)
+        vertices.extend(profile)
+        edges.extend((start + i, start + (i + 1) % len(profile))
+                     for i in range(len(profile)))
+    return vertices, edges, "Contre-Piliers Eco"
+
+
 def add_contre_pilier_moule(difprops, productprops, usinageprops, arrayprops):
+    if difprops.contrepilier_eco and productprops.product_type in ("0", "1", "3"):
+        return _add_contre_pilier_eco(difprops, arrayprops)
     product_type = productprops.product_type
     epaisseur = difprops.epaisseur
     profondeur = difprops.profondeur
@@ -1887,7 +2003,7 @@ def add_colle(difprops, productprops, usinageprops, arrayprops):
 
 
 def add_cadre_tissu_long(difprops, productprops, usinageprops, arrayprops):
-    product_type = productprops.product_type
+    product_type = _cam_type(productprops)
     split = difprops.split
     epaisseur = difprops.epaisseur
     is_splitted = True if difprops.longueur_absorbeur > split and split != 0 else False
@@ -1919,7 +2035,7 @@ def add_cadre_tissu_long(difprops, productprops, usinageprops, arrayprops):
 
 
 def add_cadre_tissu_court(difprops, productprops, usinageprops, arrayprops):
-    product_type = productprops.product_type
+    product_type = _cam_type(productprops)
     split = difprops.split
     largeur_diffuseur = difprops.largeur_diffuseur
     is_splitted = True if largeur_diffuseur > split and split != 0 else False

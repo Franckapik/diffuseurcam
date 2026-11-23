@@ -14,10 +14,13 @@ from bpy.props import (
     StringProperty,
 )
 
-productType = (
-    ("0", "Diffuseur 2D", ""),
-    ("1", "Diffuseur 1D", ""),
-    ("2", "Absorbeur", ""),
+from .gammes import GAMMES, stratik_layout
+
+# Le 4e élément fixe la valeur stockée dans les .blend : l'ordre des onglets
+# peut changer sans modifier le produit des fichiers existants.
+productType = tuple(
+    (identifier, name, description, int(identifier))
+    for identifier, name, description in GAMMES
 )
 
 
@@ -31,7 +34,7 @@ def _update_product_type(self, context):
 
 
 class UIProductProps(bpy.types.PropertyGroup):
-    product_type: EnumProperty(items=productType, update=_update_product_type)
+    product_type: EnumProperty(items=productType, default="0", update=_update_product_type)
     motif_display: EnumProperty(
         name="Vue",
         description="Choisissez un affichage",
@@ -365,7 +368,7 @@ class DiffuseurProps(bpy.types.PropertyGroup):
         description="Epaisseur des piliers",
         min=0.003,
         max=1,
-        default=0.003,
+        default=0.005,
         unit="LENGTH",
         precision=4,
     )
@@ -432,6 +435,16 @@ class DiffuseurProps(bpy.types.PropertyGroup):
             ("mono", "Mono-Pilier", ""),
             ("mono_v2", "Mono-pilier v2", "Fond compact avec perçages et base de piliers à créneaux"),
         ),
+    )
+    contrepilier_eco: BoolProperty(
+        name="Contrepilier eco",
+        description="Génère des contrepiliers de 60 mm avec fentes ajustées à l'épaisseur du modèle",
+        default=False,
+    )
+    contrepilier_eco_fente_assemblage: BoolProperty(
+        name="Fente d'assemblage",
+        description="Dessine la fente décentrée sur la cellule centrale du contrepilier eco",
+        default=True,
     )
     mono_v2_corner_motif: EnumProperty(
         name="Motif des coins",
@@ -858,9 +871,18 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "type_tenon_cadre",
                     "puits_serrage",
                 ]
+            case "4" | "6":
+                # Stratik et Mobilik reprennent toutes les options d'Organik.
+                return self.listAttributes("2")
+            case "7":
+                # Cloudik remplace l'épaisseur du modèle par sa propre épaisseur de cadre.
+                return [a for a in self.listAttributes("2") if a != "epaisseur"]
+            case "5":
+                return ["epaisseur"]
             case "3":
                 attributes = [
                     "type_moule",
+                    "contrepilier_eco",
                     "epaisseur",
                     "epaisseur_moule",
                     "pilier_reduction",
@@ -870,6 +892,10 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                     "longueur_diffuseur",
                     "socle_monopilier",
                 ]
+
+                if self.contrepilier_eco:
+                    attributes.insert(attributes.index("contrepilier_eco") + 1,
+                                      "contrepilier_eco_fente_assemblage")
 
                 if self.type_moule == "mono_v2":
                     attributes.insert(1, "mono_v2_corner_motif")
@@ -886,8 +912,8 @@ class DiffuseurProps(bpy.types.PropertyGroup):
                 if self.type_moule == "mono":
                     attributes.append("monopilier_mortaise_reduction")
 
-                # Épaisseur pilier pour stable et mono
-                if self.type_moule in {"stable", "mono", "mono_v2"}:
+                # L'épaisseur pilote aussi la position de la fente du contrepilier eco.
+                if self.type_moule in {"stable", "mono", "mono_v2"} or self.contrepilier_eco:
                     attributes.append("epaisseur_pilier")
 
                 # Codage par trous pour mono-piliers uniquement
@@ -1466,6 +1492,151 @@ class PositionSelectedProps(bpy.types.PropertyGroup):
     )
 
 
+class StratikProps(bpy.types.PropertyGroup):
+    """Tasseaux posés devant le cadre Organik."""
+    orientation: EnumProperty(
+        name="Sens des tasseaux",
+        items=(
+            ("V", "Verticaux", "Tasseaux parallèles à la longueur, répartis sur la largeur"),
+            ("H", "Horizontaux", "Tasseaux parallèles à la largeur, répartis sur la longueur"),
+        ),
+        default="V",
+    )
+    largeur_tasseau: FloatProperty(
+        name="Largeur tasseau (façade)",
+        description="Cote vue de face, utilisée pour le calcul du % ajouré",
+        default=0.025,
+        min=0.005,
+        max=0.2,
+        unit="LENGTH",
+        precision=4,
+    )
+    saillie_tasseau: FloatProperty(
+        name="Saillie tasseau",
+        description="Épaisseur du tasseau devant le tissu (s'ajoute à la profondeur)",
+        default=0.040,
+        min=0.005,
+        max=0.3,
+        unit="LENGTH",
+        precision=4,
+    )
+    pourcentage_ajoure: FloatProperty(
+        name="Ajouré",
+        description="Part de vide visée en façade ; le nombre de tasseaux en découle",
+        default=30.0,
+        min=0.0,
+        max=90.0,
+        precision=1,
+        subtype="PERCENTAGE",
+    )
+    nombre_manuel: BoolProperty(
+        name="Forcer le nombre de tasseaux",
+        description="Impose le nombre de tasseaux au lieu de le calculer depuis le % ajouré",
+        default=False,
+    )
+    nombre_tasseaux: IntProperty(
+        name="Nombre de tasseaux",
+        default=12,
+        min=2,
+        max=500,
+    )
+
+    def span(self, difprops):
+        """Longueur sur laquelle les tasseaux sont répartis."""
+        return difprops.largeur_diffuseur if self.orientation == "V" else difprops.longueur_absorbeur
+
+    def layout(self, difprops):
+        return stratik_layout(
+            self.span(difprops),
+            self.largeur_tasseau,
+            self.pourcentage_ajoure,
+            self.nombre_tasseaux if self.nombre_manuel else 0,
+        )
+
+    def reference_gap(self, layout):
+        """% de vide de la référence : la cible, ou le % obtenu si le nombre est forcé."""
+        return round(layout["ajoure"]) if self.nombre_manuel else self.pourcentage_ajoure
+
+
+class TrapikProps(bpy.types.PropertyGroup):
+    """Bass trap d'angle : prisme dont deux faces sont contre les murs."""
+    cote_a: FloatProperty(
+        name="Côté A",
+        description="Largeur de la face posée contre le premier mur",
+        default=0.30,
+        min=0.05,
+        max=3.0,
+        unit="LENGTH",
+        precision=4,
+    )
+    cote_b: FloatProperty(
+        name="Côté B",
+        description="Largeur de la face posée contre le second mur",
+        default=0.30,
+        min=0.05,
+        max=3.0,
+        unit="LENGTH",
+        precision=4,
+    )
+    hauteur: FloatProperty(
+        name="Hauteur",
+        default=1.20,
+        min=0.05,
+        max=5.0,
+        unit="LENGTH",
+        precision=4,
+    )
+
+
+class CloudikProps(bpy.types.PropertyGroup):
+    """Cloud acoustique : cadre Organik fin et goussets de suspension."""
+    epaisseur_cadre: FloatProperty(
+        name="Epaisseur cadre",
+        description="Épaisseur des planches du cadre Cloudik",
+        default=0.010,
+        min=0.003,
+        max=0.05,
+        unit="LENGTH",
+        precision=4,
+    )
+    gousset_taille: FloatProperty(
+        name="Côté gousset",
+        description="Longueur des deux côtés de l'angle droit des goussets de coin",
+        default=0.10,
+        min=0.02,
+        max=0.5,
+        unit="LENGTH",
+        precision=4,
+    )
+    gousset_epaisseur: FloatProperty(
+        name="Epaisseur gousset",
+        description="Épaisseur de la tôle des goussets",
+        default=0.003,
+        min=0.001,
+        max=0.02,
+        unit="LENGTH",
+        precision=4,
+    )
+    oeillet_diametre: FloatProperty(
+        name="Diamètre œillet",
+        description="Diamètre extérieur de l'anneau de suspension",
+        default=0.025,
+        min=0.008,
+        max=0.1,
+        unit="LENGTH",
+        precision=4,
+    )
+    oeillet_fil: FloatProperty(
+        name="Fil œillet",
+        description="Diamètre du fil de l'anneau",
+        default=0.004,
+        min=0.001,
+        max=0.02,
+        unit="LENGTH",
+        precision=4,
+    )
+
+
 class BatchPresetItem(bpy.types.PropertyGroup):
     """Un preset de configuration batch 3D"""
     name: StringProperty(name="Nom", default="Preset")
@@ -1473,6 +1644,10 @@ class BatchPresetItem(bpy.types.PropertyGroup):
     types: StringProperty(name="Types", default="7,11,13")
     profondeurs: StringProperty(name="Profondeurs (mm)", default="50,100,150,200")
     longueurs: StringProperty(name="Longueurs", default="1,2")
+    ajoures: StringProperty(name="Ajourés (%)", default="20,30,40")
+    trapik_a: StringProperty(name="Côtés A (mm)", default="300")
+    trapik_b: StringProperty(name="Côtés B (mm)", default="300")
+    trapik_h: StringProperty(name="Hauteurs (mm)", default="1200")
     grid_gap: FloatProperty(name="Espacement grille", default=0.1)
     stl_directory: StringProperty(name="Dossier GLB", default="")
 
@@ -1531,10 +1706,40 @@ class Batch3DProps(bpy.types.PropertyGroup):
         unit="LENGTH",
         precision=3,
     )
+    batch_ajoures: StringProperty(
+        name="Ajourés (%)",
+        description="Stratik : % de vide en façade séparés par des virgules (ex: 20,30,40)",
+        default="20,30,40",
+    )
+    batch_trapik_a: StringProperty(
+        name="Côtés A (mm)",
+        description="Trapik : côtés contre le premier mur, en mm, séparés par des virgules",
+        default="300",
+    )
+    batch_trapik_b: StringProperty(
+        name="Côtés B (mm)",
+        description="Trapik : côtés contre le second mur, en mm, séparés par des virgules",
+        default="300",
+    )
+    batch_trapik_h: StringProperty(
+        name="Hauteurs (mm)",
+        description="Trapik : hauteurs en mm séparées par des virgules",
+        default="1200",
+    )
+    # Le 4e élément fixe la valeur stockée : "3" reste Organik dans les fichiers existants.
     batch_product_type: EnumProperty(
         name="Type de produit",
         description="Produit à générer dans le batch",
-        items=[("0", "Diffuseur 2D", ""), ("1", "Diffuseur 1D", ""), ("2", "1D + 2D", "Générer les deux types dans la même scène"), ("3", "Absorbeur", "")],
+        items=[
+            ("1", "Indik (1D)", "", 1),
+            ("0", "Woodik (2D)", "", 0),
+            ("2", "Indik + Woodik", "Générer les deux types dans la même scène", 2),
+            ("3", "Organik", "", 3),
+            ("4", "Stratik", "", 4),
+            ("5", "Trapik", "", 5),
+            ("6", "Mobilik", "", 6),
+            ("7", "Cloudik", "", 7),
+        ],
         default="0",
     )
     preset_name: StringProperty(
@@ -1949,6 +2154,9 @@ classes = [
     DevisProps,
     DevisList,
     PositionSelectedProps,
+    StratikProps,
+    TrapikProps,
+    CloudikProps,
     BatchPresetItem,
     Batch3DProps,
     BatchRenderProps,
@@ -1966,6 +2174,9 @@ def register():
     bpy.types.Scene.pos_sel_props = bpy.props.PointerProperty(type=PositionSelectedProps)
     bpy.types.Scene.prep_props = bpy.props.PointerProperty(type=PrepareProps)
     bpy.types.Scene.product_props = bpy.props.PointerProperty(type=UIProductProps)
+    bpy.types.Scene.stratik_props = bpy.props.PointerProperty(type=StratikProps)
+    bpy.types.Scene.trapik_props = bpy.props.PointerProperty(type=TrapikProps)
+    bpy.types.Scene.cloudik_props = bpy.props.PointerProperty(type=CloudikProps)
     bpy.types.Scene.devis_props = bpy.props.PointerProperty(type=DevisProps)
     bpy.types.Scene.devis_list = bpy.props.CollectionProperty(type=DevisList)
     bpy.types.Scene.batch_3d_props = bpy.props.PointerProperty(type=Batch3DProps)
@@ -1987,6 +2198,9 @@ def unregister():
     del bpy.types.Scene.prep_props
     del bpy.types.Scene.dif_parts
     del bpy.types.Scene.product_props
+    del bpy.types.Scene.stratik_props
+    del bpy.types.Scene.trapik_props
+    del bpy.types.Scene.cloudik_props
     del bpy.types.Scene.devis_props
     del bpy.types.Scene.devis_list
     del bpy.types.Scene.batch_3d_props
